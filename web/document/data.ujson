@@ -1,0 +1,350 @@
+{
+  "ui_mask": {
+    "name": "path",
+    "editType": 0,
+    "modelNo": -1,
+    "editModeW": 600,
+    "editModeH": 400,
+    "ui_type": 16,
+    "param": {
+      "titles": [
+        {
+          "is_func": false,
+          "name": "name",
+          "ui_title": "名称",
+          "ui_type": 2,
+          "ui_width": 180,
+          "ui_visible": true,
+          "ui_readonly": false,
+          "ui_mask": {}
+        },
+        {
+          "is_func": false,
+          "name": "path",
+          "ui_title": "路径",
+          "ui_type": 2,
+          "ui_width": 130,
+          "ui_visible": true,
+          "ui_readonly": false,
+          "ui_mask": {}
+        },
+        {
+          "is_func": false,
+          "name": "file",
+          "ui_title": "文件",
+          "ui_type": 2,
+          "ui_width": 300,
+          "ui_visible": true,
+          "ui_readonly": false,
+          "ui_mask": {}
+        },
+        {
+          "is_func": false,
+          "name": "system",
+          "ui_title": "系统",
+          "ui_type": 3,
+          "ui_width": 80,
+          "ui_visible": true,
+          "ui_readonly": false,
+          "ui_mask": {}
+        }
+      ],
+      "model": []
+    }
+  },
+  "data": [
+    {
+      "name": "uieip",
+      "path": "index",
+      "file": "readme.md",
+      "subs": [
+        {
+          "name": "开发笔记",
+          "path": "note",
+          "file": "document/note.md"
+        }
+      ]
+    },
+    {
+      "name": "server",
+      "path": "server",
+      "file": "document/server/概述.md",
+      "subs": [
+        {
+          "name": "服务安装",
+          "path": "server-service",
+          "file": "document/server/服务安装.md"
+        },{
+          "name": "服务路由规则",
+          "path": "server-wevsvr",
+          "file": "document/server/服务路由规则.md"
+        },
+        {
+          "name": "安装配置",
+          "path": "server-config",
+          "file": "document/server/安装配置.md"
+        },
+        {
+          "name": "错误处理",
+          "path": "server-error",
+          "file": "document/server/error.md"
+        },
+        {
+          "name": "日志管理",
+          "path": "sever-log",
+          "file": "document/server/日志管理.md"
+        },
+        {
+          "name": "工作流",
+          "path": "sever-workflow",
+          "file": "document/server/工作流.md"
+        }
+      ]
+    },
+    {
+      "name": "数据库",
+      "path": "data",
+      "file": "document/数据库/概述.md",
+      "subs": [
+        {
+          "name": "Postgresql",
+          "path": "data-pg",
+          "file": "document/数据库/postgresql.md"
+        },
+        {
+          "name": "KingbaseES",
+          "path": "data-kingbase",
+          "file": "document/数据库/kingbase.md"
+        },
+        {
+          "name": "数据库脚本程序",
+          "path": "data-js",
+          "file": "document/数据库/脚本程序.md"
+        },
+        {
+          "name": "向量数据库",
+          "path": "data-milvus",
+          "file": "document/数据库/milvus.md"
+        }
+      ]
+    },
+    {
+      "name": "系统架构",
+      "path": "logic",
+      "file": "document/系统架构/概述.md",
+      "system": false,
+      "subs": [
+          {
+          "name": "组件类型",
+          "path": "data-uitypes",
+          "file": "document/系统架构/组件类型.md"
+        },
+        {
+          "name": "文件",
+          "path": "data-uitype-file",
+          "file": "document/系统架构/文件.md"
+        },
+        {
+          "name": "用户登录",
+          "path": "logic-login",
+          "file": "document/系统架构/用户登录.md",
+          "system": true
+        }
+      ]
+    },
+    {
+      "name": "页面脚本语言",
+      "path": "jsvm",
+      "file": "document/脚本语言/概述.md",
+      "subs": [
+        {
+          "name": "ECMAScript 5.1",
+          "path": "jsvm-0",
+          "file": "document/脚本语言/ecmascript5.1.md"
+        },
+        {
+          "name": "模型",
+          "path": "jsvm-model",
+          "file": "document/脚本语言/模型.md"
+        },
+        {
+          "name": "数据库操作",
+          "path": "jsvm-data",
+          "file": "document/脚本语言/数据库操作.md"
+        },
+        {
+          "name": "网站操作",
+          "path": "jsvm-cms",
+          "file": "document/脚本语言/网站操作.md"
+        },
+        {
+          "name": "缓存操作",
+          "path": "jsvm-cache",
+          "file": "document/脚本语言/缓存操作.md"
+        },
+        {
+          "name": "session",
+          "path": "jsvm-session",
+          "file": "document/脚本语言/session.md"
+        },
+        {
+          "name": "用户登录",
+          "path": "jsvm-login",
+          "file": "document/脚本语言/用户登录.md"
+        },
+        {
+          "name": "资源操作接口",
+          "path": "jsvm-resouse",
+          "file": "document/脚本语言/资源操作.md"
+        }
+      ]
+    },
+    {
+      "name": "web框架",
+      "path": "web",
+      "file": "document/web框架/概述.md",
+      "subs": [
+        {
+          "name": "Base",
+          "path": "web-base",
+          "file": "document/web框架/base.md"
+        },
+        {
+          "name": "组件库",
+          "path": "web-plus",
+          "file": "document/web框架/组件概述.md",
+          "subs": [
+            {
+              "name": "Public",
+              "path": "web-plus-public",
+              "file": "document/web框架/组件-public.md"
+            },
+            {
+              "name": "表单组件",
+              "path": "web-plus-form",
+              "file": "document/web框架/组件-表单组件.md"
+            },
+            {
+              "name": "窗体组件",
+              "path": "yqwin-plus-window",
+              "file": "document/web框架/组件-窗体组件.md"
+            },
+            {
+              "name": "数据组件",
+              "path": "yqwin-plus-data",
+              "file": "document/web框架/组件-数据组件.md"
+            },
+            {
+              "name": "页面框架组件",
+              "path": "yqwin-plus-layout",
+              "file": "document/web框架/组件-页面框架组件.md"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "笔记",
+      "path": "notes",
+      "file": "document/笔记/笔记.md",
+      "system": true,
+      "subs": [
+        {
+          "name": "项目管理",
+          "path": "project",
+          "file": "document/笔记/项目管理.md",
+          "system": true
+        },
+        {
+          "name": "目标管理",
+          "path": "mbo",
+          "file": "document/笔记/bi/目标管理.md",
+          "system": true
+        },
+        {
+          "name": "ESG",
+          "path": "esg",
+          "file": "document/笔记/bi/esg.md",
+          "system": true
+        },
+        {
+          "name": "商务智能(BI)、数据仓库（DW）",
+          "path": "bi",
+          "file": "document/笔记/bi/bi.md",
+          "system": true
+        }
+      ]
+    },
+    {
+      "name": "股票",
+      "path": "stock",
+      "file": "document/股票/概述.md",
+      "system": true,
+      "subs": [
+        {
+          "name": "股票交易规则",
+          "path": "stock-gz",
+          "file": "document/股票/交易规则.md",
+          "system": true
+        },
+        {
+          "name": "趋势分析",
+          "path": "stock-ta",
+          "file": "document/股票/趋势分析.md",
+          "system": true
+        },
+        {
+          "name": "量化交易策略",
+          "path": "stock-qs",
+          "file": "document/股票/量化策略.md",
+          "system": true
+        }
+      ]
+    },
+    {
+      "name": "单点登录",
+      "path": "sso",
+      "file": "document/单点登录/概述.md",
+      "system": false,
+      "subs": [
+        {
+          "name": "OAuth 2.0",
+          "path": "sso-oauth2",
+          "file": "document/单点登录/oauth2.md",
+          "system": false
+        }, {
+          "name": "OIDC",
+          "path": "sso-oidc",
+          "file": "document/单点登录/oidc.md",
+          "system": false
+        }, {
+          "name": "CAS",
+          "path": "sso-cas",
+          "file": "document/单点登录/cas.md",
+          "system": false
+        }, {
+          "name": "SAML",
+          "path": "sso-saml",
+          "file": "document/单点登录/saml.md",
+          "system": false
+        }, {
+          "name": "YUANQI SSO",
+          "path": "yuanqi-sso",
+          "file": "document/单点登录/yuanqi_sso.md",
+          "system": false
+        }, {
+          "name": "LDAP",
+          "path": "sso-ldap",
+          "file": "document/单点登录/ldap.md",
+          "system": false
+        }
+      ]
+    },
+    {
+      "name": "demo-html",
+      "path": "demo",
+      "file": "document/demo.htmls",
+      "system": false
+    }
+  ]
+}

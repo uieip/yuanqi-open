@@ -1,0 +1,217 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>CSV 测试</title>
+    <style>
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 测试容器 */
+        .test-container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        /* 标题样式 */
+        .test-container h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #303133;
+        }
+
+        /* 结果显示区域 */
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f7fa;
+            border-radius: 4px;
+            border: 1px solid #e4e7ed;
+        }
+
+        /* 结果标题 */
+        .result-container h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #303133;
+        }
+
+        /* 结果内容 */
+        .result-content {
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e4e7ed;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>20-csv 组件测试</h1>
+
+        <!-- 测试容器 -->
+        <div class="test-container">
+            <h2>基本功能测试</h2>
+
+            <!-- 编辑模式切换 -->
+            <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="可编辑"
+                inactive-text="只读模式"></el-switch>
+            </br></br>
+            <!-- 选择函数类型 -->
+            <span>函数类型</span>
+            <el-radio-group v-model="funcType" @change="handleTypeChange">
+                <el-radio v-for="item in funcValues" :key="item.type" :value="item.type">{{ item.type }}</el-radio>
+            </el-radio-group>
+            </br></br>
+            <!-- 使用 YqFunc 组件 -->
+            <yq-func v-model:value="funcValue" :is-edit="isEdit" :callback="callback"></yq-func>
+
+            <!-- 结果显示 -->
+            <div class="result-container">
+                <h3>当前值:</h3>
+                <div class="result-content">{{ funcValue || 'null' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, watch } = Vue;
+        const { initTheme, YqFunc } = YqwinPlus;
+        const { ElMessageBox } = ElementPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqFunc
+            },
+            setup() {
+                const funcType = ref('string')
+                const funcValues = ref([{
+                    type: 'string',
+                    value: 'hello string'
+                },
+                {
+                    type: 'number',
+                    value: 1234567890
+                },
+                {
+                    type: 'boolean',
+                    value: true
+                }, {
+                    type: 'null',
+                    value: null
+                },{
+                    type: 'undefined',
+                    value: undefined
+                },{
+                    type: 'date',
+                    value: new Date()
+                               },{
+                    type: 'object1',
+                    value: {
+                        name: '张三',
+                        age: 18
+                    }
+                }, {
+                    type: 'object2',
+                    value: [{
+                        name: '张三',
+                        age: 18
+                    }, {
+                        name: '李四',
+                        age: 20
+                    }]
+                }, {
+                    type: 'array1',
+                    value: [1, 2, 3]
+                }, {
+                    type: 'array2',
+                    value: ["name1", "name2", "name3"]
+                }, {
+                    type: 'array3',
+                    value: ['10 mail.baidu.com.', '20 backup-mail.baidu.com.']
+                }]);
+
+                const handleTypeChange = (val) => {
+                    funcValue.value = funcValues.value.find(item => item.type === val).value
+                }
+
+                // 初始化默认值
+                const funcValue = ref('1234567890')
+                const isEdit = ref(true)
+
+                // 监听值变化
+                watch(() => funcValue.value, (newVal) => {
+                    console.log('func 值变化:', newVal)
+                })
+
+                const callback = async (obj, value) => {
+                    console.log("obj:", obj);
+                    console.log("value:", value);
+                    // 使用 Element Plus 的 MessageBox 组件
+                    try {
+                        await ElMessageBox.confirm(
+                            "obj:" + JSON.stringify(obj),
+                            "确认吗？",
+                            {
+                                confirmButtonText: "确认",
+                                cancelButtonText: "取消",
+                                type: "info"
+                            }
+                        );
+                        return Promise.resolve({
+                            error: 0,
+                            info: '成功',
+                            value: Date.now().toString()
+                        });
+                    } catch (error) {
+                        console.log("用户点击了取消");
+                        return Promise.resolve({
+                            error: 9,
+                            info: '用户点击了取消',
+                            value: null
+                        });
+                    }
+                };
+
+                return {
+                    funcType,
+                    funcValues,
+                    handleTypeChange,
+                    funcValue,
+                    isEdit,
+                    callback,
+                }
+            }
+        })
+            .use(ElementPlus)
+            .mount('#app')
+    </script>
+
+</body>
+
+</html>

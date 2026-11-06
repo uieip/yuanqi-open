@@ -1,0 +1,407 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        /* 添加 v-cloak 样式 */
+        [v-cloak] {
+            display: none;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-container :aside-width="leftW" style="padding: 0;height: 100%;">
+            <yq-con-aside>
+                <div class="control-group" style="padding:5px 10px;">
+                    <yq-label v-cloak label="数据库" :label-dict="{ 'zh-CN': '数据库', 'en': 'Database' }"></yq-label>
+                    <el-select v-model="db_value" @change="handleDbChange" placeholder="请选择数据库" :clearable="true"
+                        :popper-append-to-body="false" style="padding-left: 5px; width: calc(100% - 60px);">
+                        <el-option v-for="item in db_data" :key="item.name" :label="item.describe" :value="item"
+                            v-cloak>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>{{ item.describe }} ({{ item.name }})</span>
+                                <span style="color: #8492a6; font-size: 13px">{{ item.fs_type }}</span>
+                            </div>
+                        </el-option>
+                    </el-select>
+                </div>
+                <div style="height: calc(100% - 45px);">
+                    <yq-table v-bind="fileRelTableProps" @row-click="relRowClick"></yq-table>
+                </div>
+
+            </yq-con-aside>
+            <yq-con-main style="padding: 0;">
+                <yq-tabs v-model="activeTab" @tab-click="tabsClick" :label-dict="tabLabelDict">
+                    <yq-tab-pane label="关联文件" name="fileRel" icon="fa fa-link"
+                        style="padding-top: 4px;">
+                        <div style="height: 100%;">
+                            <yq-data-grid ref="relRef" v-bind="relGridProps"></yq-data-grid>
+                        </div>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="未关联文件" name="fileNull" icon="fa fa-chain-broken" style="padding-top: 4px;">
+                        <div style="height: 100%;">
+                            <yq-data-grid ref="nulllinkRef" v-bind="nullGridProps"></yq-data-grid>
+                        </div>
+                    </yq-tab-pane>
+                </yq-tabs>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, nextTick, computed } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqWindowApi, yqData, YqTable, YqDataGrid, YqTabs, YqTabPane, YqLabel, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            leftW: 310,
+            file_rel: {
+                titles: [{
+                    "name": "db_name",
+                    "ui_title": "db_name",
+                    "ui_type": 2,
+                    "ui_width": 100,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "tb_name",
+                    "ui_title": "tb_name",
+                    "ui_type": 2,
+                    "ui_width": 160,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }],
+            },
+            rellink: {
+                keyId: "sid",
+                bindingKeyId: "tb_name",
+                order: "sid",
+                titles: [{
+                    "name": "tb_id",
+                    "ui_title": "tb_id",
+                    "ui_type": 2,
+                    "ui_width": 300,
+                    "ui_visible": false,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "tb_field",
+                    "ui_title": "tb_field",
+                    "ui_type": 2,
+                    "ui_width": 70,
+                    "ui_visible": false,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "name",
+                    "ui_title": "名称",
+                    "ui_type": 2,
+                    "ui_width": 230,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "type",
+                    "ui_title": "类型",
+                    "ui_type": 2,
+                    "ui_width": 90,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "size",
+                    "ui_title": "大小",
+                    "ui_type": 10,
+                    "ui_width": 80,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "linknum",
+                    "ui_title": "关联数",
+                    "ui_type": 10,
+                    "ui_width": 100,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "c_username",
+                    "ui_title": "创建人",
+                    "ui_type": 2,
+                    "ui_width": 120,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }, {
+                    "name": "createtime",
+                    "ui_title": "创建时间",
+                    "ui_type": 12,
+                    "ui_width": 140,
+                    "ui_visible": true,
+                    "ui_readonly": false,
+                    "ui_mask": {}
+                }],
+                loadData: false,
+                showMenu: false,
+                isPage: true,
+                pageSize: 10,
+                isSimple: true,
+                isSeek: false,
+                loadTitles: true,
+            },
+            nulllink: {
+                keyId: "sid",
+                order: "",
+                titles: [
+                    {
+                        "name": "name",
+                        "ui_title": "名称",
+                        "ui_type": 2,
+                        "ui_width": 230,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "type",
+                        "ui_title": "类型",
+                        "ui_type": 2,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "size",
+                        "ui_title": "大小",
+                        "ui_type": 10,
+                        "ui_width": 80,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "complete",
+                        "ui_title": "上传完成",
+                        "ui_type": 3,
+                        "ui_width": 120,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "c_username",
+                        "ui_title": "创建人",
+                        "ui_type": 2,
+                        "ui_width": 120,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "createtime",
+                        "ui_title": "创建时间",
+                        "ui_type": 12,
+                        "ui_width": 140,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }
+                ],
+                loadData: false,
+                showMenu: false,
+                isPage: true,
+                pageSize: 25,
+                isSimple: true,
+                isSeek: false,
+                loadTitles: true, //是否加载标题
+            }
+        };
+
+        window.onload = function () {
+            mainParams.leftW = window.innerWidth * 0.20;
+            if (mainParams.leftW < 310) {
+                mainParams.leftW = 310;
+            }
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    ElSelect, ElOption,
+                    yqData,
+                    YqTable,
+                    YqDataGrid,
+                    YqTabs,
+                    YqTabPane,
+                    YqLabel,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain,
+                },
+                data() {
+                    return {
+                        leftW: mainParams.leftW + "px",
+                    }
+                },
+                setup() {
+                    const relRef = ref(null);
+                    const nulllinkRef = ref(null);
+
+                    const db_value = ref('');
+                    const db_data = ref([{
+                        db_type: "sqlite",
+                        describe: "测试数据库",
+                        master: true,
+                        name: "yqbase"
+                    }]);
+
+                    const getFileRelTypes = async (row) => {
+                        //console.log(row);
+                        if (!row) {
+                            file_rel_rows.value = [];
+                            return;
+                        }
+                        const relRows = await yqData.fileRelTypes({
+                            sto_type: row["type"],
+                            sto_name: row["name"],
+                        })
+                        //console.log(relRows);
+                        if (relRows.error == 0) {
+                            file_rel_rows.value = relRows.rows;
+                        } else {
+                            file_rel_rows.value = [];
+                        }
+                    }
+
+                    let fs_row = {}
+                    const handleDbChange = async (row) => {
+                        fs_row = row;
+                        getFileRelTypes(row);
+
+                        if (activeTab.value == 'fileNull' && fs_row) {
+                            tabsClick(activeTab.value);
+                        }
+                    }
+
+                    const file_rel_rows = ref([]);
+
+                    let rel_row = {}
+                    const relRowClick = async ({ row, key, index }) => {
+                        rel_row = row;
+                        tabsClick(activeTab.value);
+                    }
+
+                    const relBindingValue = ref(null);
+                    const relBeforeLoadData = async (options) => {
+                        options.sto_type = fs_row["type"];
+                        options.sto_name = fs_row["name"];
+                        return await yqData.fileRelPaging(options);
+                    }
+
+                    const nulllinkBeforeLoadData = async (options) => {
+                        options.sto_type = fs_row["type"];
+                        options.sto_name = fs_row["name"];
+                        return await yqData.fileNullPaging(options);
+                    }
+
+                    const fileRelTableProps = computed(() => ({
+                        titles: mainParams.file_rel.titles,
+                        rows: file_rel_rows.value,
+                        pagination: false,
+                        border: true,
+                    }));
+
+                    const relGridProps = computed(() => ({
+                        ...mainParams.rellink,
+                        bindingValue: relBindingValue.value,
+                        beforeLoadData: relBeforeLoadData,
+                    }));
+
+                    const nullGridProps = computed(() => ({
+                        ...mainParams.nulllink,
+                        showMenu: mainParams.rellink.showMenu,
+                        beforeLoadData: nulllinkBeforeLoadData,
+                    }));
+
+                    const activeTab = ref('fileRel');
+
+                    const tabLabelDict = ref({
+                        "zh-CN": { fileRel: "关联文件", fileNull: "未关联文件" },
+                        "en": { fileRel: "Linked Files", fileNull: "Unlinked Files" },
+                    });
+                    const tabsClick = async (tab) => {
+                        if (tab == 'fileRel') {
+                            if (fs_row && rel_row) {
+                                relBindingValue.value = rel_row["tb_name"];
+                                await relRef.value.seek();
+                            } else {
+                                relBindingValue.value = null;
+                                await relRef.value.clear();
+                            }
+                        } else if (tab == 'fileNull') {
+                            await nulllinkRef.value.seek();
+                            if (fs_row) {
+                                await nulllinkRef.value.seek();
+                            } else {
+                                await nulllinkRef.value.clear();
+                            }
+                        }
+                    }
+
+                    onMounted(async () => {
+                        const res = await yqData.fileList({});
+                        if (res.error == 0) {
+                            db_data.value = res.rows;
+                        }
+                    });
+
+                    return {
+                        relRef,
+                        nulllinkRef,
+
+                        db_value,
+                        db_data,
+                        handleDbChange,
+
+                        fileRelTableProps,
+                        relGridProps,
+                        nullGridProps,
+
+                        file_rel_rows,
+                        relRowClick,
+
+                        activeTab,
+                        tabLabelDict,
+                        tabsClick,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+
+    <style scoped>
+        .el-tabs__header {
+            margin: 0 0 5px;
+        }
+    </style>
+</body>
+
+</html>

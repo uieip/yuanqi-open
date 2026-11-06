@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqFooter 页脚组件测试</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+    }
+
+    /* 测试控制面板 */
+    .test-panel {
+      margin: 16px;
+      padding: 16px 20px;
+      background-color: var(--el-bg-color);
+      border: 1px solid var(--el-border-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .test-panel h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--el-text-color-secondary);
+    }
+
+    .test-panel .form-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .test-panel .form-row .label {
+      font-size: 14px;
+      color: var(--el-text-color-regular);
+      min-width: 70px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const { createApp, ref } = Vue;
+    const { initTheme, YqFooter, i18n } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      components: { YqFooter },
+      setup() {
+        // 版权信息
+        const copyright = ref('© 2025 远齐科技 All Rights Reserved')
+
+        // 链接列表
+        const links = ref([
+          { label: '关于我们', isUrl: true, path: 'http://www.uieip.com/author/', target: '_blank' },
+          { label: '服务条款', path: '#', target: '_blank' },
+          { label: '隐私政策', path: '#', target: '_blank' },
+          { label: '联系我们', path: '#', target: '_blank' }
+        ])
+
+        // 右侧信息
+        const showRightInfo = ref(true)
+        const rightInfo = ref('v0.0.1')
+
+        return { copyright, links, showRightInfo, rightInfo }
+      },
+      template: `
+        <div class="test-panel">
+          <h3>YqFooter 组件测试面板</h3>
+          <div class="form-row">
+            <span class="label">版权信息</span>
+            <el-input v-model="copyright" style="width: 320px;"></el-input>
+          </div>
+          <div class="form-row">
+            <span class="label">右侧信息</span>
+            <el-input v-model="rightInfo" style="width: 160px;"></el-input>
+            <el-switch v-model="showRightInfo" active-text="显示右侧信息" inactive-text="隐藏右侧信息"></el-switch>
+          </div>
+        </div>
+        <yq-footer class="footer" :links="links" :copyright="copyright"
+          :show-right-info="showRightInfo" :right-info="rightInfo"></yq-footer>
+      `
+    })
+
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+  </script>
+</body>
+</html>

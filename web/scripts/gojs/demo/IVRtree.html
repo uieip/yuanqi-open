@@ -1,0 +1,327 @@
+<html lang="zh-cn">
+<head>
+  <title>IVRtree</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" href="/scripts/yqwin/yqwin-plus.css">
+  <script src="/scripts/theme-boot.js"></script>
+  <script src="/scripts/gojs/go.js"></script>
+  <script src="/scripts/gojs/extensions/Figures.js"></script>
+  <script src="/scripts/gojs/extensions/Themes.js"></script>
+  <style>
+    body {
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+  </style>
+</head>
+
+<body>
+  <a href="javascript:window.history.back();">返回</a>
+  <div id="myDiagramDiv"
+    style="border: 1px solid black; width: 100%; height: 500px; position: relative; background-color: rgb(243, 244, 246); cursor: auto;">
+  </div>
+  Theme:
+  <select id="theme" onchange="changeTheme()">
+    <option value="system">System</option>
+    <option value="light">Light</option>
+    <option value="dark">Dark</option>
+  </select>
+  <script>
+    document.getElementById('myDiagramDiv').style.height = (window.innerHeight - 65) + 'px';
+
+    var opt = {};
+
+    init();
+
+    function init() {
+      opt.$ = go.GraphObject.make;
+
+      opt.diagram = new go.Diagram("myDiagramDiv", {
+        allowCopy: false,
+        'draggingTool.dragsTree': true,
+        'commandHandler.deletesTree': true,
+        layout: opt.$(go.TreeLayout, { angle: 90, arrangement: go.TreeArrangement.FixedRoots }),
+        'undoManager.isEnabled': true,
+        'themeManager.themeMap': new go.Map([
+          { key: 'light', value: Modern },
+          { key: 'dark', value: ModernDark },
+        ]),
+        'themeManager.changesDivBackground': true,
+        'themeManager.currentTheme': document.getElementById('theme').value,
+      });
+
+      opt.diagram.themeManager.set('', {
+        colors: {
+          primary: '#155e75',
+          terminal: '#047857',
+        },
+      });
+
+      opt.diagram.addDiagramListener('Modified', (e) => {
+        var button = document.getElementById('SaveButton');
+        if (button) button.disabled = !opt.diagram.isModified;
+        var idx = document.title.indexOf('*');
+        if (opt.diagram.isModified) {
+          if (idx < 0) document.title += '*';
+        } else {
+          if (idx >= 0) document.title = document.title.slice(0, idx);
+        }
+      });
+
+      go.Shape.defineFigureGenerator('Van', function (shape, w, h) {
+        var geo = go.Geometry.parse(
+          'M37.409,18.905l-4.946-7.924c-0.548-0.878-1.51-1.411-2.545-1.411H3c-1.657,0-3,1.343-3,3v16.86c0,1.657,1.343,3,3,3h0.787 c0.758,1.618,2.391,2.75,4.293,2.75s3.534-1.132,4.292-2.75h20.007c0.758,1.618,2.391,2.75,4.293,2.75 c1.9,0,3.534-1.132,4.291-2.75h0.787c1.656,0,3-1.343,3-3v-2.496C44.75,22.737,41.516,19.272,37.409,18.905z M8.087,32.395 c-1.084,0-1.963-0.879-1.963-1.963s0.879-1.964,1.963-1.964s1.963,0.88,1.963,1.964S9.171,32.395,8.087,32.395z M26.042,21.001 V15.57v-2.999h3.876l5.264,8.43H26.042z M36.671,32.395c-1.084,0-1.963-0.879-1.963-1.963s0.879-1.964,1.963-1.964 s1.963,0.88,1.963,1.964S37.755,32.395,36.671,32.395z'
+        );
+        return geo.scale(w / geo.bounds.width, h / geo.bounds.height);
+      });
+      go.Shape.defineFigureGenerator('SUV', function (shape, w, h) {
+        var geo = go.Geometry.parse(
+          'M246,90.011V59.995c0-5.523-4.48-9.995-10-9.995h-50L156.97,6.416C155.11,3.634,152.34,2,149,2H28 c-5.52,0-10,4.446-10,9.969V30h-8c-4.42,0-8,3.56-8,7.983v40.022C2,82.427,5.58,86,10,86h8v20h16.458 c2.8-15.959,16.702-28.066,33.462-28.066c16.75,0,30.708,12.107,33.518,28.066h72.958c2.8-15.959,16.764-28.066,33.524-28.066 c16.75,0,30.624,12.107,33.434,28.066H250c4.42,0,8-3.563,8-7.985v-8.004H246z M86,50H30V13.97h56V50z M98,50V13.97h48L170,50H98z M68,138c-14.336,0-26.083-11.706-26.083-26.051s11.664-26.014,26-26.014s26,11.669,26,26.014S82.336,138,68,138z M67.917,99.943 c-6.617,0-12,5.386-12,12.006c0,6.621,5.383,12.006,12,12.006s12-5.386,12-12.006C79.917,105.329,74.534,99.943,67.917,99.943z M208,138c-14.337,0-26.083-11.706-26.083-26.051s11.663-26.014,26-26.014s26,11.669,26,26.014S222.337,138,208,138z M207.917,99.943c-6.617,0-12,5.386-12,12.006c0,6.621,5.383,12.006,12,12.006s12-5.386,12-12.006 C219.917,105.329,214.534,99.943,207.917,99.943z'
+        );
+        return geo.scale(w / geo.bounds.width, h / geo.bounds.height);
+      });
+      go.Shape.defineFigureGenerator('Hammer', function (shape, w, h) {
+        var geo = go.Geometry.parse(
+          'M19 5.5a4.5 4.5 0 01-4.791 4.49c-.873-.055-1.808.128-2.368.8l-6.024 7.23a2.724 2.724 0 11-3.837-3.837L9.21 8.16c.672-.56.855-1.495.8-2.368a4.5 4.5 0 015.873-4.575c.324.105.39.51.15.752L13.34 4.66a.455.455 0 00-.11.494 3.01 3.01 0 001.617 1.617c.17.07.363.02.493-.111l2.692-2.692c.241-.241.647-.174.752.15.14.435.216.9.216 1.382zM4 17a1 1 0 100-2 1 1 0 000 2z'
+        );
+        return geo.scale(w / geo.bounds.width, h / geo.bounds.height);
+      });
+
+      var actionTemplate = opt.$(go.Panel,
+        'TableRow',
+        opt.$(go.Shape, {
+          column: 0,
+          width: 20,
+          height: 20,
+          fill: null
+        },
+          new go.Binding('figure'),
+          new go.ThemeBinding('stroke', 'text')),
+
+        opt.$(go.TextBlock, {
+          column: 1
+        }, {
+          font: '11pt Verdana, sans-serif'
+        },
+          new go.Binding('text'),
+          new go.ThemeBinding('stroke', 'text')),
+
+        opt.$(go.TextBlock,
+          { column: 2 },
+          { font: '11pt Verdana, sans-serif' },
+          new go.Binding('text', 'itemIndex', (i) => `[${i}]`).ofObject(),
+          new go.ThemeBinding('stroke', 'text')
+        )
+      );
+
+      opt.diagram.nodeTemplate = // the default node template
+        opt.$(go.Node,
+          'Vertical',
+          new go.Binding('isTreeExpanded').makeTwoWay(), // remember the expansion state for
+          new go.Binding('wasTreeExpanded').makeTwoWay(), //   when the model is re-loaded
+          { selectionObjectName: 'BODY' },
+          // the main "BODY" consists of a RoundedRectangle surrounding nested Panels
+          opt.$(go.Panel,
+            'Auto',
+            { name: 'BODY' },
+            opt.$(go.Shape, 'RoundedRectangle', {
+              strokeWidth: 0
+            },
+              new go.ThemeBinding('fill', 'primary')),
+            opt.$(go.Panel, 'Vertical', {
+              margin: 3
+            },
+              // the title
+              opt.$(go.TextBlock,
+                {
+                  stretch: go.Stretch.Horizontal,
+                  font: 'bold 12pt Verdana, sans-serif',
+                  stroke: 'white',
+                },
+                new go.Binding('text', 'question')
+              ),
+              // the optional list of actions
+              opt.$(go.Panel, 'Vertical', {
+                stretch: go.Stretch.Horizontal,
+                visible: false
+              }, // not visible unless there is at least one action
+                new go.Binding('visible', 'actions', (acts) => Array.isArray(acts) && acts.length > 0),
+                // headered by a label and a PanelExpanderButton inside a Table
+                opt.$(go.Panel, 'Table', {
+                  stretch: go.Stretch.Horizontal
+                },
+                  opt.$(go.TextBlock, 'Choices', {
+                    alignment: go.Spot.Left,
+                    font: '10pt Verdana, sans-serif',
+                    stroke: 'white',
+                  }),
+                  opt.$('PanelExpanderButton',
+                    'COLLAPSIBLE', // name of the object to make visible or invisible
+                    {
+                      column: 1,
+                      alignment: go.Spot.Right,
+                      'ButtonIcon.stroke': 'white',
+                    }
+                  )
+                ), // end Table panel
+                // with the list data bound in the Table Panel
+                opt.$(go.Panel, 'Table', {
+                  name: 'COLLAPSIBLE', // identify to the PanelExpanderButton
+                  padding: 2,
+                  stretch: go.Stretch.Horizontal, // take up whole available width
+                  defaultAlignment: go.Spot.Left, // thus no need to specify alignment on each element
+                  defaultSeparatorPadding: 3,
+                  itemTemplate: actionTemplate, // the Panel created for each item in Panel.itemArray
+                },
+                  new go.ThemeBinding('background', 'div'),
+                  new go.Binding('itemArray', 'actions')
+                  // bind Panel.itemArray to nodedata.actions
+                ) // end action list Table Panel
+              ) // end optional Vertical Panel
+            ) // end outer Vertical Panel
+          ), // end "BODY"  Auto Panel
+          opt.$(go.Panel, // this is underneath the "BODY"
+            { height: 17 }, // always this height, even if the TreeExpanderButton is not visible
+            opt.$('TreeExpanderButton')
+          )
+        );
+
+      // define a second kind of Node:
+      opt.diagram.nodeTemplateMap.add(
+        'Terminal',
+        opt.$(go.Node,
+          'Spot',
+          opt.$(go.Shape, 'Circle', {
+            width: 55,
+            height: 55,
+            strokeWidth: 0
+          },
+            new go.ThemeBinding('fill', 'terminal')),
+          opt.$(go.TextBlock, {
+            font: '10pt Verdana, sans-serif',
+            stroke: 'white'
+          },
+            new go.Binding('text'))
+        )
+      );
+
+      opt.diagram.linkTemplate = opt.$(go.Link, {
+        routing: go.Routing.Orthogonal,
+        deletable: false,
+        corner: 10,
+        toShortLength: 4
+      },
+        opt.$(go.Shape, {
+          strokeWidth: 2
+        },
+          new go.ThemeBinding('stroke', 'link')),
+        opt.$(go.Shape, // the arrowhead
+          {
+            toArrow: 'Standard',
+            strokeWidth: 0
+          },
+          new go.ThemeBinding('fill', 'link')
+        )
+      );
+
+      var nodeDataArray = [
+        {
+          key: 1,
+          question: 'Greeting',
+          actions: [
+            { text: 'Sales', figure: 'BpmnEventConditional' },
+            { text: 'Parts and Services', figure: 'Gear' },
+            { text: 'Representative', figure: 'BpmnTaskUser' },
+          ],
+        },
+        {
+          key: 2,
+          question: 'Sales',
+          actions: [
+            { text: 'Compact', figure: 'RailShipment' },
+            { text: 'Mid-Size', figure: 'Forklift' },
+            { text: 'Large', figure: 'TruckShipment' },
+          ],
+        },
+        {
+          key: 3,
+          question: 'Parts and Services',
+          actions: [
+            { text: 'Maintenance', figure: 'Hammer' },
+            { text: 'Repairs', figure: 'Caution' },
+            { text: 'State Inspection', figure: 'BpmnTaskMessage' },
+          ],
+        },
+        { key: 4, question: 'Representative' },
+        { key: 5, question: 'Compact' },
+        { key: 6, question: 'Mid-Size' },
+        {
+          key: 7,
+          question: 'Large',
+          actions: [
+            { text: 'SUV', figure: 'SUV' },
+            { text: 'Van', figure: 'Van' },
+          ],
+        },
+        { key: 8, question: 'Maintenance' },
+        { key: 9, question: 'Repairs' },
+        { key: 10, question: 'State Inspection' },
+        { key: 11, question: 'SUV' },
+        { key: 12, question: 'Van' },
+        { key: 13, category: 'Terminal', text: 'Susan' },
+        { key: 14, category: 'Terminal', text: 'Eric' },
+        { key: 15, category: 'Terminal', text: 'Steven' },
+        { key: 16, category: 'Terminal', text: 'Tom' },
+        { key: 17, category: 'Terminal', text: 'Emily' },
+        { key: 18, category: 'Terminal', text: 'Tony' },
+        { key: 19, category: 'Terminal', text: 'Ken' },
+        { key: 20, category: 'Terminal', text: 'Rachel' },
+        { key: 21, category: 'Terminal', text: 'John' },
+        { key: 22, category: 'Terminal', text: 'Jake' },
+      ];
+
+      var linkDataArray = [
+        { from: 1, to: 2, answer: 1 },
+        { from: 1, to: 3, answer: 2 },
+        { from: 1, to: 4, answer: 3 },
+        { from: 2, to: 5, answer: 1 },
+        { from: 2, to: 6, answer: 2 },
+        { from: 2, to: 7, answer: 3 },
+        { from: 3, to: 8, answer: 1 },
+        { from: 3, to: 9, answer: 2 },
+        { from: 3, to: 10, answer: 3 },
+        { from: 7, to: 11, answer: 1 },
+        { from: 7, to: 12, answer: 2 },
+        { from: 5, to: 13 },
+        { from: 6, to: 14 },
+        { from: 11, to: 15 },
+        { from: 12, to: 16 },
+        { from: 8, to: 17 },
+        { from: 9, to: 18 },
+        { from: 10, to: 19 },
+        { from: 4, to: 20 },
+        { from: 4, to: 21 },
+        { from: 8, to: 22 },
+      ];
+
+      // create the Model with the above data, and assign to the Diagram
+      opt.diagram.model = new go.GraphLinksModel({
+        copiesArrays: true,
+        copiesArrayObjects: true,
+        nodeDataArray: nodeDataArray,
+        linkDataArray: linkDataArray,
+      });
+    }
+
+    const changeTheme = () => {
+      const myDiagram = go.Diagram.fromDiv('myDiagramDiv');
+      if (myDiagram) {
+        opt.diagram.themeManager.currentTheme = document.getElementById('theme').value;
+      }
+    };
+
+  </script>
+
+</body>
+
+</html>

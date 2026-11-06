@@ -1,0 +1,37 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>YQWIN-Plus 页面框架组件测试</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>{{ title }}</h1>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            data() {
+                return {
+                    title: 'YQWIN-Plus 页面框架组件测试',
+                }
+            },
+        })
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

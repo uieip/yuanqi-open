@@ -1,0 +1,367 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title> 
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+     <div id="app" style="padding: 1px 0 0 0; ">
+        <yq-data-grid ref="gridRef" v-bind="gridProps" @row-click="rowClick"></yq-data-grid>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed } = Vue;
+        const { initTheme, YqMessage, YqWindowApi, yqData, YqDataPub, YqMessageBox, PasswordEncoder, YqDataGrid  } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            user: {
+                tbname: "hr_user",
+                keyId: "sid",
+                tempno: 1,
+                bindingKeyId: null,
+                bindingValue: null,
+                addWhere: "",
+                order: "code",
+                frozenNum: 2,
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: true,
+                isPage: true,
+                isEdit: true,
+                topnum: 10,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: true,
+                isdelEdit: true,
+                move: false,
+                linkField: ["name"],
+            },
+            login_titles: [
+                {
+                    name: "sid",
+                    ui_title: "登录账号ID",
+                    fd_type: "int",
+                    length: 0,
+                    decimal: 0,
+                    ui_type: 2,
+                    ui_width: 90,
+                    ui_visible: false,
+                    ui_readonly: true,
+                    ui_mask: {}
+                },
+                {
+                    name: "name",
+                    ui_title: "名称",
+                    fd_type: "nvarchar",
+                    length: 50,
+                    decimal: 0,
+                    ui_type: 2,
+                    ui_width: 90,
+                    ui_visible: true,
+                    ui_readonly: true,
+                    ui_mask: {
+                        default: "默认值",
+                        min: 0,
+                        max: 50,
+                        blank: true,
+                        format: ""
+                    },
+                    group: "用户信息"
+                }, {
+                    name: "login_name",
+                    ui_title: "登录名",
+                    fd_type: "nvarchar",
+                    length: 50,
+                    decimal: 0,
+                    ui_type: 2,
+                    ui_width: 90,
+                    ui_visible: true,
+                    ui_readonly: false,
+                    ui_mask: {
+                        default: "默认值",
+                        min: 0,
+                        max: 50,
+                        blank: false,
+                        format: ""
+                    },
+                    group: "账户信息"
+                }, {
+                    name: "login_pass",
+                    ui_title: "密码",
+                    fd_type: "nvarchar",
+                    length: 50,
+                    decimal: 0,
+                    ui_type: 2,
+                    ui_width: 90,
+                    ui_visible: true,
+                    ui_readonly: false,
+                    ui_mask: {
+                        default: "默认值",
+                        min: 0,
+                        max: 50,
+                        blank: false,
+                        format: ""
+                    },
+                    group: "账户信息"
+                }, {
+                    name: "phone",
+                    ui_title: "手机号",
+                    fd_type: "nvarchar",
+                    length: 50,
+                    decimal: 0,
+                    ui_type: 2,
+                    ui_width: 90,
+                    ui_visible: true,
+                    ui_readonly: false,
+                    ui_mask: {
+                        default: "默认值",
+                        min: 0,
+                        max: 50,
+                        blank: true,
+                        format: ""
+                    },
+                    group: "账户信息"
+                }, {
+                    name: "email",
+                    ui_title: "邮箱",
+                    fd_type: "nvarchar",
+                    length: 50,
+                    decimal: 0,
+                    ui_type: 2,
+                    ui_width: 90,
+                    ui_visible: true,
+                    ui_readonly: false,
+                    ui_mask: {
+                        default: "默认值",
+                        min: 0,
+                        max: 50,
+                        blank: true,
+                        format: ""
+                    },
+                    group: "账户信息"
+                }, {
+                    name: "uppw",
+                    ui_title: "用户登录是否需要更新密码",
+                    ui_type: 3,
+                    ui_width: 80,
+                    ui_visible: true,
+                    ui_readonly: false,
+                    ui_mask: {},
+                    group: "账户信息"
+                },
+            ]
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const gridRef = ref(null);
+                    const dbname = ref(mainParams.dbname);
+
+                    const editLinks = [{
+                        divided: true
+                    }, {
+                        name: 'login',
+                        label: '登录账号',
+                        toptip: '设置登录账号',
+                        icon: 'fa fa-power-off',
+                        type: "primary",
+                        divided: false,
+                        disabled: (() => {
+                            return !selectRow;
+                        }),
+                        click: async (el) => {
+                            //console.log("登录账号",el);
+                            const res = await getLoginInfo(selectRow.sid);
+                            //console.log(res);
+                            if (res.error != 0) {
+                                YqMessage.error(res.info + "[" + res.error + "]");
+                                return;
+                            }
+
+                            let popperId = null;
+
+                            const loginAction = res.row ? "upp" : "add";
+                            let loginRow = res.row || {};
+                            loginRow.name = selectRow.name;
+                            loginRow.login_pass = '';
+                            const selectEl = gridRef.value.selectEl();
+
+                            const _editLinks = [];
+                            if (loginRow.sid) {
+                                _editLinks.push({
+                                    type: "danger",
+                                    label: '删除登录账户',
+                                    disabled: false,
+                                    click: async (el) => {
+                                        console.log("删除登录账户",el);
+                                        YqMessageBox.confirm({
+                                            el: el.target,
+                                            top: 25,
+                                            left: 0,
+                                            message: '您确定要删除登录账号吗？',
+                                            title: '删除登录账号',
+                                            type: 'warning'
+                                        }).then(async () => {
+                                            YqWindowApi.close(popperId, true);
+                                            await saveLoginInfo("del", loginRow);
+                                        }).catch(() => {
+                                            //console.log('用户点击了取消');
+                                        });
+                                    }
+                                });
+                            }
+
+                            popperId = await YqDataPub.editShow({
+                                el: selectEl,
+                                row: loginRow,
+                                editType: 1,
+                                titles: mainParams.login_titles,
+                                model: "",
+                                icon: "fa fa-user",
+                                title: "登录账号",
+                                editModeH: 450,
+                                editModeW: 600,
+                                checkBlank: true,
+                                isEdit: true,
+                                titleMaxWidth: 200,
+                                editLinks: _editLinks,
+                            }, (async (row) => {
+                                const hashed = await PasswordEncoder.passwdHash(row.login_pass);
+                                row.sid = selectRow.sid;
+                                row.login_pass = hashed || '';
+                                await saveLoginInfo(loginAction, row);
+                            }));
+                        }
+                    }, {
+                        name: 'delcache',
+                        label: '清理登录缓存',
+                        toptip: '清理登录缓存',
+                        icon: 'fa fa-eraser',
+                        type: "primary",
+                        divided: false,
+                        disabled: (() => {
+                            return false;
+                        }),
+                        click: async (e) => {
+                            YqMessageBox.confirm({
+                                message: '您确定要清理登录缓存吗？',
+                                title: '清理登录缓存',
+                                type: 'warning',
+                                el: e.target,
+                            }).then(async () => {
+                                await yqData.clearCache("login:");
+                            }).catch(() => {
+                                //console.log('用户点击了取消');
+                            });
+                        }
+                    }];
+
+                    const gridProps = computed(() => ({
+                        dbname: dbname.value,
+                        ...mainParams.user,
+                        menuType: 3,
+                        editLinks: editLinks
+                    }));
+
+                    // 选中的行
+                    let selectRow = null;
+
+                    // 获取登录账号信息
+                    const getLoginInfo = async (user_id) => {
+                        var opts = {
+                            ajaxUrl: "/_db.html",
+                            action: "row",
+                            dbname: dbname.value,
+                            tbname: "hr_user_login",
+                            keyid: "sid",
+                            keyval: user_id
+                        };
+                        const res = await yqData.dbTbRow(opts);
+                        return res;
+                    }
+                    // 保存登录账号信息
+                    const saveLoginInfo = async (action, row) => {
+                        var opts = {
+                            dbname: dbname.value,
+                            tbname: "hr_user_login",
+                            rows: [{ action: action, row: row }]
+                        };
+                        const res = await yqData.dbAction(opts);
+
+                        var error = 0;
+                        var info = "";
+                        if (res.error != 0) {
+                            error = res.error;
+                            info = res.info;
+                        } else if (res.rows.length == 0) {
+                            error = 1;
+                            info = "res.rows.length == 0";
+                        } else if (res.rows.length > 0) {
+                            error = res.rows[0].error;
+                            info = res.rows[0].info;
+                        }
+                        if (error == 0) {
+                            YqMessage.success(action == "del"
+                                ? { message: "登录账号删除成功。", labelDict: { "zh-CN": { message: "登录账号删除成功。" }, "en": { message: "Login account deleted successfully." } } }
+                                : { message: "登录账号设置成功。", labelDict: { "zh-CN": { message: "登录账号设置成功。" }, "en": { message: "Login account settings saved successfully." } } });
+                        } else {
+                            YqMessage.error(info + "[" + error + "]");
+                        }
+                    }
+
+                    const rowClick = ({ row, sid, index }) => {
+                        selectRow = row;
+                        //console.log(row, sid, index);
+                    }
+
+                    onMounted(async () => {
+                        const res = await yqData.fileList({});
+                        if (res.error == 0 && res.rows.length > 0) {
+                            dbname.value = res.rows[0].name;
+                            await gridRef.value.initTitles();
+                        }
+                    });
+
+                    return {
+                        gridRef,
+                        gridProps,
+                        rowClick,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqLayoutui 测试</title>
+    <!-- 自定义样式 -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            padding: 20px;
+            border-bottom: 1px solid #e4e7ed;
+            background-color: #fafafa;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #303133;
+        }
+        .content {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container">
+            <div class="header">
+                <h1>YqLayoutui 组件测试</h1>
+            </div>
+            <div class="content">
+                <!-- YqLayoutui 组件 -->
+                <div style="height: 500px; border: 1px solid #dcdfe6; border-radius: 4px;">
+                    <yq-layoutui ref="layoutuiRef" v-model:model-value="htmlContent"></yq-layoutui>
+                </div>
+            </div>
+            <textarea style="width: 100%; height: 300px;" v-model="htmlContent"></textarea>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqLayoutui } = YqwinPlus;
+        initTheme();
+        
+        const app = createApp({
+            components: {
+                YqLayoutui
+            },
+            setup() {
+                const showResult = ref(false);
+                const htmlContent = ref(`
+<table name="_tb">
+	<tbody>
+		<tr>
+			<td>
+				<label name="lable">Lable
+				</label>
+			</td>
+			<td>
+				<input type="text" style="width:120px;" name="textbox"/>
+			</td>
+			<td>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<label id="lbl_name">Lable
+				</label>
+			</td>
+			<td>
+				<input type="text" style="width:120px;" id="txt_name"/>
+			</td>
+			<td>
+			</td>
+		</tr>
+		<tr>
+			<td>
+			</td>
+			<td>
+			</td>
+			<td>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<input type="text" style="width:120px;" id="txt_name"/>
+                `);
+                
+                //htmlContent.value = '';
+
+                return {
+                    showResult,
+                    htmlContent
+                };
+            }
+        });
+        
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+</html>

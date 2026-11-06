@@ -1,0 +1,350 @@
+﻿<uieip type="page" value="base"></uieip>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Foreignkey 组件测试</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: #f0f2f5;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            padding: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .toolbar {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .toolbar label {
+            font-size: 14px;
+            color: #606266;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        .toolbar .hint {
+            font-size: 12px;
+            color: #c0c4cc;
+        }
+        .test-section {
+            background: #fff;
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .test-section:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .test-section h2 {
+            margin: 0 0 4px 0;
+            padding-bottom: 0;
+            color: #1d2129;
+            font-size: 17px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .test-section h2 .badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 10px;
+            border-radius: 10px;
+            background: #e8f4ff;
+            color: #409eff;
+        }
+        .test-section .desc {
+            font-size: 13px;
+            color: #86909c;
+            margin: 4px 0 20px 0;
+        }
+        .test-section .actions {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .test-section .actions .label {
+            font-size: 12px;
+            color: #c0c4cc;
+            margin-right: 4px;
+            user-select: none;
+        }
+        .test-body {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .test-body .control {
+            flex: 0 0 420px;
+            max-width: 100%;
+        }
+        .test-body .display {
+            flex: 1;
+            min-width: 0;
+        }
+        .test-body .display .field {
+            font-size: 13px;
+            color: #606266;
+            margin-bottom: 4px;
+            line-height: 1.6;
+        }
+        .test-body .display .field strong {
+            color: #1d2129;
+            font-weight: 600;
+            min-width: 52px;
+            display: inline-block;
+        }
+        .test-body .display .field .val {
+            color: #4e5969;
+        }
+        .test-body .display .field .val.null {
+            color: #c0c4cc;
+            font-style: italic;
+        }
+        .json-display {
+            background: #f7f8fa;
+            border: 1px solid #e8e8ed;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-top: 4px;
+            max-height: 160px;
+            overflow: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #4e5969;
+            white-space: pre;
+            word-break: break-all;
+        }
+        .json-display:empty {
+            display: none;
+        }
+        .json-display::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .json-display::-webkit-scrollbar-thumb {
+            background: #d0d0d5;
+            border-radius: 2px;
+        }
+        .json-display::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        @media (max-width: 768px) {
+            #app {
+                padding: 12px;
+            }
+            .test-body {
+                flex-direction: column;
+            }
+            .test-body .control {
+                flex: none;
+                width: 100%;
+            }
+            .test-section {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- 全局编辑开关 -->
+        <div class="toolbar">
+            <label>
+                <el-switch v-model="globalEdit" active-value="true" inactive-value="false" size="small"></el-switch>
+                编辑模式
+            </label>
+            <span class="hint">关闭后所有组件变为只读</span>
+        </div>
+
+        <!-- ========== YqForeignkey 测试 ========== -->
+        <div class="test-section">
+            <h2>1. YqForeignkey <span class="badge">下拉</span></h2>
+            <div class="desc">单选外键，displayType=1 下拉列表模式</div>
+            <div class="test-body">
+                <div class="control">
+                    <yq-foreignkey ref="fkRef1"
+                        v-model:value="fkVal1"
+                        v-model:fkrows="fkFkrows1"
+                        :ajax-url="ajaxUrl"
+                        :db-name="dbName"
+                        :tb-name="tbName"
+                        :display-type="1"
+                        value-member="sid"
+                        display-member="textbox"
+                        :panel-width="400"
+                        :is-edit="isEditBool">
+                    </yq-foreignkey>
+                </div>
+                <div class="display">
+                    <div class="field"><strong>value</strong> <span class="val" :class="{ null: fkVal1 === null }">{{ fkVal1 === null ? 'null' : fkVal1 }}</span></div>
+                    <div class="field"><strong>fkrows</strong></div>
+                    <div class="json-display">{{ JSON.stringify(fkFkrows1, null, 2) }}</div>
+                </div>
+            </div>
+ 
+        </div>
+
+        <div class="test-section">
+            <h2>2. YqForeignkey <span class="badge">弹窗</span></h2>
+            <div class="desc">单选外键，displayType=2 弹窗模式</div>
+            <div class="test-body">
+                <div class="control">
+                    <yq-foreignkey ref="fkRef2"
+                        v-model:value="fkVal2"
+                        v-model:fkrows="fkFkrows2"
+                        :ajax-url="ajaxUrl"
+                        :db-name="dbName"
+                        :tb-name="tbName"
+                        :display-type="2"
+                        value-member="sid"
+                        display-member="textbox"
+                        :panel-width="600"
+                        :panel-height="480"
+                        :is-edit="isEditBool">
+                    </yq-foreignkey>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== YqNForeignkey 测试（仅弹窗模式） ========== -->
+        <div class="test-section">
+            <h2>3. YqNForeignkey <span class="badge">弹窗</span> <span class="badge" style="background:#fff7e6;color:#fa8c16;">多选</span></h2>
+            <div class="desc">多选外键，弹窗模式，selectMax=3</div>
+            <div class="test-body">
+                <div class="control">
+                    <yq-n-foreignkey ref="nfkRef"
+                        v-model:value="nfkVal"
+                        v-model:fkrows="nfkFkrows"
+                        :ajax-url="ajaxUrl"
+                        :db-name="dbName"
+                        :tb-name="tbName"
+                        value-member="sid"
+                        display-member="textbox"
+                        :panel-width="600"
+                        :panel-height="480"
+                        :is-edit="isEditBool"
+                        :select-min="0"
+                        :select-max="3">
+                    </yq-n-foreignkey>
+                </div>
+                <div class="display">
+                    <div class="field"><strong>value</strong> <span class="val" :class="{ null: nfkVal === null }">{{ nfkVal === null ? 'null' : nfkVal }}</span></div>
+                    <div class="field"><strong>fkrows</strong></div>
+                    <div class="json-display">{{ JSON.stringify(nfkFkrows, null, 2) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, watch } = Vue;
+        const { initTheme, YqForeignkey, YqNForeignkey } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqForeignkey,
+                YqNForeignkey
+            },
+            data() {
+                return {
+                    ajaxUrl: "/_db.html",
+                    dbName: "yqbase",
+                    tbName: "ab_test_m",
+                    globalEdit: 'true',
+                };
+            },
+            setup() {
+                // --- YqForeignkey (displayType=1, 下拉) ---
+                const fkVal1 = ref(null)
+                const fkFkrows1 = ref([])
+                const fkRef1 = ref(null)
+
+                // --- YqForeignkey (displayType=2, 弹窗) ---
+                const fkVal2 = ref('8c92c2d9-a807-4f37-a444-5bbd9976e9f8')
+                const fkFkrows2 = ref([])
+                const fkRef2 = ref(null)
+
+                // --- YqNForeignkey (弹窗) ---
+                const nfkVal = ref(null)
+                const nfkFkrows = ref([])
+                const nfkRef = ref(null)
+
+                // 监听 fkrows 变化（调试用）
+                watch(fkFkrows1, (val) => console.log('fkFkrows1 changed:', JSON.parse(JSON.stringify(val))), { deep: true })
+                watch(fkFkrows2, (val) => console.log('fkFkrows2 changed:', JSON.parse(JSON.stringify(val))), { deep: true })
+                watch(nfkFkrows, (val) => console.log('nfkFkrows changed:', JSON.parse(JSON.stringify(val))), { deep: true })
+
+                // --- 操作方法 ---
+                const setFkVal1 = (val) => { fkVal1.value = val }
+                const clearFkVal1 = () => { fkVal1.value = null }
+                const logFkRow1 = () => {
+                    const row = fkRef1.value?.row
+                    console.log('fkRef1.row:', row ? JSON.parse(JSON.stringify(row)) : null)
+                }
+
+                const setFkVal2 = (val) => { fkVal2.value = val }
+                const clearFkVal2 = () => { fkVal2.value = null }
+                const logFkRow2 = () => {
+                    const row = fkRef2.value?.row
+                    console.log('fkRef2.row:', row ? JSON.parse(JSON.stringify(row)) : null)
+                }
+
+                const setNfkVal = (val) => { nfkVal.value = val }
+                const clearNfkVal = () => { nfkVal.value = null }
+                const logNfkRows = () => {
+                    const rows = nfkRef.value?.rows()
+                    console.log('nfkRef.rows:', rows ? JSON.parse(JSON.stringify(rows)) : [])
+                }
+
+                return {
+                    fkVal1, fkFkrows1, fkRef1,
+                    fkVal2, fkFkrows2, fkRef2,
+                    nfkVal, nfkFkrows, nfkRef,
+                    setFkVal1, clearFkVal1, logFkRow1,
+                    setFkVal2, clearFkVal2, logFkRow2,
+                    setNfkVal, clearNfkVal, logNfkRows,
+                };
+            },
+            computed: {
+                isEditBool() {
+                    return this.globalEdit === 'true'
+                }
+            }
+        });
+        app.use(ElementPlus)
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

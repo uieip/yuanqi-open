@@ -1,0 +1,478 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        /* 添加 v-cloak 样式 */
+        [v-cloak] {
+            display: none;
+        }
+
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Element Plus 布局样式 */
+        .el-container {
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;">
+    <div id="app">
+        <yq-container :aside-width="'350px'">
+            <yq-con-aside style="padding-top: 1px; overflow: hidden;">
+                <div class="control-group" style="padding:5px 10px;">
+                    <yq-label label="数据库" :label-dict="dbLabelDict" style="padding-right: 5px;"></yq-label>
+                    <el-select v-model="db_value" @change="handleDbChange" placeholder="请选择数据库" :clearable="true"
+                        :popper-append-to-body="false" style="width: 230px;">
+                        <el-option v-for="item in db_data" :key="item.name" :label="item.describe" :value="item.name"
+                            v-cloak>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>{{ item.describe }} ({{ item.name }})</span>
+                                <span style="color: var(--el-text-color-placeholder); font-size: 13px">{{ item.db_type
+                                    }}</span>
+                            </div>
+                        </el-option>
+                    </el-select>
+                </div>
+                <div style="padding-top: 0;width: 100%; height:calc(100vh - 45px);">
+                    <yq-tabs v-model="activeTab" @tab-click="tabsClick" :label-dict="labelDict">
+                        <yq-tab-pane label="表" icon="fa fa-table" name="table">
+                            <div style="height: 100%; padding-top: 4px;">
+                                <yq-data-tree ref="treeRef" v-bind="tableParams"></yq-data-tree>
+                            </div>
+                        </yq-tab-pane>
+                        <yq-tab-pane label="数据库关系图" icon="fa fa-share-alt" name="tb_rel">
+                            <div style="height: 100%; padding-top: 4px;">
+                                <yq-data-grid ref="tbDiagramRef" v-bind="tbDiagramParams"></yq-data-grid>
+                            </div>
+                        </yq-tab-pane>
+                    </yq-tabs>
+                </div>
+            </yq-con-aside>
+            <yq-con-main style="height: 100%; padding: 1px 0 0 1px;margin: 0;background-color: var(--yq-bg-body);">
+                <yq-content ref="contentRef" v-model:tabs="tabs" :position="tabPosition"
+                    style="height: 100%;"></yq-content>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, nextTick, computed } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqDataTree, YqDataGrid, YqContent, yqData, yqUiPub, YqWindowApi, YqTabs, YqTabPane, YqLabel, YqMessageBox, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            table: {
+                tbname: "sys_tb",
+                keyId: "sid",
+                displayMember: "name",
+                bindingKeyId: null,
+                bindingValue: null,
+                pKeyId: "pid",
+                pKeyValue: null,
+
+                tempno: -1,
+                addWhere: "",
+                order: "queue",
+                loadDataType: 2,
+                loadTitles: false,
+                loadData: false,
+                checkBlank: true,
+
+                topnum: 6,
+                menuPaddingL: "5px",
+                menuPaddingR: "5px",
+
+                getNodeIcon: (data) => {
+                    return data.tb_type === 0 ? "fa fa-folder" : "fa fa-table";
+                },
+                getNodeLabel: (data) => {
+                    return data.tb_type === 0 ? (data.describe ?? data.name) : ((data.describe ?? '') + "[" + (data.name ?? '') + "]");
+                },
+            },
+            tb_diagram: {
+                tbname: "sys_tb_diagram",
+                keyId: "sid",
+                order: "queue",
+                tempno: 1,
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 1,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: false,
+                add: true,
+                upp: true,
+                del: true,
+                move: true,
+                isSimple: false,
+                isSeek: false,
+            },
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    ElSelect,
+                    ElOption,
+                    YqDataTree,
+                    YqDataGrid,
+                    YqContent,
+                    YqTabs,
+                    YqTabPane,
+                    YqLabel,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain,
+                },
+                data() {
+                    return {
+                        tabs: [
+                            {
+                                id: 'dashboard',
+                                label: '首页',
+                                icon: 'fa fa-file',
+                                content: '<h1>首页</h1>',
+                                type: 'html',
+                                active: true,
+                                closable: false,
+                                contextMenu: []
+                            }
+                        ],
+                        tabPosition: "top",
+                    }
+                },
+                setup() {
+                    const treeRef = ref(null);
+                    const contentRef = ref(null);
+                    const tbDiagramRef = ref(null);
+
+                    window.updateDiagram = async (data) => {
+                        await tbDiagramRef.value?.saveDataAfter(data.rows, data.res, false);
+                        //console.log('updateDiagram', res);
+                    };
+
+                    const isEdit = ref(false);
+                    const db_value = ref("");
+                    const db_data = ref([{
+                        db_type: "sqlite",
+                        describe: "测试数据库",
+                        master: true,
+                        name: "yqbase"
+                    }]);
+
+                    let loadTreeData = false;
+                    let loadTbRalData = false;
+
+                    const handleDbChange = async (val) => {
+                        db_value.value = val;
+                        loadTreeData = false;
+                        loadTbRalData = false;
+                        await selectChange();
+                    }
+
+                    const activeTab = ref("table");
+                    const dbLabelDict = ref({
+                        "zh-CN": "数据库",
+                        "en": "Database",
+                    });
+                    const labelDict = ref({
+                        "zh-CN": {
+                            table: "表",
+                            tb_rel: "表关系",
+                        },
+                        "en": {
+                            table: "Table",
+                            tb_rel: "Table Relation",
+                        },
+                    });
+
+                    const tabsClick = async (tab) => {
+                        activeTab.value = tab.props.name;
+                        await selectChange();
+                    }
+
+                    const selectChange = async () => {
+                        if (db_value.value) {
+                            if (activeTab.value == 'table') {
+                                if (loadTreeData) {
+                                    return;
+                                }
+                                loadTreeData = true;
+                                await treeRef.value.loadData();
+                                isEdit.value = true;
+                            } else if (activeTab.value == 'tb_rel') {
+                                if (loadTbRalData) {
+                                    return;
+                                }
+                                loadTbRalData = true;
+                                tbDiagramRef.value.initTitles();
+                            }
+                        } else {
+                            isEdit.value = false;
+                            await treeRef.value.clear();
+                            await tbDiagramRef.value.clear();
+                        }
+                    }
+
+                    const showEditUrl = (params) => {
+                        const { id, name, icon, url } = params;
+                        //console.log(id, name, icon, url);
+                        const _tab = {
+                            id: id,
+                            label: name,
+                            icon: icon,
+                            type: 'iframe',
+                            content: url,
+                            isUrl: true,
+                            closable: true, // 默认可关闭
+                            contextMenu: [
+                                { label: '关闭', icon: 'fa fa-window-close-o', action: 'close' },
+                                { label: '关闭其它', icon: 'fa fa-columns', action: 'closeOthers' },
+                                { label: '关闭全部', icon: 'fa fa-window-restore', action: 'closeAll' },
+                                {},
+                                { label: '关闭左侧', icon: 'fa fa-caret-square-o-left', action: 'closeLeft' },
+                                { label: '关闭右侧', icon: 'fa fa-caret-square-o-right', action: 'closeRight' },
+                                {},
+                                { label: '刷新', icon: 'fa fa-refresh', action: 'refresh' },
+                                { label: '新窗口打开', icon: 'fa fa-paper-plane', action: 'blankOpen' },
+                            ]
+                        };
+
+                        contentRef.value?.addTab(_tab);
+                    }
+
+                    const handleRowDoubleClick = ({ row }) => {
+                        if (!row) {
+                            return;
+                        }
+                        if (row.tb_type === 0) {
+                            return;
+                        }
+
+                        showEditUrl({
+                            id: 'db_' + db_value.value + "_" + row.name,
+                            name: row.name,
+                            icon: 'fa fa-table',
+                            url: `fields.html?dbname=${db_value.value}&tb_id=${row.sid}`
+                        });
+                    }
+
+                    const isSqliteDb = () => {
+                        const db = db_data.value.find(item => item.name === db_value.value);
+                        return (db && db.db_type === "sqlite");
+                    }
+
+                    const handleProcClick = (row) => {
+                        if (!row || row.tb_type !== 1) {
+                            return;
+                        }
+
+                        showEditUrl({
+                            id: 'p_' + db_value.value + "_" + row.name,
+                            name: row.name + "_action",
+                            icon: 'fa fa-code',
+                            url: `data_proc.html?dbname=${db_value.value}&tbname=${row.name}&tb_id=${row.sid}`
+                        });
+                    }
+
+                    const lastClickRow = ref({});
+                    const handleRowClick = ({ row, sid }) => {
+                        lastClickRow.value = row;
+                    }
+
+                    const tableParams = computed(() => ({
+                        ...mainParams.table,
+                        menuType: 3,
+                        dbname: db_value.value,
+                        isEdit: isEdit.value,
+                        topnum: 5,
+                        labelDict: {
+                            delcache: {
+                                "zh-CN": {
+                                    label: '清理数据库缓存',
+                                    toptip: '清理数据库缓存',
+                                },
+                                "en": {
+                                    label: 'Clear Database Cache',
+                                    toptip: 'Clear database cache',
+                                },
+                            },
+                            fields: {
+                                "zh-CN": {
+                                    label: '字段',
+                                    toptip: '字段管理',
+                                },
+                                "en": {
+                                    label: 'Fields',
+                                    toptip: 'Field management',
+                                },
+                            },
+                            proc: {
+                                "zh-CN": {
+                                    label: '存储过程',
+                                    toptip: '存储过程',
+                                },
+                                "en": {
+                                    label: 'Procedure',
+                                    toptip: 'Stored procedure',
+                                },
+                            },
+                        },
+                        editLinks_r: [{
+                            name: "fields",
+                            label: "字段",
+                            toptip: "字段管理",
+                            icon: "fa fa-table",
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return !(lastClickRow.value && lastClickRow.value.tb_type === 1);
+                            }),
+                            click: () => {
+                                handleRowDoubleClick({ row: lastClickRow.value });
+                            }
+                        }, {
+                            name: "proc",
+                            label: "存储过程",
+                            toptip: "存储过程",
+                            icon: "fa fa-code",
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return !(lastClickRow.value && lastClickRow.value.tb_type === 1) || isSqliteDb();
+                            }),
+                            click: () => {
+                                handleProcClick(lastClickRow.value);
+                            }
+                        }, {
+                            name: 'delcache',
+                            label: '清理数据库缓存',
+                            toptip: '清理数据库缓存',
+                            icon: 'fa fa-eraser',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return false;
+                            }),
+                            click: async (e) => {
+                                YqMessageBox.confirm({
+                                    message: '确定清除数据库缓存...',
+                                    title: '提示',
+                                    type: 'message',
+                                    el: e.target,
+                                }).then(async () => {
+                                    await yqData.clearCache("data:");
+                                }).catch(() => {
+                                    //console.log('用户点击了取消');
+                                });
+                            }
+                        }
+                        ],  //显示的链接菜单
+                        onRowDoubleClick: handleRowDoubleClick,
+                        onRowClick: handleRowClick,
+                    }));
+
+                    const tbDiagramParams = computed(() => ({
+                        ...mainParams.tb_diagram,
+                        menuType: 3,
+                        height: '100%',
+                        dbname: db_value.value,
+                        isEdit: isEdit.value,
+                        afterSetTitles: async () => {
+                            await tbDiagramRef.value.loadData();
+                        },
+                        beforeEdit: async (action, row) => {
+                            console.log(action, row);
+
+                            if (!row.sid) {
+                                showEditUrl({
+                                    id: db_value.value + "_" + yqUiPub.getShortID(),
+                                    name: "新增关系图",
+                                    icon: 'fa fa-share-alt',
+                                    url: `diagram.html?dbname=${db_value.value}`
+                                });
+                            } else {
+                                showEditUrl({
+                                    id: db_value.value + "_" + row.sid.replace('-', ''),
+                                    name: row.describe + "[" + row.code + "]",
+                                    icon: 'fa fa-share-alt',
+                                    url: `diagram.html?dbname=${db_value.value}&sid=${row.sid}`
+                                });
+                            }
+
+                            return { cancel: true, row: row };
+                        },
+                    }));
+
+                    onMounted(async () => {
+                        const res = await yqData.dbList({});
+                        if (res.error == 0 && res.rows.length > 0) {
+                            db_data.value = res.rows;
+                            db_value.value = res.rows[0].name;
+                            handleDbChange(db_value.value);
+                        }
+                    });
+
+                    return {
+                        treeRef,
+                        contentRef,
+                        tbDiagramRef,
+                        activeTab,
+                        dbLabelDict,
+                        labelDict,
+                        tabsClick,
+                        db_value,
+                        db_data,
+                        handleDbChange,
+                        tableParams,
+                        tbDiagramParams,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+
+        window.addEventListener('message', (event) => {
+            if (event.data.action === 'updateDiagram') {
+                console.log(event.data);
+            }
+        });
+
+    </script>
+
+    <style scoped>
+
+    </style>
+</body>
+
+</html>

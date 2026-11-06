@@ -1,0 +1,254 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-container v-model:aside-width="leftW">
+            <yq-con-aside style="overflow: hidden;">
+                <yq-label style="padding:4px;display:inline-block;" label="站点"
+                    :label-dict="{ 'zh-CN': '站点', 'en': 'Site' }"></yq-label>
+                <div style="padding:4px 4px 7px 0;display:inline-block;width: calc(100% - 70px); ">
+                    <yq-combogrid ref="cmsRef" v-bind="cmsProps" @row-select="cmsRowSelect"></yq-combogrid>
+                </div>
+                <div :style="menuStyle">
+                    <yq-tree-view v-bind="treeProps"> </yq-tree-view>
+                </div>
+            </yq-con-aside>
+            <yq-con-main style="padding: 0 0 0 4px;">
+                <div ref="siteRef">
+                    <yq-edit :titles="editTitles" :model="editModel" :row="editRow"></yq-edit>
+                </div>
+                <h3>导航信息</h3>
+                <yq-attr :titles="navTitles" :model="navModel" :row="navRow" :height="navHeight"></yq-attr>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, nextTick, computed } = Vue;
+        const { ElTree } = ElementPlus;
+        const { initTheme, YqWindowApi, yqData, YqCombogrid, YqEdit, YqAttr, YqTreeView, YqLabel, YqContainer, YqConAside, YqConMain  } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            leftW: 310,
+        };
+
+        window.onload = function () {
+            mainParams.leftW = window.innerWidth * 0.20;
+            if (mainParams.leftW < 310) {
+                mainParams.leftW = 310;
+            }
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqCombogrid,
+                    YqEdit,
+                    YqAttr,
+                    YqTreeView,
+                    YqLabel,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain,
+                },
+                setup() {
+                    const cmsRef = ref(null);
+                    const menuStyle = computed(() => {
+                        return {
+                            padding: '0 0 5px 0',
+                            height: (window.innerHeight - 42) + 'px',
+                            backgroundColor: 'var(--el-bg-color)',
+                            overflow: 'hidden'
+                        }
+                    });
+                    const navHeight = computed(() => {
+                        let height = window.innerHeight - 440;
+                        return height;
+                    });
+                    const leftW = ref(mainParams.leftW + "px");
+
+                    const dbname = ref("yqbase");
+
+                    const cms = ref({
+                        tbname: "sys_cms",
+                        keyId: "sid",
+                        displayMember: "{describe}[{name}]",
+                        order: "queue",
+                        titles: [],
+                        loadData: false,
+                        editMode: 3,
+                        editType: 2,
+                        isEdit: true,
+                        isSeek: false,
+                        isSimple: false,
+                        isPage: false,
+                        move: true,
+                        editModeW: 1048,
+                        editModeH: 564,
+                        editModeNo: 2,
+                        autoSelect: true,
+                    });
+
+                    const cmsProps = computed(() => ({
+                        dbname: dbname.value,
+                        tbname: cms.value.tbname,
+                        keyId: cms.value.keyId,
+                        displayMember: cms.value.displayMember,
+                        order: cms.value.order,
+                        titles: cms.value.titles,
+                        loadData: cms.value.loadData,
+                        editMode: cms.value.editMode,
+                        editType: cms.value.editType,
+                        isEdit: cms.value.isEdit,
+                        menuType: 3,
+                        isSeek: cms.value.isSeek,
+                        isSimple: cms.value.isSimple,
+                        isPage: cms.value.isPage,
+                        move: cms.value.move,
+                        autoSelect: cms.value.autoSelect,
+                        editModeW: cms.value.editModeW,
+                        editModeH: cms.value.editModeH,
+                        editModeNo: cms.value.editModeNo,
+                        beforeSetTitles: treeBeforeSetTitles,
+                    }));
+
+                    const treeBeforeSetTitles = async (titles) => {
+                        editTitles.value = titles;
+
+                        console.log("editTitles.value", editTitles.value);
+
+                        const navigation = editTitles.value.find(item => item.name == "navigation");
+
+                        if (navigation) {
+                            var model = navigation.ui_mask.param.model;
+                            navTitles.value = navigation.ui_mask.param.titles;
+                            console.log("navigation", model);
+                        }
+
+                        return titles;
+                    }
+
+                    const treeAfterSetTitles = async () => {
+
+                    }
+
+                    const editTitles = ref([]);
+                    const editModel = ref("");
+                    const editRow = ref({});
+
+                    const navTitles = ref([]);
+                    const navModel = ref("");
+                    const navRow = ref({});
+
+                    const treeRows = ref([]);
+                    const treeNodeClick = ({ row, key }) => {
+                        if (row) {
+                            navRow.value = row;
+                        } else {
+                            navRow.value = {};
+                        }
+                    };
+
+                    const treeProps = computed(() => ({
+                        rows: treeRows.value,
+                        onRowClick: treeNodeClick,
+                        getNodeIcon: (data) => {
+                            return data.subs.length == 0 ? "fa fa-file-text-o" : "fa fa-folder-o";
+                        },
+                        getNodeLabel: (data) => {
+                            return data.name || data.describe;
+                        },
+                    }));
+
+                    const cmsRowSelect = ({ row, index, key }) => {
+                        //console.log("cmsRowSelect",row,index,key);
+                        editRow.value = row;
+
+                        if (row && row.navigation) {
+                            if (typeof row.navigation == "string") {
+                                treeRows.value = JSON.parse(row.navigation);
+                            } else {
+                                treeRows.value = row.navigation;
+                            }
+                            console.log("treeRows.value", treeRows.value);
+                        } else {
+                            treeRows.value = [];
+                        }
+                    };
+
+                    onMounted(async () => {
+                        const dbList = await yqData.dbList();
+                        if (dbList.error == 0) {
+                            dbname.value = dbList.rows[0].name;
+
+                            const res_model = await yqData.tbModel({
+                                dbname: dbname.value,
+                                tbname: cms.value.tbname,
+                                tempno: 3
+                            });
+                            //console.log(res_model);
+                            if (res_model.error == 0) {
+                                editModel.value = res_model.model;
+                            }
+
+                            await cmsRef.value.loadData();
+                        } else {
+                            console.error(dbList);
+                        }
+                    });
+
+                    return {
+                        cmsRef,
+                        menuStyle,
+                        navHeight,
+                        leftW,
+
+                        cmsProps,
+                        cmsRowSelect,
+
+                        editTitles,
+                        editModel,
+                        editRow,
+
+                        navTitles,
+                        navModel,
+                        navRow,
+
+                        treeProps,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+
+    <style scoped>
+        .el-tabs__header {
+            margin: 0 0 5px;
+        }
+    </style>
+</body>
+
+</html>

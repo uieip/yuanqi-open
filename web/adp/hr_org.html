@@ -1,0 +1,176 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-container v-model:aside-width="leftW" style="height: 100%;">
+            <yq-con-aside style="margin: 1px 0 0 0;">
+                <yq-data-tree ref="treeRef" v-bind="orgProps" @row-click="treeRowClick"></yq-data-tree>
+            </yq-con-aside>
+            <yq-con-main style="padding:1px 0 0 1px;">
+                <yq-data-grid ref="gridRef" v-bind="gridProps"></yq-data-grid>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, nextTick, computed } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqWindowApi, yqData, YqDataTree, YqDataGrid, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            leftW: 310,
+            org: {
+                tbname: "hr_org",
+                keyId: "sid",
+                bindingKeyId: null,
+                bindingValue: null,
+                pKeyId: "pid",
+                pKeyValue: null,
+                loadDataType: 2,
+                displayMember: "name",
+                order: "queue",
+                loadTitles: false,
+                loadData: false,
+                menuType: 3,
+                editMode: 2,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: -1,
+                topnum: 5,
+            },
+            user: {
+                tbname: "hr_org_user_rel",
+                keyId: "sid",
+                bindingKeyId: "org_id",
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 1,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+                editLoadData: true,
+                isSimple: false,
+                isSeek: false,
+                linkField: ["user_id"],
+            }
+        };
+
+        window.onload = function () {
+            mainParams.leftW = window.innerWidth * 0.20;
+            if (mainParams.leftW < 310) {
+                mainParams.leftW = 310;
+            }
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataTree,
+                    YqDataGrid,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain,
+                },
+                data() {
+                    return {
+                        leftW: mainParams.leftW + "px",
+                    }
+                },
+                setup() {
+                    const treeRef = ref(null);
+                    const gridRef = ref(null);
+                    const dbname = ref(mainParams.dbname);
+
+                    const orgProps = computed(() => ({
+                        dbname: dbname.value,
+                        ...mainParams.org,
+                        afterSetTitles: treeAfterSetTitles,
+                    }));
+
+                    const gridProps = computed(() => ({
+                        dbname: dbname.value,
+                        ...mainParams.user,
+                        bindingValue: bindingValue.value,
+                        menuType: 3,
+                        afterSetTitles: gridAfterSetTitles,
+                    }));
+
+                    const treeAfterSetTitles = async () => {
+                        await nextTick();
+                        await gridRef.value.initTitles();
+                    }
+
+                    const treeRowClick = async ({ row, sid }) => {
+                        bindingValue.value = sid;
+                        if (sid) {
+                            await gridRef.value.loadData();
+                        } else {
+                            await gridRef.value.clear();
+                        }
+                    }
+
+                    const gridAfterSetTitles = async () => {
+                        await treeRef.value.loadData();
+                    }
+
+                    const bindingValue = ref(null);
+                    onMounted(async () => {
+                        const res = await yqData.fileList({});
+                        if (res.error == 0 && res.rows.length > 0) {
+                            dbname.value = res.rows[0].name;
+                            await treeRef.value.initTitles();
+                        }
+                    });
+
+                    return {
+                        treeRef,
+                        gridRef,
+                        dbname,
+                        orgProps,
+                        gridProps,
+                        treeAfterSetTitles,
+                        treeRowClick,
+                        gridAfterSetTitles,
+                        bindingValue,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,185 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session,cache,http"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+    <title>登录</title>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-4 col-md-4 col-md-offset-3 col-md-5" style="padding: 30px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">用户登录</div>
+                    <div class="panel-body">
+                        <uieip>login_info</uieip>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+    <script runat="server">
+        var backurl_link = "";
+        var login_info = "";
+        var app_id = "6f443b3811a52d3cc857e34765c71cd5";
+        var app_corpsecret = "yq-5053cbe869be75ec54b10047431a5a8e";
+        init();
+
+        function init() {
+            var backurl = request.param("backurl");
+            if (login.state()) {
+                if (backurl === null) {
+                    response.redirect(request.baseurl());
+                } else {
+                    response.redirect(backurl);
+                }
+                return;
+            }
+
+            if (!(backurl === null)) {
+                session.set("backurl", backurl);
+            } else {
+                backurl = session.getString("backurl");
+                if (backurl === undefined) {
+                    backurl = request.clienturl();
+                }
+            }
+
+            backurl_link = backurl;
+
+            var code = request.param("code");
+            if (code === null) {
+                response.redirect(code_get());
+                return;
+            }
+
+            var access_token = get_access_token();
+            if (access_token == "") {
+                login_info = "<p>获取access_token失败</p><a href=\"javascript:clear_get();\">重新登录</a>";
+                return;
+            }
+
+            var res = get_userinfo(access_token, code, 0);
+            if (res.error == 0 && res.data.errcode == 0) {
+                login_check(access_token, res.data.userid);
+            } else {
+                login_info = "<p>" + res.data.errmsg + "[" + res.error + "][" + res.data.errcode + ":" + res.index + "]</p><a href=\"javascript:clear_get();\">重新登录</a>";
+            }
+        }
+
+        function code_get() {
+            var url = request.clienturl();
+            return "http://sso.uieip.com/connect/auth/authorize?appid=6f443b3811a52d3cc857e34765c71cd5&redirect_uri=" + encodeURIComponent(url) + "&response_type=code&scope=snsapi_base&state=STATE";
+        }
+
+        function get_access_token() {
+            var res = cache.getValue("access_token");
+            if (res.error == 0) {
+                return res.data;
+            }
+
+            res = http.get("http://sso.uieip.com/connect/auth/gettoken?appid=" + app_id + "&corpsecret=" + app_corpsecret, {
+                "Accept": "application/json"
+            });
+            if (res.error == 0 && res.data.errcode == 0) {
+                cache.setValue("access_token", res.data.access_token, res.data.expires_in);
+                return res.data.access_token;
+            } else {
+                return "";
+            }
+        }
+
+        function clear_access_tiken() {
+            cache.delete("access_token");
+        }
+
+        function get_userinfo(access_token, code, index) {
+            var res = http.get("http://sso.uieip.com/connect/auth/getuserinfo?appid=" + app_id + "&access_token=" + access_token + "&code=" + code, {
+                "Accept": "application/json"
+            });
+
+            if (res.error == 0 && res.data.errcode == 50001 && index == 0) {
+                clear_access_tiken();
+                var access_token = get_access_token();
+                if (access_token != "") {
+                    index++;
+                    return get_userinfo(access_token, code, index);
+                } else {
+                    res.index = index;
+                    return res;
+                }
+            } else {
+                res.index = index;
+                return res;
+            }
+        }
+
+        function login_check(access_token, user_id) {
+            var ck = login.check(user_id);
+            if (ck.error == 0) {
+                backurl = session.getString("backurl");
+                if (backurl === undefined) {
+                    response.redirect(backurl_link);
+                } else {
+                    response.redirect(backurl);
+                    session.delete("backurl");
+                }
+            } else if (ck.error == 2) {  //用户在本地不存在
+                var res = http.post("http://sso.uieip.com/connect/auth/getuserdetail?appid=" + app_id + "&access_token=" + access_token, {
+                    "userid": res.data.userid
+                }, {
+                    "Accept": "application/json"
+                });
+
+                if (!(res.error == 0 && res.data.errcode == 0)) {
+                    login_info = "<p>" + ck.info + "[" + ck.error + "]</p><a href=\"javascript:clear_get();\">重新登录</a>";
+                }
+
+                var data = res.data;
+                /*
+                    var row = {
+                        user_type: 3,
+                        user_id: data.userid,
+                        name: data.nickname
+                    };
+                    if (!(data.phone === undefined || data.phone === null)) {
+                        row.mobile = data.phone;
+                    }
+                    if (!(data.email === undefined || data.email === null)) {
+                        row.email = data.email;
+                    }
+
+                    var res = login.addUser(row);
+                    if (res.error == 0) {
+                        login_check(data.userId);
+                    } else {
+                        login_info = "<p>" + ck.info + "[" + ck.error + "]</p><a href=\"javascript:clear_get();\">重新登录</a>";
+                    }
+                */
+                login_info = "<p>" + ck.info + "[" + ck.error + "]</p><a href=\"javascript:clear_get();\">登录用户：" + data.login_name + " 不存在，重新登录</a>";
+            } else {
+                login_info = "<p>" + ck.info + "[" + ck.error + "]</p><a href=\"javascript:clear_get();\">重新登录</a>";
+            }
+        }
+    </script>
+    <script>
+        var backurl = "<uieip>backurl_link</uieip>";
+
+        function clear_get() {
+            location = "http://sso.uieip.com/login/logout.html?backurl=" + encodeURIComponent(backurl_get());
+        }
+
+        function backurl_get() {
+            const url = new URL(location.href.replace(/#$/, ''));
+            const _backurl = url.searchParams.get("backurl");
+            return _backurl || backurl;
+        }
+    </script>
+</body>
+
+</html>

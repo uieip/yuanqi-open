@@ -1,0 +1,254 @@
+/* ==========================================================================
+   YQWIN-Plus 测试页统一视觉层（test-ui.css）
+   --------------------------------------------------------------------------
+   所有 yqvue/test/*.html 共用。加载位置：theme-boot.js 之后、页面自有
+   <style> 之前 —— 页面级样式永远覆盖本层，因此本文件只做「基线 + 通用构件」：
+     · 设计令牌统一挂到 Element Plus CSS 变量上，组件库与页面同一套色
+     · 标题层级、正文排版、滚动容器
+     · 测试控制面板卡片 / 按钮行 / 结果区 pre / 表格 / 提示条
+   不设置 #app 尺寸与定位，避免破坏全屏布局类测试页。
+   ========================================================================== */
+
+:root {
+  /* ---- 设计令牌 ---- */
+  --test-radius-sm: 6px;
+  --test-radius: 10px;
+  --test-radius-lg: 14px;
+  --test-gap: 16px;
+  --test-gap-lg: 24px;
+  --test-shadow-sm: 0 1px 2px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 4%);
+  --test-shadow: 0 2px 4px rgb(0 0 0 / 4%), 0 8px 24px rgb(0 0 0 / 6%);
+  --test-border: 1px solid var(--el-border-color-lighter, #ebeef5);
+  --test-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --test-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* 页面底色与文字：跟随主题（theme-boot.js 写入的 --yq-bg / --yq-text） */
+  --test-bg: var(--yq-bg, var(--el-bg-color-page, #f5f7fa));
+  --test-fg: var(--yq-text, var(--el-text-color-primary, #303133));
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--test-fg);
+  background-color: var(--test-bg);
+  font-family: var(--test-font);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---- 标题层级：干净的灰阶层次，不用彩色大标题 ---- */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0 0 0.6em;
+  color: var(--test-fg);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 22px;
+}
+
+h2 {
+  margin-top: 1.2em;
+  font-size: 17px;
+}
+
+h3,
+h4 {
+  font-size: 15px;
+}
+
+h1 small,
+h2 small,
+h3 small {
+  margin-left: 8px;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+p {
+  margin: 0 0 0.8em;
+  color: var(--el-text-color-regular, #606266);
+}
+
+/* ---- 测试控制面板：统一卡片外观 ---- */
+.test-panel {
+  box-sizing: border-box;
+  margin: 0 0 var(--test-gap-lg);
+  padding: 18px 22px;
+  background-color: var(--el-bg-color, #fff);
+  border: var(--test-border);
+  border-radius: var(--test-radius);
+  box-shadow: var(--test-shadow-sm);
+}
+
+.test-panel > h3,
+.test-panel > h4 {
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  border-bottom: var(--test-border);
+}
+
+.test-panel + .test-panel {
+  margin-top: calc(var(--test-gap-lg) * -1 + var(--test-gap));
+}
+
+/* 面板内的按钮行：自动换行、等距 */
+.btn-row,
+.test-panel .btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+/* ---- 结果输出区 ---- */
+pre {
+  box-sizing: border-box;
+  margin: 0 0 var(--test-gap);
+  padding: 14px 16px;
+  overflow: auto;
+  color: var(--el-text-color-regular, #606266);
+  background-color: var(--el-fill-color-light, #f5f7fa);
+  border: var(--test-border);
+  border-radius: var(--test-radius-sm);
+  font-family: var(--test-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+code {
+  font-family: var(--test-mono);
+}
+
+/* ---- 表格：斑马纹 + 轻边框，便于肉眼比对数据 ---- */
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  overflow: hidden;
+  border: var(--test-border);
+  border-radius: var(--test-radius-sm);
+  font-size: 13px;
+}
+
+thead th {
+  padding: 10px 12px;
+  color: var(--el-text-color-secondary, #909399);
+  background-color: var(--el-fill-color-light, #f5f7fa);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: var(--test-border);
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--el-fill-color-lighter, #fafafa);
+}
+
+/* ---- 链接：去下划线，hover 才显示 ---- */
+a {
+  color: var(--el-color-primary, #409eff);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+a:hover {
+  color: var(--el-color-primary-light-3, #79bbff);
+  text-decoration: underline;
+}
+
+/* ---- 输入控件基线高度，避免原生 input 与 EP 组件错位 ---- */
+input[type='button'],
+input[type='submit'] {
+  padding: 7px 15px;
+  color: var(--el-text-color-regular, #606266);
+  background-color: var(--el-bg-color, #fff);
+  border: 1px solid var(--el-border-color, #dcdfe6);
+  border-radius: var(--test-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+input[type='button']:hover,
+input[type='submit']:hover {
+  color: var(--el-color-primary, #409eff);
+  border-color: var(--el-color-primary-light-5, #a0cfff);
+  background-color: var(--el-color-primary-light-9, #ecf5ff);
+}
+
+input[type='button']:active,
+input[type='submit']:active {
+  transform: translateY(1px);
+}
+
+/* ---- 滚动条：细窄、低对比，不抢视觉 ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--el-border-color, #dcdfe6) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--el-border-color, #dcdfe6);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--el-border-color-darker, #c0c4cc);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* ---- 窄屏适配：面板内边距与标题缩小 ---- */
+@media (max-width: 768px) {
+  .test-panel {
+    padding: 14px 16px;
+  }
+
+  h1 {
+    font-size: 19px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+}

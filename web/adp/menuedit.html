@@ -1,0 +1,384 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title> 
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-container v-model:header-height="topH" :resizable="false">
+            <yq-con-header style="padding: 0 5px;">
+                <yq-edit ref="menueditRef" :titles="menuTitles" :model="menuedit.model" v-model:row="menueRow"
+                    :is-edit="menuedit.isEdit"></yq-edit>
+            </yq-con-header>
+            <yq-con-main style="padding: 5px 0 4px 4px;">
+                <yq-tabs :tab-position="'left'" v-model="activeTab" @tab-click="tabsClick" :label-dict="tabLabelDict">
+                    <yq-tab-pane label="权限标识" name="mark">
+                        <yq-data-grid ref="markRef" v-bind="markProps"></yq-data-grid>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="界面参数" name="var">
+                        <yq-data-grid ref="varRef" v-bind="varProps"></yq-data-grid>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="数据" name="ui">
+                        <yq-data-grid ref="uiRef" v-bind="uiProps"></yq-data-grid>
+                    </yq-tab-pane>
+                </yq-tabs>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed, nextTick } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqWindowApi, yqData, yqUiPub, YqEdit, YqDataGrid, YqTabs, YqTabPane, YqContainer, YqConHeader, YqConMain  } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            menu_id: "27295aa2-f278-4cc9-a6c8-91aa212c8865",
+            topH: 75,
+            mask: {
+                tbname: "sys_menu_mark",
+                keyId: "sid",
+                bindingKeyId: "menu_id",
+                tempno: 1,
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: true,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+
+                isSimple: false,
+                isSeek: false,
+                linkField: ["describe"],
+            },
+            param: {
+                tbname: "sys_menu_var",
+                keyId: "sid",
+                bindingKeyId: "menu_id",
+                tempno: 1,
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: true,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+
+                isSimple: false,
+                isSeek: false,
+                linkField: ["describe"],
+                //异步：处理标题
+                beforeSetTitles: async (titles) => {
+                    let mark_no = titles.find(t => t.name == "mark_no");
+                    if (mark_no) {
+                        mark_no.ui_mask.dbName = mainParams.dbname;
+                        mark_no.ui_mask.addWhere = "menu_id='" + mainParams.menu_id + "' and no>0";
+                    }
+                    console.log(mark_no);
+                    return titles;
+                },
+            },
+            ui: {
+                tbname: "sys_menu_ui",
+                keyId: "sid",
+                bindingKeyId: "menu_id",
+                tempno: 1,
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: true,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+
+                loadDefault: true,
+
+                isSimple: false,
+                isSeek: false,
+                linkField: ["describe"],
+                //异步：处理标题
+                beforeSetTitles: async (titles) => {
+                    let mark_no = titles.find(t => t.name == "mark_no");
+                    if (mark_no) {
+                        mark_no.ui_mask.dbName = mainParams.dbname;
+                        mark_no.ui_mask.addWhere = "menu_id='" + mainParams.menu_id + "' and no>0";
+                    }
+                    //console.log("beforeSetTitles", titles);
+                    return titles;
+                },
+            }
+        };
+
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            mainParams.dbname = urlParams.get('dbname') || mainParams.dbname;
+            mainParams.menu_id = urlParams.get('menu_id') || mainParams.menu_id;
+            //console.log(mainParams);
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqEdit,
+                    YqDataGrid,
+                    YqTabs,
+                    YqTabPane,
+                    YqContainer,
+                    YqConHeader,
+                    YqConMain,
+                },
+                data() {
+                    return {
+                        topH: mainParams.topH + "px",
+                        menuedit: {
+                            model: `<table>
+                <tbody>    
+                    <tr>
+                    <td><label id="lbl_menu_type">菜单类型</label></td>
+                    <td><input id="txt_menu_type" type="text"  style="width: 120px;"></td>
+ 
+                    <td><label id="lbl_no">编码</label></td>
+                    <td><input id="txt_no" type="text"  style="width: 150px;"></td>
+    
+                    <td><label id="lbl_name">名称</label></td>
+                    <td><input id="txt_name" type="text"  style="width: 200px;"></t d>
+                </tr><tr>
+                    <td><label id="lbl_open_more">打开多页面</label></td>
+                    <td><input id="txt_open_more" type="text""></input></td>
+                    <td><label id="lbl_check_type">权限校验类型</label></td>
+                    <td><select id="txt_check_type" type="text" style="width: 150px;"></select></td>
+                     <td><label id="lbl_func">程序</label></td>
+                    <td><input id="txt_func" type="text" style="width: 200px;"></td>
+                </tr> 
+                </tbody>
+            </table>`,
+                            isEdit: false,
+                        },
+                    }
+                },
+                setup() {
+                    const markRef = ref(null);
+                    const varRef = ref(null);
+                    const uiRef = ref(null);
+
+                    const dbname = ref(mainParams.dbname);
+                    const bindingValue = ref(mainParams.menu_id);
+                    const menuTitles = ref([]);
+                    const menueRow = ref({});
+
+                    const editModeH = computed(() => {
+                        return window.innerHeight - mainParams.topH - 9;
+                    });
+
+                    const activeTab = ref("mark");
+
+                    const tabLabelDict = ref({
+                        "zh-CN": { mark: "权限标识", var: "界面参数", ui: "数据" },
+                        "en": { mark: "Permission Mark", var: "UI Params", ui: "Data" },
+                    });
+
+                    let markInit = false;
+                    let varInit = false;
+                    let uiInit = false;
+
+                    let maskRows = [];
+                    const maskEditLinks = ref([{
+                        name: "init",
+                        label: "添加同级",
+                        toptip: "添加同级",
+                        icon: "fa fa-list-ul",
+                        type: "primary",
+                        disabled: () => {
+                            //console.log("maskRows", maskRows);
+                            return maskRows.length > 0;
+                        },
+                        click: async () => {
+                            console.log("添加同级");
+                            await markRef.value.saveData([{
+                                action: "add",
+                                row: {
+                                    menu_id: mainParams.menu_id,
+                                    mark_type: 0,
+                                    no: 0,
+                                    describe: "菜单权限"
+                                }
+                            }, {
+                                action: "add",
+                                row: {
+                                    menu_id: mainParams.menu_id,
+                                    mark_type: 1,
+                                    no: 1,
+                                    describe: "界面权限"
+                                }
+                            }]);
+                        }
+                    }]);
+
+                    const maskBeforeSetData = async (rows) => {
+                        maskRows = rows;
+                        return rows;
+                    }
+
+                    const markProps = computed(() => ({
+                        dbname: dbname.value,
+                        ...mainParams.mask,
+                        bindingValue: bindingValue.value,
+                        menuType: 3,
+                        height: editModeH.value,
+                        editLinks: maskEditLinks.value,
+                        beforeSetData: maskBeforeSetData,
+                    }));
+
+                    const varProps = computed(() => ({
+                        dbname: dbname.value,
+                        ...mainParams.param,
+                        bindingValue: bindingValue.value,
+                        menuType: 3,
+                        height: editModeH.value,
+                    }));
+
+                    const uiProps = computed(() => ({
+                        dbname: dbname.value,
+                        ...mainParams.ui,
+                        bindingValue: bindingValue.value,
+                        menuType: 3,
+                        height: editModeH.value,
+                    }));
+
+                    const switchTab = async () => {
+                        if (activeTab.value == "mark") {
+                            if (!markInit) {
+                                markInit = true;
+                                await markRef.value.initTitles();
+                            }
+                        } else if (activeTab.value == "var") {
+                            if (!varInit) {
+                                varInit = true;
+                                await varRef.value.initTitles();
+                            }
+                        } else if (activeTab.value == "ui") {
+                            if (!uiInit) {
+                                uiInit = true;
+                                await uiRef.value.initTitles();
+                            }
+                        }
+                    }
+
+                    const tabsClick = (tab) => {
+                        activeTab.value = tab.props.name;
+                        switchTab();
+                    }
+
+                    onMounted(async () => {
+                        let res = await yqData.tbTitle({
+                            dbname: dbname.value,
+                            tbname: "sys_menu",
+                            tempno: -1
+                        });
+                        //console.log("res",res);
+                        if (res && res.error == 0) {
+                            const uiTitles = yqUiPub.formatUiTitles(res.titles);
+                            menuTitles.value = uiTitles;
+                        } else {
+                            console.log("获取菜单标题失败", res);
+                            return;
+                        }
+
+                        res = await yqData.dbTbRow({
+                            dbname: dbname.value,
+                            tbname: 'sys_menu',
+                            keyid: 'sid',
+                            keyval: bindingValue.value
+                        });
+
+                        if (res.error == 0) {
+                            menueRow.value = res.row;
+                            // await fieldRef.value.initTitles();
+                        }
+
+                        switchTab();
+                    });
+
+                    return {
+                        markRef,
+                        varRef,
+                        uiRef,
+
+                        dbname,
+                        bindingValue,
+                        menuTitles,
+                        menueRow,
+
+                        editModeH,
+
+                        markProps,
+                        varProps,
+                        uiProps,
+
+                        activeTab,
+                        tabLabelDict,
+                        tabsClick,
+
+                        maskEditLinks,
+                        maskBeforeSetData,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+
+    <style scoped>
+        .el-tabs__header {
+            margin: 0 0 5px;
+        }
+    </style>
+</body>
+
+</html>

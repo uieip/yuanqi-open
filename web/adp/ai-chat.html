@@ -1,0 +1,72 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>AI聊天</title>
+    <style>
+        #app {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body style="padding: 0;margin: 0;">
+    <div id="app">
+        <yq-ai-chat :chat-url="'/_aichat.html'" :select-first="false" :load-agents-log="false"
+            :load-sessions-log="false" :process-message-log="true" :tool-call="true" :show-title="false"
+            :menu-items="menuItems"></yq-ai-chat>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { initTheme, YqAiChat, YqWindowApi  } = YqwinPlus;
+        initTheme();
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqAiChat
+                },
+
+                setup() {
+                    const menuItems = ref([{
+                        divided: true,
+                    }, {
+                        name: 'mainindix',
+                        label: '主菜单',
+                        toptip: '主菜单',
+                        icon: 'fa fa-home',
+                        divided: false,
+                        disabled: () => false,
+                        click: (event) => {
+                            window.open('index.html', '_blank');
+                        }
+                    }]);
+
+
+                    return {
+                        menuItems
+                    }
+                }
+            })
+
+            app.use(ElementPlus, {  })
+            app.mount('#app')
+        }
+
+        window.onload = async function () {
+            initApp();
+        }
+
+        // 全局变量
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,308 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据库关系图</title>
+    <style>
+        /* 添加 v-cloak 样式 */
+        [v-cloak] {
+            display: none;
+        }
+
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;">
+    <div id="app">
+        <yq-chart-db-rel v-model="chartData" :is-edit="isEdit" :mini="mini" :on-save="onSave"
+            :select-table="selectTable" />
+    </div>
+    <script>
+        const { createApp, ref, watch, onMounted } = Vue;
+        const { initTheme, YqMessage, YqUiMaskEdit, YqChartDbRel, yqData, YqWindowApi  } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            sid: null,
+            parent: null,
+            table: {
+                tbname: "sys_tb",
+                keyId: "sid",
+                displayMember: "name",
+                bindingKeyId: null,
+                bindingValue: null,
+                pKeyId: "pid",
+                pKeyValue: null,
+
+                tempno: -1,
+                addWhere: "",
+                order: "queue",
+                loadDataType: 2,
+                loadTitles: true,
+                loadData: true,
+                isEdit: false,
+                showMenu: false,
+
+                getNodeIcon: (data) => {
+                    return data.tb_type === 0 ? "fa fa-folder" : "fa fa-table";
+                },
+                getNodeLabel: (data) => {
+                    return data.tb_type === 0 ? (data.describe ?? data.name) : ((data.describe ?? '') + "[" + (data.name ?? '') + "]");
+                },
+            },
+        };
+
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            mainParams.dbname = urlParams.get('dbname') || mainParams.dbname;
+            mainParams.sid = urlParams.get('sid') || null;
+            if (window.parent !== window.self) {
+                mainParams.parent = window.parent;
+            }
+
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqChartDbRel
+                },
+                setup() {
+                    const isEdit = ref(true);
+                    const mini = ref(false);
+                    const chartData = ref([]);
+
+                    let editRow = {};
+
+                    const selectTable = async (event) => {
+                        //console.log('selectTable event:', event);
+                        const newNode = await showSelectTb(event.target);
+
+                        return newNode;
+                    };
+
+                    const showSelectTb = async (el) => {
+                        let popperId = '';
+
+                        let parent = true;
+                        if (!window.parent || window.parent === window) {
+                            parent = false;
+                        }
+
+                        let height = window.innerHeight - 100;
+                        let width = window.innerWidth - 100;
+                        if (height < 800) {
+                            height = 800;
+                        }
+                        if (height < 400) {
+                            height = 400;
+                        }
+                        if (width > 500) {
+                            width = 500;
+                        }
+                        if (width < 300) {
+                            width = 300;
+                        }
+
+                        return new Promise((resolve) => {
+                            const content = {
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '5px',
+                                        height: '100%',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqDataTree',
+                                    props: {
+                                        ...mainParams.table,
+                                        menuType: 3,
+                                        dbname: mainParams.dbname,
+                                        height: height - 10,
+                                        onRowDoubleClick: async ({ row }) => {
+                                            //console.log('onRowDoubleClick row:', row);
+                                            if (row.tb_type == 0) {
+                                                return;
+                                            }
+
+                                            const res = await yqData.tbTitle({
+                                                dbname: mainParams.dbname,
+                                                tbname: row.name,
+                                                tempno: -1,
+                                            });
+
+                                            //console.log('res:', res);
+                                            if (res.error != 0) {
+                                                YqMessage.error(res.info + "[" + res.error + "]");
+                                                return;
+                                            }
+
+                                            let fields = [];
+                                            for (let i = 0; i < res.titles.length; i++) {
+                                                fields.push({
+                                                    name: res.titles[i].name,
+                                                    title: res.titles[i].ui_title,
+                                                    type: res.titles[i].ui_type,
+                                                    visible: res.titles[i].ui_visible
+                                                });
+                                            }
+
+                                            // 模拟添加表
+                                            const newNode = {
+                                                name: row.name,
+                                                describe: row.describe,
+                                                isdata: true,
+                                                fields: fields
+                                            };
+
+                                            YqWindowApi.close(popperId, parent);
+                                            resolve(newNode);
+                                        }
+                                    }
+                                }
+                            }
+
+                            const options = {
+                                containerRef: el,
+                                placement: 'popper',
+                                showTitle: false,
+                                modal: false,
+                                top: 30,
+                                left: 0,
+                                width: width,
+                                height: height,
+                                fullscreen: false,
+                                type: 'param',
+                                content: content,
+                                overflow: 'hidden',
+                                showFooter: false,
+                                parent: parent,
+                            }
+
+                            popperId = YqWindowApi.show(options);
+                        });
+                    }
+
+
+                    const onSave = async (event, data) => {
+                        console.log('save event:', event, 'data:', data);
+
+                        if (!mainParams.parent || !mainParams.parent.updateDiagram) {
+                            YqMessage.error({
+                                message: '父窗口不存在或不支持更新关系图',
+                                labelDict: {
+                                    "zh-CN": { message: '父窗口不存在或不支持更新关系图' },
+                                    "en": { message: 'Parent window does not exist or does not support updating the diagram' },
+                                },
+                            });
+                            return;
+                        }
+
+                        if (data.info) {
+                            let keys = ['code', 'describe', 'root_tb', 'remark'];
+                            for (let key of keys) {
+                                if (data.info[key]) {
+                                    editRow[key] = data.info[key]
+                                } else {
+                                    delete editRow[key];
+                                }
+                            }
+                        }
+                        editRow.data = JSON.stringify(data);
+
+                        const rows = [{
+                            action: editRow.sid ? 'upp' : 'add',
+                            row: editRow
+                        }];
+                        const res = await yqData.dbAction({
+                            dbname: mainParams.dbname,
+                            tbname: 'sys_tb_diagram',
+                            rows: rows
+                        });
+
+                        editRow.sid = res.rows[0].sid;
+                        YqMessage.success({
+                            message: '保存成功',
+                            labelDict: {
+                                "zh-CN": { message: '保存成功' },
+                                "en": { message: 'Save succeeded' },
+                            },
+                        });
+
+                        if (mainParams.parent && mainParams.parent.updateDiagram) {
+                            await mainParams.parent.updateDiagram({
+                                rows: rows,
+                                res: res
+                            });
+                        }
+                    };
+
+                    onMounted(async () => {
+                        try {
+                            if (!mainParams.sid) {
+                                return;
+                            }
+                            const res = await yqData.dbTbRow({
+                                dbname: mainParams.dbname,
+                                tbname: 'sys_tb_diagram',
+                                keyid: 'sid',
+                                keyval: mainParams.sid
+                            });
+                            console.log(res);
+                            if (res.error == 0) {
+                                if (res.row) {
+                                    editRow = res.row;
+                                    chartData.value = res.row.data ? JSON.parse(res.row.data) || [] : [];
+                                } else {
+                                    YqMessage.error({
+                                        message: '获取图表数据失败',
+                                        labelDict: {
+                                            "zh-CN": { message: '获取图表数据失败' },
+                                            "en": { message: 'Failed to load diagram data' },
+                                        },
+                                    });
+                                }
+                            } else {
+                                YqMessage.error(res.info || '获取图表数据失败');
+                            }
+                        } catch (error) {
+                            console.error('Error in onMounted:', error);
+                            YqMessage.error(error.message || '获取图表数据失败');
+                        }
+                    });
+
+                    return {
+                        isEdit,
+                        mini,
+                        chartData,
+                        onSave,
+                        selectTable
+                    };
+                }
+            });
+
+            app.use(ElementPlus, { })
+            app.mount('#app')
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,338 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+  <title>系统监控</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    #app {
+      height: 100%;
+      width: 100%;
+    }
+
+    .el-container {
+      height: 100%;
+    }
+
+    .el-header {
+      height: 40px !important;
+      padding: 5px !important;
+      display: flex;
+      flex-direction: row;
+      align-content: center;
+      align-items: baseline;
+    }
+
+    .el-footer {
+      padding: 0 0 0 5px;
+      margin: 0;
+      height: 45px;
+      display: flex;
+      align-items: center;
+    }
+
+    .el-switch {
+      margin: 0 10px 0 0;
+    }
+
+    .el-checkbox {
+      margin: 0 10px 0 5px;
+    }
+
+    .el-switch__label--left {
+      margin-right: 4px;
+    }
+
+    .el-switch__label--right {
+      margin-left: 4px;
+    }
+
+    .el-checkbox__label {
+      padding-left: 4px;
+    }
+  </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0; height: 100%;">
+  <div id="app">
+    <yq-container style="height: 100%;padding: 1px 0 0 0;">
+      <yq-con-header style="padding: 0 20px;">
+        <yq-menu type="inline" :menu-items="menuItems" :mini="false"></yq-menu>
+        <template v-for="(item, index) in switchItems" :key="item.value">
+          <span style="padding: 0 5px 0 10px;">{{ item.label }}</span>
+          <el-switch v-model="item.checked" :active-value="true" :inactive-value="false" active-text="on"
+            inactive-text="off" @change="item.change" :disabled="item.disabled()">
+          </el-switch>
+        </template>
+        <el-checkbox-group v-model="mentLogSet" style="margin-left: auto;padding-right: 5px;">
+          <el-checkbox value="debug" label="debug"></el-checkbox>
+          <el-checkbox value="info" label="info"></el-checkbox>
+          <el-checkbox value="warning" label="warning"></el-checkbox>
+          <el-checkbox value="error" label="error"></el-checkbox>
+          <el-checkbox value="critical" label="critical"></el-checkbox>
+        </el-checkbox-group>
+      </yq-con-header>
+      <yq-con-main style="padding: 0;margin: 0;overflow: hidden;">
+        <div ref="logRef" style="height: 100%;padding: 10px;margin: 0;overflow: auto;background-color: var(--yq-bg);border: 1px solid var(--yq-border);color: var(--yq-text);"></div>
+      </yq-con-main>
+      <yq-con-footer style="padding: 0 20px;display: flex;align-items: center;">
+        <yq-code-edit-text v-bind="codeProps" style="width: 300px;"></yq-code-edit-text>
+        <yq-button style="margin-left: 10px;" v-bind="codeBtnProps" type="primary" label="Send" :label-dict="{ 'zh-CN': '发送', 'en': 'Send' }"></yq-button>
+      </yq-con-footer>
+    </yq-container>
+  </div>
+  <script>
+    const { ref, onMounted, createApp } = Vue;
+    const { ElTable, ElButtonGroup } = ElementPlus;
+    const { initTheme, YqCodeEditText, YqMenu, YqWindowApi, YqButton, YqContainer, YqConHeader, YqConMain, YqConFooter  } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      components: {
+        YqMenu,
+        YqCodeEditText,
+        ElButtonGroup,
+        YqButton,
+        YqContainer,
+        YqConHeader,
+        YqConMain,
+        YqConFooter
+      },
+      setup() {
+        const switchItems = ref([{
+          value: 'heart',
+          label: 'heart',
+          checked: false,
+          disabled: () => {
+            return ws.value === null;
+          },
+          change: (val) => {
+            if (!ws.value) {
+              return;
+            }
+            var s_msg = '{"type":"setup","info":{"name":"heartbeat","value":' + (val ? 'true' : 'false') + '}}';
+            print("SEND: " + s_msg);
+            ws.value.send(s_msg);
+          }
+        }, {
+          value: 'remsg',
+          label: 'remsg',
+          checked: false,
+          disabled: () => {
+            return ws.value === null;
+          },
+          change: (val) => {
+            if (!ws.value) {
+              return;
+            }
+            var s_msg = '{"type":"setup","info":{"name":"remsg","value":' + (val ? 'true' : 'false') + '}}';
+            print("SEND: " + s_msg);
+            ws.value.send(s_msg);
+          }
+        }]);
+        const mentLogSet = ref(['debug', 'info', 'warning', 'error', 'critical']);
+
+        function msgSplit(data) {
+          var redata = [];
+          var ss = data.split('}\n{');
+          if (ss.length == 1) {
+            redata.push(data);
+          } else {
+            for (var i = 0; i < ss.length; i++) {
+              if (i == 0) {
+                redata.push(ss[i] + "}");
+              } else if (i == (ss.length - 1)) {
+                redata.push("{" + ss[i]);
+              } else {
+                redata.push("{" + ss[i] + "}");
+              }
+            }
+          }
+          return redata;
+        }
+
+        const ws = ref(null);
+        const logRef = ref(null);
+
+        var print = function (message) {
+          var d = document.createElement("div");
+          d.textContent = message;
+          logRef.value.appendChild(d);
+          var doScroll = logRef.value.scrollTop < (logRef.value.scrollHeight - logRef.value.clientHeight);
+          if (doScroll) {
+            logRef.value.scrollTop = logRef.value.scrollHeight - logRef.value.clientHeight;
+          }
+        };
+
+        function open() {
+          if (ws.value) {
+            return false;
+          }
+          try {
+            var ws_url = "ws://" + window.location.host + "/_runtime.html?action=monitor";
+            ws.value = new WebSocket(ws_url);
+            ws.value.onerror = function (error) {
+              console.error("WebSocket[" + ws_url + "] error:", error);
+            };
+          } catch (e) {
+            console.error("Failed to create WebSocket[" + ws_url + "]:", e);
+          }
+
+          ws.value.onopen = function (evt) {
+            console.log("OPEN", evt);
+            print("OPEN");
+          }
+          ws.value.onclose = function (evt) {
+            console.log("CLOSE", evt);
+            print("CLOSE");
+            ws.value = null;
+          }
+          ws.value.onmessage = function (evt) {
+            console.log("MESSAGE", evt);
+            var rows = msgSplit(evt.data);
+            rows.forEach(row => {
+              var data = JSON.parse(row);
+              if (data.type == "heartbeat") {
+                console.log(data);
+                print("HEARTBEAT: " + data.info);
+              } else if (data.type == "log") {
+                console.log(data);
+                if (mentLogSet.value.includes(data.info.type)) {
+                  var log_ = data.info.type + " " + data.info.ts;
+                  if (data.info.file != "") {
+                    log_ += " " + data.info.file + ":" + data.info.line;
+                  }
+                  if (typeof data.info.msg == "object") {
+                    log_ += " " + JSON.stringify(data.info.msg);
+                  } else {
+                    log_ += " " + data.info.msg;
+                  }
+                  print(log_);
+                }
+              } else {
+                print("RESPONSE: " + row);
+              }
+            });
+          }
+          ws.value.onerror = function (evt) {
+            console.log("ERROR", evt);
+            print("ERROR: " + (evt.data === undefined ? "WebSocket cannot connect." : evt.data));
+          }
+        }
+
+        function close() {
+          if (ws.value) {
+            ws.value.close();
+          }
+        }
+
+        function clear() {
+          logRef.value.innerHTML = "";
+          logRef.value.scrollTop = 0;
+        }
+
+        const menuItems = ref([
+          {
+            name: "ocean",
+            label: "open",
+            toptip: "open",
+            icon: "fa fa-play",
+            type: "primary",
+            disabled: () => {
+              return ws.value !== null;
+            },
+            click: () => {
+              open();
+            }
+          }, {
+            name: "close",
+            label: "close",
+            toptip: "close",
+            icon: "fa fa-stop",
+            type: "primary",
+            disabled: () => {
+              return ws.value === null;
+            },
+            click: () => {
+              close();
+            }
+          }, {
+            divided: true
+          }, {
+            name: "clear",
+            label: "clear",
+            toptip: "clear",
+            icon: "fa fa-eraser",
+            type: "primary",
+            disabled: () => {
+              return ws.value === null;
+            },
+            click: () => {
+              clear();
+            }
+          }
+        ]);
+
+        const codeProps = ref({
+          code: '',
+          isEdit: () => {
+            if (!ws.value) {
+              return false;
+            }
+            return true;
+          },
+          mode: 'text',
+          types: ['text'],
+          clear: true,
+          setting: false,
+          editModeW: 500,
+          editModeH: 210,
+          onChange: (val) => {
+            codeProps.value.code = val;
+          }
+        });
+        const codeBtnProps = ref({
+          type: "primary",
+          onClick: () => {
+            if (!ws.value) {
+              return;
+            }
+            let s_msg = codeProps.value.code;
+            print("SEND: " + s_msg);
+            ws.value.send(s_msg);
+          }
+        });
+
+        onMounted(async () => {
+        })
+
+        return {
+          menuItems,
+          switchItems,
+          mentLogSet,
+          logRef,
+          codeProps,
+          codeBtnProps
+        };
+      }
+    })
+    app.use(ElementPlus);
+    app.mount('#app');
+
+    window.app = app;
+    window.YqwinPlus = {
+      YqWindowApi: YqWindowApi,
+    };
+  </script>
+</body>
+
+</html>

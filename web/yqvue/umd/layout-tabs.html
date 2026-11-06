@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqTabs 组件测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      padding: 20px;
+      background: #f5f7fa;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    .test-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #303133;
+    }
+
+    .test-section {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .test-section h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      color: #409eff;
+      border-bottom: 2px solid #ecf5ff;
+      padding-bottom: 8px;
+    }
+
+    .test-section h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: #606266;
+    }
+
+    .tab-demo {
+      height: 200px;
+      border: 1px solid #ebeef5;
+      border-radius: 4px;
+      padding: 0;
+    }
+
+    .tab-demo .demo-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #606266;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app" style="height: 100%; width: 100%;">
+    <div class="test-container">
+      <h1>YqTabs 组件测试</h1>
+
+      <!-- 无图标：传统 el-tab-pane 插槽方式 -->
+      <div class="test-section">
+        <h2>1. 无图标（默认插槽）</h2>
+        <h3>通过 el-tab-pane 子组件渲染标签</h3>
+        <div class="tab-demo">
+          <yq-tabs v-model="basicTab">
+            <yq-tab-pane label="Tab 1" name="tab1">
+              <div class="demo-content">Tab 1 内容</div>
+            </yq-tab-pane>
+            <yq-tab-pane label="Tab 2" name="tab2">
+              <div class="demo-content">Tab 2 内容</div>
+            </yq-tab-pane>
+            <yq-tab-pane label="Tab 3" name="tab3">
+              <div class="demo-content">Tab 3 内容</div>
+            </yq-tab-pane>
+          </yq-tabs>
+        </div>
+      </div>
+
+      <!-- 有图标：通过 icon prop -->
+      <div class="test-section">
+        <h2>2. 有图标（icon prop）</h2>
+        <h3>通过 yq-tab-pane 的 icon prop 渲染图标</h3>
+        <div class="tab-demo">
+          <yq-tabs v-model="iconTab">
+            <yq-tab-pane label="用户管理" name="tab-users" icon="fa fa-users">
+              <div class="demo-content">用户管理内容</div>
+            </yq-tab-pane>
+            <yq-tab-pane label="系统设置" name="tab-settings" icon="fa fa-cog">
+              <div class="demo-content">系统设置内容</div>
+            </yq-tab-pane>
+            <yq-tab-pane label="数据分析" name="tab-chart" icon="fa fa-bar-chart">
+              <div class="demo-content">数据分析内容</div>
+            </yq-tab-pane>
+          </yq-tabs>
+        </div>
+      </div>
+
+      <!-- 只有图标：无 label 文本 -->
+      <div class="test-section">
+        <h2>3. 只有图标（无文本）</h2>
+        <h3>仅通过 icon prop 渲染图标，不显示文本</h3>
+        <div class="tab-demo">
+          <yq-tabs v-model="iconOnlyTab">
+            <yq-tab-pane name="tab-users" icon="fa fa-users">
+              <div class="demo-content">用户管理内容</div>
+            </yq-tab-pane>
+            <yq-tab-pane name="tab-settings" icon="fa fa-cog">
+              <div class="demo-content">系统设置内容</div>
+            </yq-tab-pane>
+            <yq-tab-pane name="tab-chart" icon="fa fa-bar-chart">
+              <div class="demo-content">数据分析内容</div>
+            </yq-tab-pane>
+          </yq-tabs>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+    const { initTheme, YqTabs, YqTabPane, i18n } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      setup() {
+        const basicTab = ref('tab1')
+        const iconTab = ref('tab-users')
+        const iconOnlyTab = ref('tab-users')
+
+        return { basicTab, iconTab, iconOnlyTab }
+      },
+    })
+
+    app.component('yq-tabs', YqTabs)
+    app.component('yq-tab-pane', YqTabPane)
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+  </script>
+</body>
+
+</html>

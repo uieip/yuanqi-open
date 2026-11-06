@@ -1,0 +1,356 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        /* 添加 v-cloak 样式 */
+        [v-cloak] {
+            display: none;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-container v-model:aside-width="leftW">
+            <yq-con-aside style="overflow: hidden;">
+                <yq-label style="padding:4px;display:inline-block;" v-cloak label="系统" :label-dict="{ 'zh-CN': '系统', 'en': 'System' }"></yq-label>
+                <div style="padding:4px 4px 7px 0;width: calc(100% - 60px);display: inline-block;">
+                    <yq-combogrid ref="appRef" v-bind="appProps"></yq-combogrid>
+                </div>
+                <div :style="menuStyle">
+                    <yq-data-tree ref="menuRef" v-bind="menuProps" @row-double-click="menuDoubleClick"></yq-data-tree>
+                </div>
+            </yq-con-aside>
+            <yq-con-main style="padding: 0 0 0 1px;">
+                <yq-content ref="contentRef" v-model:tabs="tabs" :position="tabPosition"
+                    style="height: 100%;"></yq-content>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, nextTick, computed } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqWindowApi, YqMessageBox, yqData, YqCombogrid, YqDataTree, YqEdit, YqContent, YqLabel, YqContainer, YqConAside, YqConMain  } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            leftW: 310,
+        };
+
+        window.onload = function () {
+            mainParams.leftW = window.innerWidth * 0.20;
+            if (mainParams.leftW < 310) {
+                mainParams.leftW = 310;
+            }
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    yqData,
+                    YqCombogrid,
+                    YqDataTree,
+                    YqEdit,
+                    YqContent,
+                    YqLabel,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain
+                },
+                data() {
+                    return {
+                        leftW: mainParams.leftW + "px",
+                        tabs: [
+                            {
+                                id: 'dashboard',
+                                label: '首页',
+                                icon: 'fa fa-file',
+                                content: '<h1>首页</h1>',
+                                type: 'html',
+                                active: true,
+                                closable: false,
+                                contextMenu: []
+                            }
+                        ],
+                        tabPosition: "top",
+                    }
+                },
+                setup() {
+                    const appRef = ref(null);
+                    const menuRef = ref(null);
+                    const contentRef = ref(null);
+
+                    const menuStyle = computed(() => {
+                        return {
+                            padding: '0',
+                            height: (window.innerHeight - 42) + 'px',
+                        }
+                    })
+
+                    const dbname = ref("yqbase");
+
+                    const appRow = ref(null);
+                    const menuBindingValue = ref(null);
+
+                    const appProps = computed(() => ({
+                        dbname: dbname.value,
+                        tbname: "sys_menu_app",
+                        keyId: "sid",
+                        displayMember: "{name}[{no}]",
+                        order: "queue",
+                        titles: [],
+                        loadData: false,
+                        isEdit: true,
+                        isSeek: false,
+                        isSimple: false,
+                        isPage: false,
+                        move: true,
+                        editMode: 3,
+                        editModeW: 600,
+                        editModeH: 450,
+                        editModeNo: -1,
+                        autoSelect: true,
+                        menuType: 3,
+
+                        editLinks_r: [{
+                            name: "language",
+                            label: "语言",
+                            toptip: "语言",
+                            icon: "fa fa-language",
+                            type: "primary",
+                            disabled: () => {
+                                return appRow.value === null;
+                            },
+                            click: (event) => {
+                                transShow(event, 1, "app:*");
+                            }
+                        }], //右侧附加菜单
+
+                        onRowSelect: appUpdateSelectValue,
+                    }));
+
+                    const menuProps = computed(() => ({
+                        dbname: dbname.value,
+                        tbname: "sys_menu",
+                        keyId: "sid",
+                        bindingKeyId: "app_id",
+                        bindingValue: menuBindingValue.value,
+                        pKeyId: "pid",
+                        pKeyValue: null,
+                        loadDataType: 2,
+                        displayMember: "{name}[{no}]",
+                        loadTitles: false,
+                        loadData: false,
+                        menuType: 3,
+                        overflowY: true,
+                        editModeW: 600,
+                        editModeH: 450,
+                        editModeNo: -1,
+                        isEdit: true,
+                        topnum: 5,
+                        btnMini: true,
+                        getNodeIcon: (data) => {
+                            if (data.menu_type === 0) {
+                                if (typeof data.icon === "string") {
+                                    return JSON.parse(data.icon);
+                                } else {
+                                    return "fa fa-folder";
+                                }
+                            }
+                            else if (data.menu_type === 1 || data.menu_type === 2) {
+                                if (typeof data.icon === "string") {
+                                    return JSON.parse(data.icon);
+                                } else {
+                                    return "fa fa-file-o";
+                                }
+                            } else if (data.menu_type === 9) {
+                                return "fa fa-ellipsis-h";
+                            } else {
+                                return "fa fa-file-o";
+                            }
+                        },
+                        getNodeLabel: (data) => {
+                            if (data.menu_type === 0 || data.menu_type === 1) {
+                                return (data.name || data.describe) + "[" + data.no + "]";
+                            } else if (data.menu_type === 2) {
+                                return '*' + (data.name || data.describe) + "[" + data.no + "]";
+                            } else if (data.menu_type === 9) {
+                                return '';
+                            } else {
+                                return data.name || data.describe;
+                            }
+                        },
+                        editLinks: [ {
+                                divided: true,
+                            },
+                            {
+                                name: "language",
+                                label: "语言",
+                                toptip: "语言",
+                                icon: "fa fa-language",
+                                type: "primary",
+                                disabled: () => {
+                                    return appRow.value === null;
+                                },
+                                click: (event) => {
+                                    console.log("appRow.value:", appRow.value);
+                                    transShow(event, 2, `app:${appRow.value["no"]}`);
+                                }
+                            },
+                            {
+                                name: 'delcache',
+                                label: '清理登录缓存',
+                                toptip: '清理登录缓存',
+                                icon: 'fa fa-eraser',
+                                type: "primary",
+                                divided: false,
+                                disabled: (() => {
+                                    return false;
+                                }),
+                                click: async (e) => {
+                                    YqMessageBox.confirm({
+                                        message: '确定清理应用缓存...',
+                                        title: '提示',
+                                        type: 'message',
+                                        el: e.target,
+                                    }).then(async () => {
+                                        await yqData.clearCache("menu:");
+                                    }).catch(() => {
+                                        //console.log('用户点击了取消');
+                                    });
+                                }
+                            }
+
+                        ], //右侧附加菜单
+                    }));
+
+                    const appUpdateSelectValue = ({ row }) => {
+                        if (row) {
+                            appRow.value = row;
+                            menuBindingValue.value = row["sid"];
+                            menuRef.value.loadData();
+                        } else {
+                            appRow.value = null;
+                            menuBindingValue.value = null;
+                            menuRef.value.clear();
+                        }
+                    }
+
+                    const transShow = (event, type, name) => {
+                        let height = 400;
+                        let top = 40;
+                        let left = -300;
+                        if (type === 1) {
+                            height = appProps.value.editModeH;
+                            top = 30;
+                            left = -50;
+                        }
+                        else if (type === 2) {
+                            height = (window.innerHeight - 42 - 80);
+                            top = 30;
+                            left = -50;
+                        }
+                        let editH = height - 113;
+                        const s = YqWindowApi.show({
+                            containerRef: event.target,
+                            placement: 'popper',
+                            title: "语言",
+                            width: 570,
+                            height: height,
+                            left: left,
+                            top: top,
+                            type: 'iframe',
+                            content: `trans.html?dbname=${dbname.value}&type=${type}&name=${name}&height=${editH}`,
+                            parent: true,
+                            overflow: 'none',
+                            showFooter: false,
+                        });
+
+                    }
+
+                    const menuDoubleClick = ({ row }) => {
+                        if (!row || row.menu_type !== 1) {
+                            return;
+                        }
+
+                        const _tab = {
+                            id: row.sid.replace(/\//g, '-'),
+                            label: row.name,
+                            icon: 'fa fa-table',
+                            type: 'iframe',
+                            content: `menuedit.html?dbname=${dbname.value}&menu_id=${row.sid}`,
+                            isUrl: true,
+                            closable: true, // 默认可关闭
+                            contextMenu: [
+                                { label: '关闭', icon: 'fa fa-window-close-o', action: 'close' },
+                                { label: '关闭其它', icon: 'fa fa-columns', action: 'closeOthers' },
+                                { label: '关闭全部', icon: 'fa fa-window-restore', action: 'closeAll' },
+                                {},
+                                { label: '关闭左侧', icon: 'fa fa-caret-square-o-left', action: 'closeLeft' },
+                                { label: '关闭右侧', icon: 'fa fa-caret-square-o-right', action: 'closeRight' },
+                                {},
+                                { label: '刷新', icon: 'fa fa-refresh', action: 'refresh' },
+                                { label: '新窗口打开', icon: 'fa fa-paper-plane', action: 'blankOpen' },
+                            ]
+                        }
+
+                        contentRef.value?.addTab(_tab)
+                    }
+
+                    onMounted(async () => {
+                        const dbList = await yqData.dbList();
+                        if (dbList.error == 0) {
+                            dbname.value = dbList.rows[0].name;
+
+                            await appRef.value?.loadData();
+                        } else {
+                            console.error(dbList);
+                        }
+                    });
+
+                    return {
+                        appRef,
+                        menuRef,
+                        contentRef,
+                        menuStyle,
+                        appProps,
+                        menuProps,
+
+                        dbname,
+                        appRow,
+                        menuBindingValue,
+                        appUpdateSelectValue,
+                        menuDoubleClick,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+
+    <style scoped>
+        .el-tabs__header {
+            margin: 0 0 5px;
+        }
+    </style>
+</body>
+
+</html>

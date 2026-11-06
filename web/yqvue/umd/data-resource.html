@@ -1,0 +1,85 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqResource 测试页面</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .control-panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #e4e7ed;
+            border-radius: 4px;
+            background-color: #f5f7fa;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .component-container {
+            padding: 0;
+            min-height: 300px;
+            height: calc(100vh - 200px);
+            background-color: white;
+            overflow: auto;
+        }
+
+    </style>
+</head>
+
+<body style="height: auto;">
+    <div id="app">
+        <h1>YqResource 组件测试</h1>
+        <div class="control-panel">
+            <div class="control-group">
+                <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑模式"
+                    inactive-text="查看模式"></el-switch>
+            </div>
+        </div>
+        <div class="component-container">
+            <yq-resource :is-edit="isEdit"></yq-resource>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqResource } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqResource
+            },
+            setup() {
+                // 基本状态
+                const isEdit = ref(true);
+             
+                return {
+                    isEdit,
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

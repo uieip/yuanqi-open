@@ -1,0 +1,1310 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>翻译</title>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-edit ref="editRef" v-bind="formProps"></yq-edit>
+        <div style="width: 100%; padding:3px 20px 0 0; display: flex; justify-content: flex-end;">
+            <yq-menu ref="menuRef" v-bind="menuProps" :label-dict="menuTrans"></yq-menu>
+        </div>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme, YqMessage, YqEdit, YqMenu, yqData, yqUiPub, YqWindowApi, YqMessageBox  } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            type: 9,
+            name: "demo",
+            lang: "zh-CN",
+            height: 570,
+        };
+
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            mainParams.dbname = urlParams.get('dbname') || mainParams.dbname;
+            mainParams.type = parseInt(urlParams.get('type')) || mainParams.type;
+            mainParams.name = urlParams.get('name') || mainParams.name;
+            mainParams.lang = urlParams.get('lang') || mainParams.lang;
+            mainParams.height = parseInt(urlParams.get('height')) || mainParams.height;
+            //console.log("mainParams:", mainParams);
+
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqEdit,
+                    YqMenu,
+                },
+                setup() {
+                    // 当前url
+                    const currentUrl = window.location.href
+                    // 获取url参数 _frameid
+                    const urlParams = new URLSearchParams(window.location.search)
+                    const frameId = urlParams?.get('_frameid') || ''
+                    const isParent = true
+
+                    let parentParams = YqWindowApi.getParams(frameId, isParent);
+
+                    console.log("getParentParams", parentParams);
+
+                    const editRef = ref(null);
+
+                    const titles = ref([
+                        {
+                            name: "sid",
+                            remark: null,
+                            ui_mask: {
+                            },
+                            ui_readonly: true,
+                            ui_title: "sid",
+                            ui_type: 1,
+                            ui_visible: true,
+                            ui_width: 80,
+                        },
+                        {
+                            name: "type",
+                            remark: null,
+                            ui_mask: {
+                                default: null,
+                                blank: true,
+                                type: "int",
+                                lists: [
+                                    {
+                                        no: 1,
+                                        name: "应用"
+                                    },
+                                    {
+                                        no: 2,
+                                        name: "菜单"
+                                    },
+                                    {
+                                        no: 3,
+                                        name: "表"
+                                    }
+                                ],
+                                textbox: true
+                            },
+                            ui_readonly: true,
+                            ui_title: "类型",
+                            ui_type: 6,
+                            ui_visible: true,
+                            ui_width: 80,
+                        },
+                        {
+                            name: "lang",
+                            remark: null,
+                            ui_mask: {
+                                default: "zh-CN",
+                                blank: true,
+                                type: "string",
+                                lists: [
+                                    {
+                                        no: "zh-CN",
+                                        name: "中文"
+                                    },
+                                    {
+                                        no: "en",
+                                        name: "英文"
+                                    }
+                                ],
+                                textbox: true,
+                            },
+                            ui_readonly: false,
+                            ui_title: "语言",
+                            ui_type: 6,
+                            ui_visible: true,
+                            ui_width: 80,
+                        },
+                        {
+                            name: "name",
+                            remark: null,
+                            ui_mask: {
+                                default: null,
+                                blank: true,
+                                min: null,
+                                max: null,
+                                format: ""
+                            },
+                            ui_readonly: true,
+                            ui_title: "名称",
+                            ui_type: 2,
+                            ui_visible: true,
+                            ui_width: 80
+                        },
+                        {
+                            name: "json",
+                            ui_title: "json",
+                            ui_type: 2,
+                            ui_width: 80,
+                            ui_readonly: false,
+                            ui_visible: true,
+                            "ui_mask": {}
+                        }
+                    ]);
+
+                    let json_h = mainParams.height;
+
+                    const model = ref(`
+            <table >
+                <tbody>    
+                    <tr>
+                        <td><label id="lbl_type">类型</label></td>
+                        <td><select id="txt_type" type="text" textbox="true" style="width: 100px;"></select></td>
+                        <td><label id="lbl_name">名称</label></td>
+                        <td><input id="txt_name" type="text" style="width: 120px;" /></td>
+                        <td><label id="lbl_lang">语言</label></td>
+                        <td><select id="txt_lang" type="text" textbox="true" style="width: 100px;"></select></td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">
+                            <div id="txt_json" type="text" textbox="false" style="height: ${json_h}px;"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+                    `);
+                    const row = ref({
+                        type: mainParams.type,
+                        lang: mainParams.lang,
+                        name: mainParams.name,
+                        json: [],
+                    });
+
+                    // 打开ui_mask子窗口
+                    const handleUiMaskEdit = async ({ el, row, value, func }) => {
+                        let parent = true
+                        if (!window.parent || window.parent === window) {
+                            parent = false
+                        }
+
+                        let _value = row.value;
+
+                        console.log("row:", row);
+                        console.log("value:", value);
+                        console.log("func:", func);
+
+                        let titles = [
+                            {
+                                "name": "placeholder",
+                                "ui_title": "占位符",
+                                "ui_type": 2,
+                                "ui_width": 80,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {},
+                            }, {
+                                "name": "group",
+                                "ui_title": "分组",
+                                "ui_type": 2,
+                                "ui_width": 80,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {},
+                            }
+                        ];
+
+                        let model = `
+            <table>
+                <tbody>    
+                    <tr>
+                        <td><label id="lbl_placeholder">占位符</label></td>
+                        <td><input id="txt_placeholder" type="text" style="width: 180px;" /></td>` +
+                            ((row.ui_type == 6 || row.ui_type == 8 || row.ui_type == 15 || row.ui_type == 16 || row.ui_type == 17) ? `` : `</tr><tr>`) +
+                            `<td><label id="lbl_group">分组</label></td>
+                        <td><input id="txt_group" type="text" style="width: 180px;" /></td>
+                    </tr>
+                </tbody>
+            </table>  
+                        `;
+
+                        switch (row.ui_type) {
+                            case 6:
+                                titles.push(
+                                    {
+                                        name: "lists",
+                                        ui_title: "取值",
+                                        ui_type: 15,
+                                        ui_width: 90,
+                                        ui_visible: true,
+                                        ui_readonly: false,
+                                        ui_mask: {
+                                            textbox: false,
+                                            editType: 0,
+                                            showEdit: false,
+                                            param: {
+                                                titles: [
+                                                    {
+                                                        name: "no",
+                                                        ui_title: "No",
+                                                        ui_type: 2,
+                                                        ui_width: 130,
+                                                        ui_visible: true,
+                                                        ui_readonly: true,
+                                                        ui_mask: {
+                                                            min: 0,
+                                                            blank: false
+                                                        }
+                                                    }, {
+                                                        name: "name",
+                                                        ui_title: "Name",
+                                                        ui_type: 2,
+                                                        ui_width: 215,
+                                                        ui_visible: true,
+                                                        ui_readonly: false,
+                                                        ui_mask: {
+                                                            blank: false
+                                                        }
+                                                    }
+                                                ],
+                                                model: []
+                                            }
+                                        }
+                                    }
+                                );
+                                model += ` 
+                                    <div id="txt_lists" textbox="false" modelno="-1" edittype="0"
+                                        style='width: 477px; height: 350px;'>
+                                    </div> 
+                                    `;
+                                break;
+                            case 8:
+                                titles.push(
+                                    {
+                                        name: "trees",
+                                        ui_title: "取值",
+                                        ui_type: 16,
+                                        ui_width: 90,
+                                        ui_visible: true,
+                                        ui_readonly: false,
+                                        ui_mask: {
+                                            textbox: false,
+                                            editType: 0,
+                                            showEdit: false,
+                                            param: {
+                                                titles: [
+                                                    {
+                                                        name: "no",
+                                                        ui_title: "No",
+                                                        ui_type: 2,
+                                                        ui_width: 110,
+                                                        ui_visible: true,
+                                                        ui_readonly: true,
+                                                        ui_mask: {
+                                                            min: 0,
+                                                            blank: false
+                                                        }
+                                                    }, {
+                                                        name: "name",
+                                                        ui_title: "Name",
+                                                        ui_type: 2,
+                                                        ui_width: 200,
+                                                        ui_visible: true,
+                                                        ui_readonly: false,
+                                                        ui_mask: {
+                                                            blank: false
+                                                        }
+                                                    },
+                                                ]
+                                            },
+                                        }
+                                    }
+                                );
+                                model += ` 
+                                    <div id="txt_trees" textbox="false" modelno="-1" edittype="0" 
+                                        style='width: 477px; height: 350px;'>
+                                    </div>
+                                    `;
+                                break;
+                            case 15:
+                            case 16:
+                            case 17:
+                                titles.push(jsonTitles_3("param", "param", 380));
+                                model += ` 
+                                    <div id="txt_param" textbox="false" modelno="-1" edittype="0" 
+                                        style='width: 600px; height: 350px;'>
+                                    </div>
+                                    `;
+                                break;
+                            default:
+                                break;
+                        }
+
+                        const rect = el.getBoundingClientRect()
+
+                        return new Promise((resolve) => {
+                            let dialogId = null;
+                            let refEdit = ref(null);
+                            let content = {
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '10px',
+                                        overflow: 'hidden'
+                                    }
+                                },
+                                children:
+                                {
+                                    h: 'YqEdit',
+                                    ref: refEdit,
+                                    props: {
+                                        titles: titles,
+                                        model: model,
+                                        row: value,
+                                        isEdit: true,
+                                        'onUpdate:row': (value) => {
+                                            resolve({
+                                                error: 0,
+                                                info: '',
+                                                value: value,
+                                                alert: false
+                                            });
+                                        }
+                                    }
+                                }
+                            };
+
+                            let w = 265;
+                            let h = 105;
+                            if (row.ui_type == 6 || row.ui_type == 8) {
+                                w = 495;
+                                h = 415;
+                            } else if (row.ui_type == 15 || row.ui_type == 16 || row.ui_type == 17) {
+                                w = 620;
+                                h = 415;
+                            }
+
+                            const options = {
+                                containerRef: el,
+                                placement: 'popper',
+                                showTitle: false,
+                                modal: false,
+                                top: rect.height,
+                                left: 0,
+                                width: w,
+                                height: h,
+                                fullscreen: false,
+                                type: 'param',
+                                content: content,
+                                overflow: 'hidden',
+                                showFooter: false,
+                                parent: parent
+                            }
+
+                            dialogId = YqWindowApi.show(options);
+                        });
+                    }
+
+                    const jsonTitles_3 = (name, title, height) => {
+                        return {
+                            name: name,
+                            ui_title: title,
+                            ui_type: 15,
+                            ui_width: 80,
+                            ui_readonly: false,
+                            ui_visible: true,
+                            ui_mask: {
+                                blank: false,
+                                textbox: false,
+                                min: 1,
+                                panelWidth: 500,
+                                panelHeight: 400,
+                                editType: 0,
+                                modelNo: -1,
+                                editModeH: height,
+                                showEdit: false,
+                                param: {
+                                    titles: [{
+                                        is_func: false,
+                                        name: "name",
+                                        ui_title: "Name",
+                                        ui_type: 2,
+                                        ui_width: 120,
+                                        ui_visible: true,
+                                        ui_readonly: true,
+                                        ui_mask: {}
+                                    }, {
+                                        is_func: false,
+                                        name: "ui_type",
+                                        ui_title: "UiType",
+                                        ui_type: 10,
+                                        ui_width: 120,
+                                        ui_visible: false,
+                                        ui_readonly: true,
+                                        ui_mask: {}
+                                    },
+                                    {
+                                        is_func: false,
+                                        name: "ui_title",
+                                        ui_title: "Title",
+                                        ui_type: 2,
+                                        ui_width: 120,
+                                        ui_visible: true,
+                                        ui_readonly: false,
+                                        ui_mask: {}
+                                    }, {
+                                        is_func: false,
+                                        name: "ui_mask",
+                                        ui_title: "UI Mask",
+                                        ui_type: 21,
+                                        ui_width: 250,
+                                        ui_visible: true,
+                                        ui_readonly: false,
+                                        ui_mask: {
+                                            blank: false,
+                                            clearable: false,
+                                            callback: async (obj, data, func) => {
+                                                //console.log(obj, data, func)
+                                                try {
+                                                    const res = await handleUiMaskEdit(
+                                                        {
+                                                            el: obj,
+                                                            value: data.value,
+                                                            row: data.row,
+                                                            func: func
+                                                        }
+                                                    );
+                                                    return res;
+                                                } catch (error) {
+                                                    YqMessage.error(error.message);
+                                                    return {
+                                                        error: 1,
+                                                        info: error.message,
+                                                        value: data.value,
+                                                        alert: true
+                                                    };
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ],
+                                    "model": []
+                                }
+                            }
+                        };
+                    };
+
+                    const getJsonTitles = computed(() => {
+                        switch (mainParams.type) {
+                            case 1:
+                                return {
+                                    name: "json",
+                                    ui_title: "json",
+                                    ui_type: 15,
+                                    ui_width: 80,
+                                    ui_readonly: false,
+                                    ui_visible: true,
+                                    ui_mask: {
+                                        blank: false,
+                                        textbox: false,
+                                        min: 1,
+                                        panelWidth: 500,
+                                        panelHeight: 400,
+                                        editType: 0,
+                                        modelNo: -1,
+                                        editModeH: json_h,
+                                        showEdit: false,
+                                        param: {
+                                            titles: [{
+                                                is_func: false,
+                                                name: "no",
+                                                ui_title: "No",
+                                                ui_type: 10,
+                                                ui_width: 50,
+                                                ui_visible: true,
+                                                ui_readonly: true,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "name",
+                                                ui_title: "Name",
+                                                ui_type: 2,
+                                                ui_width: 180,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "describe",
+                                                ui_title: "Describe",
+                                                ui_type: 2,
+                                                ui_width: 110,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "remark",
+                                                ui_title: "Remark",
+                                                ui_type: 5,
+                                                ui_width: 100,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {
+                                                    editModeW: 320,
+                                                    editModeH: 200,
+                                                    types: [
+                                                        "base"
+                                                    ],
+                                                    textbox: true
+                                                }
+                                            }
+                                            ],
+                                            "model": []
+                                        }
+                                    }
+                                };
+                            case 2:
+                                return {
+                                    name: "json",
+                                    ui_title: "json",
+                                    ui_type: 15,
+                                    ui_width: 80,
+                                    ui_readonly: false,
+                                    ui_visible: true,
+                                    ui_mask: {
+                                        blank: false,
+                                        textbox: false,
+                                        min: 1,
+                                        panelWidth: 500,
+                                        panelHeight: 400,
+                                        editType: 0,
+                                        modelNo: -1,
+                                        editModeH: json_h,
+                                        showEdit: false,
+                                        param: {
+                                            titles: [{
+                                                is_func: false,
+                                                name: "no",
+                                                ui_title: "No",
+                                                ui_type: 10,
+                                                ui_width: 50,
+                                                ui_visible: true,
+                                                ui_readonly: true,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "name",
+                                                ui_title: "Name",
+                                                ui_type: 2,
+                                                ui_width: 180,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "describe",
+                                                ui_title: "Describe",
+                                                ui_type: 2,
+                                                ui_width: 110,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "remark",
+                                                ui_title: "Remark",
+                                                ui_type: 5,
+                                                ui_width: 100,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {
+                                                    editModeW: 320,
+                                                    editModeH: 200,
+                                                    types: [
+                                                        "base"
+                                                    ],
+                                                    textbox: true
+                                                }
+                                            }
+                                            ],
+                                            "model": []
+                                        }
+                                    }
+                                };
+                            case 3:
+                                return jsonTitles_3("json", "json", json_h);
+                            case 4:
+                            case 9:
+                                return {
+                                    name: "json",
+                                    ui_title: "json",
+                                    ui_type: 15,
+                                    ui_width: 80,
+                                    ui_readonly: false,
+                                    ui_visible: true,
+                                    ui_mask: {
+                                        blank: false,
+                                        textbox: false,
+                                        min: 1,
+                                        panelWidth: 500,
+                                        panelHeight: 400,
+                                        editType: 0,
+                                        modelNo: -1,
+                                        editModeH: json_h,
+                                        showEdit: false,
+                                        param: {
+                                            titles: [{
+                                                is_func: false,
+                                                name: "code",
+                                                ui_title: "Code",
+                                                ui_type: 2,
+                                                ui_width: 120,
+                                                ui_visible: true,
+                                                ui_readonly: true,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "name",
+                                                ui_title: "Name",
+                                                ui_type: 2,
+                                                ui_width: 180,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {}
+                                            },
+                                            {
+                                                is_func: false,
+                                                name: "describe",
+                                                ui_title: "Describe",
+                                                ui_type: 2,
+                                                ui_width: 193,
+                                                ui_visible: true,
+                                                ui_readonly: false,
+                                                ui_mask: {}
+                                            }
+                                            ],
+                                            "model": []
+                                        }
+                                    }
+                                };
+
+                            default:
+                                return {
+                                    name: "json",
+                                    ui_title: "json",
+                                    ui_type: 1,
+                                    ui_mask: {
+                                        default: null
+                                    },
+                                    ui_readonly: false,
+                                    ui_visible: true,
+                                    ui_width: 80
+                                };
+                        }
+                    })
+
+                    const saveEnabled = ref(false);
+                    const clearEnabled = ref(false);
+                    const clearAllEnabled = ref(false);
+
+                    const getDefaultValue = async () => {
+                        // 递归处理子标题
+                        const defaultTitles = (_titles, _trans) => {
+                            let _json = [];
+
+                            for (let i = 0; i < _titles?.length || 0; i++) {
+                                const row = _titles[i];
+
+                                // 解析ui_mask
+                                let tmp = row.ui_mask || {};
+                                if (typeof tmp === 'string') {
+                                    try {
+                                        tmp = JSON.parse(tmp);
+                                    } catch (error) {
+                                        console.log(error);
+                                    }
+                                }
+
+                                let ui_type = row.ui_type || 1;
+                                let ui_mask = {
+                                    placeholder: tmp.placeholder || null,
+                                    group: null,
+                                };
+
+                                switch (ui_type) {
+                                    case 6:
+                                        ui_mask.lists = tmp.lists || [];
+                                        break;
+                                    case 8:
+                                        if (tmp.level === 1) {
+                                            ui_mask.trees = tmp.trees || [];
+                                        } else {
+                                            ui_type = 1;
+                                        }
+                                        break;
+                                    case 15:
+                                    case 16:
+                                    case 17:
+                                        const subTitles = tmp.param?.titles || [];
+                                        let subTrans = [];
+                                        const transItem = _trans?.find((item) => item.name == row.name);
+                                        if (transItem != null) {
+                                            subTrans = transItem.ui_mask?.param || [];
+                                        }
+                                        ui_mask.param = defaultTitles(subTitles, subTrans);
+
+                                        break;
+
+                                    default:
+                                        break;
+                                }
+
+                                let title = {
+                                    name: row.name,
+                                    ui_type: ui_type,
+                                    ui_title: row.ui_title || row.name,
+                                    ui_mask: ui_mask
+                                }
+
+                                if (_trans?.length > 0) {
+                                    const transItem = _trans?.find((item) => item.name == row.name);
+                                    if (transItem != null) {
+                                        title.ui_title = transItem.ui_title;
+                                        title.ui_mask.placeholder = transItem.ui_mask?.placeholder || null;
+                                        title.ui_mask.group = transItem.ui_mask?.group || null;
+
+                                        switch (title.ui_type) {
+                                            case 6:
+                                                for (let j = 0; j < title.ui_mask.lists?.length || 0; j++) {
+                                                    const item = (transItem.ui_mask?.lists || []).find((s) => s.no == title.ui_mask.lists[j].no);
+                                                    if (item != null) {
+                                                        title.ui_mask.lists[j].name = item.name;
+                                                    }
+                                                }
+                                                break;
+                                            case 8:
+                                                const replaceitem = (trees, up_trees) => {
+                                                    for (let j = 0; j < trees?.length || 0; j++) {
+                                                        const item = trees[j];
+                                                        const up_item = up_trees.find((s) => s.no == item.no);
+                                                        if (up_item != null) {
+                                                            item.name = up_item.name;
+                                                            if (item.subs?.length > 0 && up_item.subs?.length > 0) {
+                                                                replaceitem(item.subs, up_item.subs);
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                if (title.ui_mask.trees?.length > 0 && (transItem.ui_mask?.trees || []).length > 0) {
+                                                    replaceitem(title.ui_mask.trees, transItem.ui_mask.trees || []);
+                                                }
+                                                break;
+                                            default:
+                                                break;
+                                        }
+                                    }
+                                }
+
+                                if (title.ui_mask.placeholder === null || title.ui_mask.placeholder === "") {
+                                    delete title.ui_mask.placeholder;
+                                }
+                                if (title.ui_mask.group === null || title.ui_mask.group === "") {
+                                    delete title.ui_mask.group;
+                                }
+
+                                _json.push(title);
+                            }
+
+                            return _json;
+                        }
+
+
+                        let hasRow = false;
+
+                        let json = [];
+
+                        // 翻译信息
+                        let transRes = await yqData.transGet({
+                            dbname: mainParams.dbname,
+                            type: row.value.type,
+                            lang: row.value.lang,
+                            name: row.value.name
+                        });
+                        if (transRes.error != 0) {
+                            YqMessage.error(transRes.msg);
+                            return [];
+                        }
+                        console.log("transRes:", JSON.stringify(transRes, null, 2));
+
+                        switch (mainParams.type) {
+                            case 1:
+                                //dbApps
+                                let appsRes = await yqData.dbApps({
+                                    appnos: "*"
+                                });
+                                if (appsRes.error != 0) {
+                                    YqMessage.error(appsRes.info);
+                                    return [];
+                                }
+                                // console.log("appsRes:", JSON.stringify(appsRes, null, 2));
+
+
+                                for (let i = 0; i < appsRes.rows?.length || 0; i++) {
+                                    const row = appsRes.rows[i];
+                                    let app = {
+                                        no: row.no,
+                                        name: row.name,
+                                        describe: row.describe,
+                                        remark: row.remark,
+                                    }
+
+                                    if (transRes.trans?.length > 0) {
+                                        const transItem = transRes.trans?.find((item) => item.no == row.no);
+                                        if (transItem != null) {
+                                            app.name = transItem.name;
+                                            app.describe = transItem.describe;
+                                            app.remark = transItem.remark;
+                                        }
+                                    }
+
+                                    json.push(app);
+                                }
+
+                                break;
+                            case 2:
+                                let names = mainParams.name.split(":");
+                                if (names.length != 2) {
+                                    YqMessage.error({
+                                        message: "name格式错误",
+                                        labelDict: {
+                                            "zh-CN": { message: "name格式错误" },
+                                            "en": { message: "Invalid name format" },
+                                        },
+                                    });
+                                    return [];
+                                }
+
+                                let appno = parseInt(names[1]);
+                                let menusRes = await yqData.dbMenus({
+                                    appno: appno
+                                });
+                                if (menusRes.error != 0) {
+                                    YqMessage.error(menusRes.msg);
+                                    return [];
+                                }
+
+                                // 递归获取所有子菜单
+                                const rows = []
+                                const getsubs = (pid) => {
+                                    let subs = [];
+                                    for (let i = 0; i < menusRes.rows?.length || 0; i++) {
+                                        const row = menusRes.rows[i];
+                                        if (pid === null) {
+                                            if (row.pid === null || row.pid === undefined) {
+                                                rows.push(row);
+                                                getsubs(row.sid);
+                                            }
+                                        } else if (row.pid === pid) {
+                                            rows.push(row);
+                                            getsubs(row.sid);
+                                        }
+                                    }
+                                }
+                                getsubs(null);
+
+                                //console.log("menusRes:", rows);
+
+                                for (let i = 0; i < rows?.length || 0; i++) {
+                                    const row = rows[i];
+                                    if (!(row.menu_type === 0 || row.menu_type === 1 || row.menu_type === 2)) {
+                                        continue;
+                                    }
+
+                                    let menu = {
+                                        no: row.no,
+                                        name: row.name,
+                                        describe: row.describe,
+                                        remark: row.remark,
+                                    }
+
+                                    if (transRes.trans?.length > 0) {
+                                        const transItem = transRes.trans?.find((item) => item.no == row.no);
+                                        if (transItem != null) {
+                                            menu.name = transItem.name;
+                                            menu.describe = transItem.describe;
+                                            menu.remark = transItem.remark;
+                                        }
+                                    }
+
+                                    json.push(menu);
+                                }
+
+                                break;
+                            case 3:
+                                let titlesRes = await yqData.tbTitle({
+                                    dbname: mainParams.dbname,
+                                    tbname: mainParams.name,
+                                    tempno: '-1',
+                                });
+
+                                console.log("titlesRes:", titlesRes);
+                                if (titlesRes.error != 0) {
+                                    YqMessage.error(titlesRes.msg);
+                                    return [];
+                                }
+
+                                json = defaultTitles(titlesRes.titles, transRes.trans);
+
+                                console.log("json:", json);
+
+                                break;
+
+                            case 4:
+                            case 9:
+                                const paramsRes = await yqData.params({
+                                    type: mainParams.type,
+                                    name: mainParams.name
+                                });
+                                console.log("paramsRes:", paramsRes);
+                                if (paramsRes.error != 0) {
+                                    YqMessage.error(paramsRes.info);
+                                    return [];
+                                }
+
+                                for (let j = 0; j < paramsRes.params?.length || 0; j++) {
+                                    const row = paramsRes.params[j];
+                                    if (transRes.trans?.length > 0) {
+                                        const transItem = transRes.trans?.find((item) => item.code == row.code);
+                                        if (transItem != null) {
+                                            if (!(transItem.name === null || transItem.name === "")) {
+                                                row.name = transItem.name;
+                                            }
+                                            if (!(transItem.describe === null || transItem.describe === "")) {
+                                                row.describe = transItem.describe;
+                                            }
+                                        }
+                                    }
+
+                                    json.push(row);
+                                }
+
+                                break;
+
+                            default:
+                        }
+
+                        if (transRes.trans?.length > 0) {
+                            hasRow = true;
+                        }
+
+                        //console.log("json:", json);
+
+                        let numRes = await yqData.transNumber({
+                            dbname: mainParams.dbname,
+                            type: row.value.type,
+                            name: row.value.name
+                        });
+                        if (numRes.error != 0) {
+                            YqMessage.error(numRes.msg);
+                            return [];
+                        }
+
+                        //console.log("numRes:", JSON.stringify(numRes, null, 2));
+                        clearEnabled.value = hasRow;
+                        clearAllEnabled.value = numRes.num > 0;
+                        saveEnabled.value = true;
+
+                        return json;
+                    }
+
+                    const formProps = computed(() => {
+                        return {
+                            titles: titles.value,
+                            model: model.value,
+                            row: row.value,
+                            isEdit: true,
+                            "onUpdate:row": (newRow) => {
+                                row.value = newRow;
+                            },
+                            "onUpdate:value": ({ name, value }) => {
+                                if (name == "lang") {
+                                    loadTransData();
+                                }
+                            }
+                        }
+                    })
+
+                    const menuRef = ref(null);
+                    const menuProps = ref({
+                        type: 'inline',
+                        menuItems: [
+                            {
+                                name: "save",
+                                label: "save",
+                                toptip: "save",
+                                icon: "fa fa-save",
+                                type: "primary",
+                                disabled: () => {
+                                    return !saveEnabled.value
+                                },
+                                click: async () => {
+                                    EditDisabled();
+                                    let transRes = await yqData.transSave({
+                                        dbname: mainParams.dbname,
+                                        type: row.value.type,
+                                        lang: row.value.lang,
+                                        name: row.value.name,
+                                        json: JSON.stringify(row.value.json),
+                                    });
+                                    if (transRes.error != 0) {
+                                        YqMessage.error(transRes.msg);
+                                        return;
+                                    }
+                                    YqMessage.success({
+                                        message: "save success",
+                                        labelDict: {
+                                            "zh-CN": { message: "保存成功" },
+                                            "en": { message: "Save success" },
+                                        },
+                                    });
+                                    await loadTransData();
+                                }
+                            }, {
+                                divided: true
+                            }, {
+                                name: "clear",
+                                label: "clear",
+                                toptip: "clear",
+                                icon: "fa fa-times",
+                                type: "primary",
+                                disabled: () => {
+                                    return !clearEnabled.value
+                                },
+                                click: async () => {
+                                    try {
+                                        await YqMessageBox.confirm({
+                                            el: event.target,
+                                            top: 35,
+                                            message: '您确定要清空所有翻译吗？',
+                                            title: '确认操作',
+                                            type: 'warning',
+                                            labelDict: {
+                                                "en": {
+                                                    title: 'Confirm Clear',
+                                                    message: 'Are you sure you want to clear translations?',
+                                                    cancelButtonText: 'Cancel',
+                                                    confirmButtonText: 'Confirm'
+                                                }
+                                            }
+                                        });
+                                        EditDisabled();
+                                        let transRes = await yqData.transClear({
+                                            dbname: mainParams.dbname,
+                                            type: row.value.type,
+                                            lang: row.value.lang,
+                                            name: row.value.name
+                                        });
+                                        if (transRes.error != 0) {
+                                            YqMessage.error(transRes.info);
+                                        } else {
+                                            YqMessage.success({
+                                                message: "clear success",
+                                                labelDict: {
+                                                    "zh-CN": { message: "清理成功" },
+                                                    "en": { message: "Clear success" },
+                                                },
+                                            });
+
+                                            if (parentParams.reload) {
+                                                await parentParams.reload();
+                                                YqWindowApi.close(frameId, isParent);
+                                                return;
+                                            }
+                                        }
+                                        await loadTransData();
+                                    }
+                                    catch (ex) { }
+                                }
+                            }, {
+                                divided: true
+                            }, {
+                                name: "clearall",
+                                label: "clear all",
+                                toptip: "clear all",
+                                icon: "fa fa-trash",
+                                type: "primary",
+                                disabled: () => {
+                                    return !clearAllEnabled.value
+                                },
+                                click: async (event) => {
+                                    try {
+                                        await YqMessageBox.confirm({
+                                            el: event.target,
+                                            top: 35,
+                                            message: '您确定要清空所有翻译吗？',
+                                            title: '确认操作',
+                                            type: 'warning',
+                                            labelDict: {
+                                                "en": {
+                                                    title: 'Confirm Clear All',
+                                                    message: 'Are you sure you want to clear all translations?',
+                                                    cancelButtonText: 'Cancel',
+                                                    confirmButtonText: 'Confirm'
+                                                }
+                                            }
+                                        });
+
+                                        EditDisabled();
+                                        let transRes = await yqData.transClearAll({
+                                            dbname: mainParams.dbname,
+                                            type: row.value.type,
+                                            name: row.value.name
+                                        });
+                                        if (transRes.error != 0) {
+                                            YqMessage.error(transRes.info);
+                                        } else {
+                                            YqMessage.success({
+                                                message: "clearAll success",
+                                                labelDict: {
+                                                    "zh-CN": { message: "全部清理成功" },
+                                                    "en": { message: "Clear all success" },
+                                                },
+                                            });
+
+                                            if (parentParams.reload) {
+                                                await parentParams.reload();
+                                                YqWindowApi.close(frameId, isParent);
+                                                return;
+                                            }
+                                        }
+                                        await loadTransData();
+                                    }
+                                    catch (ex) { }
+                                }
+                            }
+                        ],
+                        mini: false,
+                    });
+                    const menuTrans = ref({
+                        "save": {
+                            "zh-CN": {
+                                "label": "保存",
+                                "toptip": "保存"
+                            },
+
+                            "en": {
+                                "label": "save",
+                                "toptip": "save"
+                            }
+                        },
+                        "clear":
+                        {
+                            "zh-CN": {
+                                "label": "清空",
+                                "toptip": "清空"
+                            },
+                            "en": {
+                                "label": "clear",
+                                "toptip": "clear"
+                            }
+                        },
+                        "clearall":
+                        {
+                            "zh-CN": {
+                                "label": "清空所有",
+                                "toptip": "清空所有"
+                            },
+                            "en": {
+                                "label": "clearall",
+                                "toptip": "clearall"
+                            }
+                        },
+                    });
+
+                    const EditDisabled = () => {
+                        saveEnabled.value = false;
+                        clearEnabled.value = false;
+                        clearAllEnabled.value = false;
+                    };
+
+                    // 加载翻译数据
+                    const loadTransData = async () => {
+                        EditDisabled();
+
+                        const jsonData = await getDefaultValue();
+
+                        editRef.value.setRow({
+                            row: {
+                                ...row.value,
+                                json: jsonData,
+                            },
+                        });
+                    }
+
+                    onMounted(async () => {
+                        const opts = {
+                            dbname: mainParams.dbname,
+                            tbname: "sys_trans",
+                            tempno: -1
+                        };
+
+                        let res = await yqData.tbTitle(opts, false);
+                        if (res.error != 0) {
+                            YqMessage.error(res.msg);
+                            return;
+                        }
+                        //console.log("titles:", JSON.stringify(res.titles, null, 2));
+
+                        const tmp_titles = [...res.titles];
+                        for (let i = 0; i < tmp_titles.length; i++) {
+                            if (tmp_titles[i].name == "json") {
+                                tmp_titles[i] = getJsonTitles.value;
+                                break;
+                            }
+                        }
+
+                        titles.value = await yqUiPub.formatUiTitles(tmp_titles, "");;
+
+                        console.log("titles.value:", titles.value);
+
+                        await loadTransData();
+                    });
+
+                    return {
+                        editRef,
+                        formProps,
+                        menuRef,
+                        menuProps,
+                        menuTrans,
+                    }
+                }
+            })
+            app.use(ElementPlus, {
+
+            });
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

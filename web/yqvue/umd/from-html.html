@@ -1,0 +1,188 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Document>from-html</title>
+    <!-- 引入基础样式 -->
+    <style>
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 左右布局容器 */
+        .layout-container {
+            display: flex;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        /* 左侧编辑器容器 */
+        .editor-container {
+            flex: 1;
+            min-width: 400px;
+        }
+
+        /* 右侧内容容器 */
+        .content-container {
+            flex: 1;
+            min-width: 400px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        /* 内容容器标题样式 */
+        .content-container h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #303133;
+        }
+
+        /* 内容容器代码块样式 */
+        .content-container pre {
+            background-color: #f5f7fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border: 1px solid #e4e7ed;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h2>HTML 测试</h2>
+        <!-- 左右布局容器 -->
+        <div class="layout-container">
+            <!-- 左侧：编辑器 -->
+            <div class="editor-container">
+                <div style="margin-bottom: 15px; padding: 10px; background-color: #f0f2f5; border-radius: 4px;">
+                    <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="可编辑"
+                        inactive-text="只读模式"></el-switch> <br>
+                    <el-switch v-model="directup" :active-value="true" :inactive-value="false" active-text="直接上传"
+                        inactive-text="选择后不上传"></el-switch> |
+                    <el-switch v-model="chunk" :active-value="true" :inactive-value="false" active-text="分片上传"
+                        inactive-text="普通上传" style="margin-right: 20px;"></el-switch>
+                </div>
+                <div style="width: 350px;padding-bottom: 10px;">
+                    <yq-rich-text :type="type" v-model:value="htmlValue" :storage-type="storageType" :storage-name="storageName"
+                        :accept="accept" :chunk="chunk" :directup="directup" :is-edit="isEdit" :statusbar="statusbar">
+                    </yq-rich-text>
+                </div>
+                <!-- 使用 YqHtml 组件 -->
+                <div style="height: calc(100vh - 240px);">
+                    <yq-html v-model:value="htmlValue" :storage-type="storageType" :storage-name="storageName"
+                        :accept="accept" :chunk="chunk" :directup="directup" :is-edit="isEdit" :statusbar="statusbar">
+                    </yq-html>
+                </div>
+            </div>
+
+            <!-- 右侧：内容预览 -->
+            <div class="content-container">
+                <h2>编辑器内容:</h2>
+                <pre>{{ htmlValue.html }}</pre>
+                <h2>文件列表:</h2>
+                <pre>{{ JSON.stringify(htmlValue.files || [], null, 2) }}</pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, watch } = Vue;
+        const { initTheme, YqHtml, YqRichText } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqHtml,
+                YqRichText
+            },
+            data() {
+                return {
+                    type: 1,
+                    storageType: 2,
+                    storageName: "sqlite",
+                    accept: "image/*",
+                    chunk: false,
+                    directup: false,
+                    isEdit: true,
+                    statusbar:false,
+                }
+            },
+            setup() {
+                // 初始化默认内容
+                const defaultContent = `<h1>Hello HTML!</h1>
+<img src="@sqlite_1c9998aa-09ad-11f1-b463-9010576ae8bc" alt="签名.png">
+<br>
+<img src="^sqlite_1c9e6eec-09ad-11f1-b463-9010576ae8bc" alt="证件照.jpg">
+<p>这是一个使用 TinyMCE 创建的 HTML 编辑器示例。</p>
+<h2>特性</h2>
+<ul>
+<li>支持 HTML 语法</li>
+<li>实时预览</li>
+<li>工具栏快捷操作</li>
+<li>图片上传</li>
+<li>附件上传</li>
+</ul>
+<h2>如何使用</h2>
+<ol>
+<li>在编辑器中输入 HTML 内容</li>
+<li>使用工具栏进行格式调整</li>
+<li>点击上传图片按钮添加图片</li>
+<li>点击上传附件按钮添加附件</li>
+</ol>`;
+                const htmlValue = ref({
+                    html: defaultContent, files: [
+                        {
+                            "sto_type": 2,
+                            "sto_name": "sqlite",
+                            "name": "签名.png",
+                            "type": "image/png",
+                            "size": 10529,
+                            "sid": "1c9998aa-09ad-11f1-b463-9010576ae8bc"
+                        },
+                        {
+                            "sto_type": 2,
+                            "sto_name": "sqlite",
+                            "name": "证件照.jpg",
+                            "type": "image/jpeg",
+                            "size": 41270,
+                            "sid": "1c9e6eec-09ad-11f1-b463-9010576ae8bc"
+                        }
+                    ]
+                })
+
+                watch(() => htmlValue.value, (newVal) => {
+                    console.log("base update:", newVal)
+                }, { immediate: true })
+
+                return {
+                    htmlValue
+                }
+            }
+        })
+            .use(ElementPlus)
+            .mount('#app')
+    </script>
+
+</body>
+
+</html>

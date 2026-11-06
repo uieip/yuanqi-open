@@ -1,0 +1,127 @@
+﻿<uieip type="page" value="base" timeout="5000"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>数据编辑测试</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="app">
+        <p>当前url: {{ currentUrl }}</p>
+        <p>当前iframe id: {{ frameId }}； parent: {{ parent }}； action: {{ action }}</p>
+        <el-button type="primary" @click="saveData">保存</el-button>
+        <yq-edit ref="formEditRef" :is-demo="isDemo" :ajax-url="ajaxUrl" :is-view="isView" :titles="titles"
+            :model="model" v-model:row="row" :key-id="keyId" :is-edit="isEdit" v-model:fkrows="fkrows">
+        </yq-edit>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { ElMessage } = ElementPlus;
+        const { initTheme, YqEdit, YqWindowApi } = YqwinPlus;
+        initTheme();
+
+        window.onload = function () {
+            initApp();
+        }
+
+        function initApp() {
+            // 当前url
+            const currentUrl = window.location.href
+            // 获取url参数 _frameid
+            const urlParams = new URLSearchParams(window.location.search)
+            const frameId = urlParams?.get('_frameid') || ''
+            const isParent = true
+
+            let params = YqWindowApi.getParams(frameId, isParent);
+
+
+            console.log("getParentParams", params);
+
+            const app = createApp({
+                components: {
+                    'yq-edit': YqEdit
+                },
+                data() {
+                    return {
+                        action: params.action || "edit",
+                        currentUrl: currentUrl || '',
+                        frameId: frameId || '',
+                        parent: isParent,
+
+                        isView: false,
+                        titles: params.titles || [],
+                        model: params.model || '',
+                        keyId: 'sid',
+                        fkrows: params.row.fkrows || [],
+                    }
+                },
+                setup() {
+                    const formEditRef = ref(null);
+                    const row = ref(params.row || {});
+                    const isEdit = ref(params.isEdit ?? true);
+                    return {
+                        formEditRef,
+                        row,
+                        isEdit,
+                    }
+                },
+                computed: {
+                    editUrl() {
+                        return ""
+                    }
+                },
+                methods: {
+                    hello() {
+                        console.log("hello")
+                    },
+                    async saveData() {
+                        if (params.checkBlank && this.formEditRef.error()) {
+                            ElMessage({
+                                message: '请填写完整信息',
+                                type: 'error'
+                            })
+                            return;
+                        }
+
+                        let row = this.formEditRef.getRow()
+                        const res = await params.save([{
+                            action: params.action,
+                            row: row
+                        }])
+
+                        if (res.close) {
+                            return;
+                        }
+
+                        if (res.error === 0 && res.rows.length > 0 && res.rows[0].error === 0) {
+                            params.action = "upp"
+                            row[this.keyId] = res.rows[0].sid;
+                            row.value = row;
+                        } else {
+                            ElMessage({
+                                message: '保存失败' + (res.error !== 0 ? res.info : (res.rows[0].error !== 0 ? res.rows[0].info : "未知错误")),
+                                type: 'error'
+                            })
+                        }
+                        //console.log(res)
+                    }
+                }
+            })
+            app.use(ElementPlus)
+            app.mount('#app')
+        }
+    </script>
+</body>
+
+</html>

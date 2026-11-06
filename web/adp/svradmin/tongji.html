@@ -1,0 +1,129 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>统计管理</title>
+    <style>
+        /* 添加 v-cloak 样式 */
+        [v-cloak] {
+            display: none;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        .el-header {
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;">
+    <div id="app">
+        <yq-container style="height: 100vh;" header-height="50px">
+            <yq-con-header style="padding: 5px;margin: 0; display: flex; align-items: center;">
+                <span style="font-size: 14px; padding-right: 5px;">主信息</span>
+                <yq-combogrid ref="mainRef" v-bind="mainProps" style="width: 300px;"></yq-combogrid>
+            </yq-con-header>
+            <yq-con-main style="padding: 0;margin: 5px;overflow: hidden;">
+
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed, h } = Vue;
+        const { initTheme, YqCombogrid, yqData, YqWindowApi, YqContainer, YqConHeader, YqConMain   } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            main: {
+                tbname: "tj_main",
+                keyId: "sid",
+                displayMember: "{describe}[{name}]",
+                order: "queue",
+                titles: [],
+                tempno: 1,
+                loadData: false,
+                isEdit: true,
+                isSeek: false,
+                isSimple: false,
+                isPage: false,
+                move: true,
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: 2,
+
+                linkField: ["name"],
+                
+                popoverModeW: 500,
+                popoverModeH: 400,
+
+                autoSelect: true,
+            },
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqCombogrid,
+                    YqContainer,
+                    YqConHeader,
+                    YqConMain
+                },
+                setup() {
+                    const dbname = ref("yqbase");
+                    const mainRef = ref(null);
+                    const mainProps = computed(() => ({
+                        ...mainParams.main,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        loadData: false,
+                    }));
+
+                    onMounted(async () => {
+                        const dbList = await yqData.dbList();
+                        if (dbList.error == 0) {
+                            dbname.value = dbList.rows[0].name;
+
+                            await mainRef.value?.loadData();
+                        } else {
+                            console.error(dbList);
+                        }
+                    });
+
+                    return {
+                        mainRef,
+                        mainProps,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+
+            window.app = app;
+            window.YqwinPlus = {
+                YqWindowApi: YqWindowApi,
+            };
+        }
+    </script>
+</body>
+
+</html>

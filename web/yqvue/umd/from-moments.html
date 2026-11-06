@@ -1,0 +1,175 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqMoments 朋友圈编辑器测试</title>
+    <style>
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-panel {
+            padding: 16px;
+            background-color: #f0f2f5;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-panel .el-switch {
+            margin-right: 8px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            min-height: 500px;
+        }
+
+        .editor-container {
+            flex: 1;
+            min-width: 400px;
+            max-width: 600px;
+        }
+
+        .data-container {
+            flex: 1;
+            min-width: 350px;
+            background-color: #ffffff;
+            padding: 16px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-container h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #303133;
+        }
+
+        .data-container pre {
+            background-color: #f5f7fa;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #e4e7ed;
+            font-size: 13px;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>朋友圈编辑器 YqMoments 测试</h1>
+
+        <div class="control-panel">
+            <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑模式"
+                inactive-text="查看模式"></el-switch>
+
+            <el-switch v-model="directup" :active-value="true" :inactive-value="false" active-text="直接上传"
+                inactive-text="选择后上传"></el-switch>
+
+            <el-switch v-model="chunk" :active-value="true" :inactive-value="false" active-text="分片上传"
+                inactive-text="普通上传"></el-switch>
+
+            <el-button type="primary" size="small" @click="setSampleData">加载示例数据</el-button>
+            <el-button type="warning" size="small" @click="clearData">清空数据</el-button>
+        </div>
+
+        <div class="main-container">
+            <div class="editor-container">
+                <yq-moments ref="momentsRef" :storage-type="storageType" :storage-name="storageName" :accept="accept"
+                    :chunk="chunk" :directup="directup" :is-edit="isEdit" v-model:value="momentsValue">
+                </yq-moments>
+            </div>
+
+            <div class="data-container">
+                <h3>编辑器数据 (JSON):</h3>
+                <pre>{{ momentsValue ? JSON.stringify(momentsValue, null, 2) : '(空)' }}</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqMoments } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMoments
+            },
+            setup() {
+                const isEdit = ref(true)
+                const directup = ref(false)
+                const chunk = ref(false)
+                const storageType = ref(2)
+                const storageName = ref('sqlite')
+                const accept = ref('image/*')
+
+                const momentsValue = ref(null)
+                const momentsRef = ref(null)
+
+                const sampleData = {
+                    "text": "今天天气不错，出去走走！🌞",
+                    "files": [
+                        {
+                            "sto_type": 2,
+                            "sto_name": "sqlite",
+                            "name": "知识库.png",
+                            "size": 2828311,
+                            "type": "image/png",
+                            "sid": "e7c5bb7f-7acd-11f1-a366-00155d96c0e3"
+                        }
+                    ]
+                }
+
+                const setSampleData = () => {
+                    momentsValue.value = { ...sampleData }
+                }
+
+                const clearData = () => {
+                    momentsValue.value = null
+                }
+
+                return {
+                    isEdit,
+                    directup,
+                    chunk,
+                    storageType,
+                    storageName,
+                    accept,
+                    momentsValue,
+                    momentsRef,
+                    setSampleData,
+                    clearData
+                }
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

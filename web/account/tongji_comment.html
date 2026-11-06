@@ -1,0 +1,275 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <!-- 主题引导：首屏绘制前同步应用 data-theme 与临界底色，防止主题闪烁 -->
+    <script src="/scripts/theme-boot.js"></script>
+    <!-- Element Plus 暗色变量：html.dark 由 src/theme.ts 按主题切换时挂载 -->
+    <link rel="stylesheet" href="/scripts/vue/element-plus/dark/css-vars.css">
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding: 2px; ">
+        <yq-data-grid ref="mRef" v-bind="mProps"></yq-data-grid>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed, h } = Vue;
+        const { initTheme, YqMessage, YqWindowApi, YqDataGrid, YqTongjiPub, YqMessageBox  } = YqwinPlus;
+        initTheme();
+ 
+        <uieip type="tmpl" value="model.params"></uieip>
+
+            let mainParams = {
+            m_tb: _tb
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const mRef = ref(null);
+                    const selectedRow = ref(null);
+                    const mProps = computed(() => ({
+                        ...mainParams.m_tb,
+                        menuType: 3,
+                        loadTitles: false,
+                        loadData: true,
+                        btnMini: false,
+                        dbClickEdit: false,
+                        editLinks: [
+                            {
+                                name: "del",
+                                label: "删除评论",
+                                toptip: "删除评论",
+                                icon: "fa fa-times",
+                                type: "danger",
+                                disabled: () => {
+                                    if (!selectedRow.value) {
+                                        return true;
+                                    }
+                                    return selectedRow.value.isdel === true;
+                                },
+                                click: async (event) => {
+                                    try {
+                                        await YqMessageBox.confirm({
+                                            message: '您确定要删除评论吗，删除后将无法恢复不了，是否继续删除？',
+                                            title: '确认操作',
+                                            type: 'warning',
+                                            el: event.target,
+                                            height: 150,
+                                        });
+                                        //console.log("confirm", "删除评论");
+                                        let opt = {
+                                            "action": "uncomment",
+                                            "data": {
+                                                "sid": selectedRow.value.sid,
+                                            },
+                                            "url": selectedRow.value.url
+                                        };
+                                        const res = await YqTongjiPub.submit(opt, "");
+                                        if (res.error !== 0) {
+                                            YqMessage.error(res.info);
+                                            return;
+                                        }
+
+                                        await mRef.value.refreshData();
+                                        YqMessage.success({
+                                            message: "删除评论成功",
+                                            labelDict: {
+                                                "zh-CN": { message: "删除评论成功" },
+                                                "en": { message: "Delete comment succeeded" },
+                                            },
+                                        });
+                                    } catch (err) {
+                                        if (err === "cancel") {
+                                            return;
+                                        }
+                                        if (err.message) {
+                                            YqMessage.error(err.message);
+                                        } else {
+                                            YqMessage.error({
+                                                message: "删除评论失败",
+                                                labelDict: {
+                                                    "zh-CN": { message: "删除评论失败" },
+                                                    "en": { message: "Delete comment failed" },
+                                                },
+                                            });
+                                        }
+                                    }
+                                }
+                            }, {
+                                divided: true,
+                            }, {
+                                name: "upp",
+                                label: "修改评论",
+                                toptip: "修改评论",
+                                icon: "fa fa-pencil-square",
+                                type: "primary",
+                                disabled: () => {
+                                    if (!selectedRow.value) {
+                                        return true;
+                                    }
+                                    return selectedRow.value.isdel === true;
+                                },
+                                click: async () => {
+                                    const opt = {
+                                        action: "upcomment",
+                                        data: {
+                                            sid: selectedRow.value.sid,
+                                            comment: selectedRow.value.comment,
+                                        },
+                                        url: selectedRow.value.url,
+                                        title: selectedRow.value.title,
+                                        tid: selectedRow.value.tid,
+                                    };
+                                    if (selectedRow.value.tid) {
+                                        opt.tid = selectedRow.value.tid;
+                                    }
+                                    if (selectedRow.value.cid) {
+                                        opt.data.cid = selectedRow.value.cid;
+                                    }
+                                    const el = mRef.value.selectEl();
+                                    const res = await YqTongjiPub.tongji(opt, "", el);
+
+                                    //console.log("修改评论result", res);
+                                    if (res.error !== 0) {
+                                        YqMessage.error(res.info);
+                                        return;
+                                    }
+
+                                    await mRef.value.uppRow({ sid: selectedRow.value.sid, row: { ...selectedRow.value, ...res.row } });
+                                    YqMessage.success({
+                                        message: "修改评论成功",
+                                        labelDict: {
+                                            "zh-CN": { message: "修改评论成功" },
+                                            "en": { message: "Comment updated succeeded" },
+                                        },
+                                    });
+                                }
+                            }
+                        ],
+                        labelDict: {
+                            del: {
+                                "zh-CN": {
+                                    label: "删除评论",
+                                    toptip: "删除评论",
+                                },
+                                "en": {
+                                    label: "Del Comment",
+                                    toptip: "Del Comment",
+                                },
+                            },
+                            upp: {
+                                "zh-CN": {
+                                    label: "修改评论",
+                                    toptip: "修改评论",
+                                },
+                                "en": {
+                                    label: "Up Comment",
+                                    toptip: "Up Comment",
+                                },
+                            },
+                        },
+                        beforeSetTitles: async (titles) => {
+                            //console.log("beforeSetTitles", titles);
+                            let index = titles.findIndex(item => item.name === "cid");
+                            if (index !== -1) {
+                                titles[index].is_func = true;
+                                titles[index].order = null;
+                                titles[index].align = "center";
+                                titles[index].func = (row, value) => {
+                                    if (value) {
+                                        return h("span", {}, "☑");
+                                    }
+                                    return "";
+                                }
+                            }
+                            index = titles.findIndex(item => item.name === "url");
+                            if (index !== -1) {
+                                titles[index].is_func = true;
+                                titles[index].align = "left";
+                                titles[index].func = (row, value) => {
+                                    return h("a", { href: value, target: "_blank" }, value);
+                                }
+                            }
+                            return titles;
+                        },
+                        beforeSetData: async (rows) => {
+                            //console.log("beforeSetData", rows);
+                            let _rows = [];
+                            for (let row of rows) {
+                                _rows.push({
+                                    url: row.url,
+                                    action: "comment",
+                                    sid: row.sid,
+                                });
+                            }
+                            const res = await YqTongjiPub.infos(_rows, "");
+                            console.log("beforeSetData", rows, res);
+
+                            if (res.error !== 0) {
+                                YqMessage.error(res.info);
+                                return [];
+                            }
+
+                            for (let row of rows) {
+                                let item = res.rows.find(item => item.sid === row.sid);
+                                if (item) {
+                                    if (item.value.data !== undefined) {
+                                        row.isdel = item.value.data.isdel;
+                                        row.comment = item.value.data.comment;
+                                        row.m_time = item.value.data.m_time;
+                                    }
+
+                                    if (item && item.value.s_comment !== undefined) {
+                                        row.isdel = !item.value.s_comment;
+                                    }
+                                }
+                            }
+
+                            return rows;
+                        },
+                        onRowClick: ({ row, index, key }) => {
+                            console.log(row, index, key);
+                            selectedRow.value = row;
+                        }
+                    }));
+
+                    onMounted(async () => {
+                        await mRef.value.initTitles();
+                    });
+
+                    return {
+                        mRef,
+                        mProps
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

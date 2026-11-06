@@ -1,0 +1,246 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqGantt Demo</title>
+  <style>
+    body {
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    #app {
+      margin: 20px;
+    }
+  </style>
+</head>
+
+<body style="height: auto;">
+  <div id="app">
+    <h1>YqGantt Demo</h1>
+    <div style="width: 100%; height: 60vh;">
+      <yq-gantt v-if="showGantt" ref="ganttRef" :data="fData" :person-add="true" person-class="fa fa-pencil-square-o"
+        person-txt="扩展编辑" @person="onPerson">
+      </yq-gantt>
+    </div>
+    <div style="margin: 10px 0;">
+      <input type="button" value="getdata" @click="getdata">
+      <input type="button" value="setdata" @click="setdata">
+      <input type="button" value="Toggle grid" @click="toggleGrid">
+      <input type="button" value="Show grid" @click="toggleGrid2">
+      <input type="button" value="Toggle chart" @click="toggleChart">
+      <input type="button" value="Show chart" @click="toggleChart2">
+      <input type="button" value="readonly" @click="readonly">
+      <input type="button" value="enable" @click="enable2">
+      <input type="button" value="resize" @click="resize">
+      <input type="button" value="destroy" @click="destroy">
+      <input type="button" value="reinit" @click="reinit">
+    </div>
+    <p>getdata 结果：</p>
+    <pre
+      style="height: 25vh; overflow: auto; border: 1px solid #ccc; padding: 8px; font-size: 12px;">{{ output }}</pre>
+  </div>
+
+  <script>
+    const { createApp, ref, nextTick } = Vue;
+    const { initTheme, YqGantt } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      components: {
+        YqGantt
+      },
+      setup() {
+        const ganttRef = ref(null);
+        const showGantt = ref(true);
+        const output = ref('');
+
+        const fData = ref({
+          "data": [
+            {
+              "uid": "111111",
+              "id": 1,
+              "wbscode": "1",
+              "type": 1,
+              "title": "Project #1",
+              "startdate": "2023/08/01",
+              "enddate": "2023/08/11",
+              "progress": "0.00"
+            },
+            {
+              "uid": "222222",
+              "id": 2,
+              "wbscode": "1.1",
+              "type": 2,
+              "parent": 1,
+              "title": "Task #1",
+              "startdate": "2023/08/01",
+              "enddate": "2023/08/08",
+              "progress": "0.50",
+              "users": [
+                "1"
+              ],
+              "usersval": "John"
+            },
+            {
+              "uid": "4mLLi1L2VpV",
+              "id": 3,
+              "wbscode": "1.2",
+              "type": 2,
+              "parent": 1,
+              "title": "Task #2",
+              "startdate": "2023/08/06",
+              "enddate": "2023/08/09",
+              "progress": "0.50",
+              "users": [
+                "2",
+                "3"
+              ],
+              "usersval": "Mike,Anna"
+            },
+            {
+              "uid": "4mLLi1LcXAZ",
+              "id": 4,
+              "wbscode": "1.3",
+              "type": 1,
+              "parent": 1,
+              "title": "Task #3",
+              "startdate": "2023/08/09",
+              "enddate": "2023/08/11",
+              "progress": "0.80"
+            },
+            {
+              "uid": "4mLLi1LKVUK",
+              "id": 5,
+              "wbscode": "1.3.1",
+              "type": 2,
+              "parent": 4,
+              "title": "Task #3.1",
+              "startdate": "2023/08/09",
+              "enddate": "2023/08/11",
+              "progress": "0.20",
+              "users": [
+                "1"
+              ],
+              "usersval": "John"
+            },
+            {
+              "uid": "4mLLi1LneLK",
+              "id": 6,
+              "wbscode": "1.3.2",
+              "type": 3,
+              "parent": 4,
+              "title": "Task #3.2",
+              "startdate": "2023/08/11",
+              "enddate": "2023/08/11"
+            }
+          ],
+          "links": [
+            {
+              "form": "2",
+              "to": "3"
+            },
+            {
+              "form": "3",
+              "to": "5"
+            }
+          ],
+          "user": [
+            {
+              "id": "1",
+              "name": "John"
+            },
+            {
+              "id": "2",
+              "name": "Mike"
+            },
+            {
+              "id": "3",
+              "name": "Anna"
+            }
+          ]
+        });
+
+        function getdata() {
+          fData.value = ganttRef.value.getData();
+          output.value = JSON.stringify(fData.value, null, 2);
+          console.log(output.value);
+        }
+
+        function setdata() {
+          console.log(fData.value);
+          ganttRef.value.setData(fData.value);
+        }
+
+        function toggleGrid() {
+          ganttRef.value.showgrid(false);
+        }
+
+        function toggleGrid2() {
+          ganttRef.value.showgrid(true);
+        }
+
+        function toggleChart() {
+          ganttRef.value.showchart(false);
+        }
+
+        function toggleChart2() {
+          ganttRef.value.showchart(true);
+        }
+
+        function readonly() {
+          ganttRef.value.isEdit(false);
+        }
+
+        function enable2() {
+          ganttRef.value.isEdit(true);
+        }
+
+        function resize() {
+          ganttRef.value.resize({ width: 500, height: 400 });
+        }
+
+        function destroy() {
+          ganttRef.value.destroy();
+        }
+
+        async function reinit() {
+          showGantt.value = false;
+          await nextTick();
+          showGantt.value = true;
+        }
+
+        function onPerson() {
+          console.log('person 扩展编辑');
+        }
+
+        return {
+          ganttRef,
+          showGantt,
+          output,
+          fData,
+          getdata,
+          setdata,
+          toggleGrid,
+          toggleGrid2,
+          toggleChart,
+          toggleChart2,
+          readonly,
+          enable2,
+          resize,
+          destroy,
+          reinit,
+          onPerson
+        };
+      }
+    });
+
+    app.use(ElementPlus);
+
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

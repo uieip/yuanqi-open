@@ -1,0 +1,953 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            margin: 20px;
+        }
+    </style>
+</head>
+
+<body style="height: auto;">
+    <div id="app">
+        <div>
+            <el-switch v-model="isEdit" active-value="true" inactive-value="false" active-text="编辑"
+                inactive-text="不编辑"></el-switch> |
+            <el-switch v-model="isView" active-value="true" inactive-value="false" active-text="label"
+                inactive-text="edit"></el-switch> |
+            titles <el-select v-model="changeTitle" placeholder="请选择" style="width: 120px;" @change="changeTitles">
+                <el-option v-for="item in titles_all" :key="item.name" :label="item.name"
+                    :value="item.value"></el-option>
+            </el-select> |
+            rows <el-select v-model="changeRow" placeholder="请选择" style="width: 120px;" @change="changeRows">
+                <el-option v-for="item in rows_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+            </el-select> |
+            <el-button type="primary" @click="handleGetRow">getRow</el-button>
+            <p>-------------------------------------</p>
+            <el-radio-group v-model="editType" style="margin-bottom: 10px;">
+                <el-radio value="1">属性编辑模式</el-radio>
+                <el-radio value="2">form编辑模式</el-radio>
+            </el-radio-group>
+            <div style="width: 300px;">
+                <yq-attr-text :is-demo="isDemo" v-model:row="row" v-model:fkrows="fkrows" :titles="titles"
+                    :edit-type="editTypeInt" :model="model" :key-id="keyId" :is-edit="isEditBool" :is-view="isViewBool"
+                    :edit-mode-w="450" :edit-mode-h="300" @row-click="handleRowClick">
+                </yq-attr-text>
+            </div>
+            <p>-------------------------------------</p>
+            <div style="height: 50vh;width: 100%;  overflow: auto;">
+                <yq-edit ref="editRef" :is-demo="isDemo" :titles="titles" :model="model" v-model:row="row"
+                    :key-id="keyId" :is-edit="isEditBool" :is-view="isViewBool">
+                </yq-edit>
+            </div>
+            <p>----------------------------------------------------------------------</p>
+            <div>{{row}}</div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, computed } = Vue;
+        const { initTheme, YqEdit, YqAttrText } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqEdit,
+                YqAttrText
+            },
+            data() {
+                return {
+                    isDemo: true,
+                }
+            },
+            setup() {
+                const keyId = ref("sid");
+                const isEdit = ref('true');
+                const isView = ref('false');
+
+                const titles_1 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "lable",
+                        "is_func": false,
+                        "ui_title": "Lable",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": true,
+                        "ui_mask": {
+                            "default": "默认值1"
+                        }
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": true,
+                            "format": ""
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    },
+                    {
+                        "name": "richbox",
+                        "is_func": false,
+                        "ui_title": "Richbox",
+                        "fd_type": "nvarchar",
+                        "length": 2000,
+                        "decimal": 0,
+                        "ui_type": 5,
+                        "ui_width": 190,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": true,
+                            "types": [
+                                "json",
+                                "html",
+                                "js"
+                            ]
+                        },
+                        "group": "group2"
+                    },
+                    {
+                        "name": "combobox",
+                        "is_func": false,
+                        "ui_title": "Combobox",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 6,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": 2,
+                            "blank": true,
+                            "lists": [
+                                {
+                                    "no": 1,
+                                    "name": "111111"
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "222222"
+                                },
+                                {
+                                    "no": 3,
+                                    "name": "333333"
+                                }
+                            ]
+                        },
+                        "group": "group2"
+                    },
+                    {
+                        "name": "foreignkey",
+                        "is_func": false,
+                        "ui_title": "ForeignKey",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 7,
+                        "ui_width": 180,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "dbName": "yqbase",
+                            "tbName": "sys.sys_table",
+                            "tempNo": -1,
+                            "displayType": 1,
+                            "valueMember": "sid",
+                            "displayMember": "textbox",
+                            "isPage": true,
+                            "pageSize": 10,
+                            "addWhere": "",
+                            "order": "textbox",
+                            "panelWidth": 400,
+                            "panelHeight": 260,
+                            "expandMember": null,
+                            "seekNo": -1,
+                            "seekModeW": 800,
+                            "seekModeH": 600
+                        },
+                        "group": "group2"
+                    },
+                    {
+                        "name": "treeselect1",
+                        "is_func": false,
+                        "ui_title": "TreeSelect1",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": [
+                                2,
+                                201,
+                                20101
+                            ],
+                            "blank": false,
+                            "level": 1,
+                            "subfield": "treeselect2",
+                            "trees": [
+                                {
+                                    "no": 1,
+                                    "name": "root1",
+                                    "extend": "扩展",
+                                    "default": true,
+                                    "subs": [
+                                        {
+                                            "no": 101,
+                                            "name": "sub101",
+                                            "subs": [
+                                                {
+                                                    "no": 10101,
+                                                    "name": "三级10101"
+                                                },
+                                                {
+                                                    "no": 10102,
+                                                    "name": "三级10102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 102,
+                                            "name": "sub102",
+                                            "subs": [
+                                                {
+                                                    "no": 10201,
+                                                    "name": "三级10201"
+                                                },
+                                                {
+                                                    "no": 10202,
+                                                    "name": "三级10202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "root2",
+                                    "subs": [
+                                        {
+                                            "no": 201,
+                                            "name": "Sub201",
+                                            "subs": [
+                                                {
+                                                    "no": 20101,
+                                                    "name": "三级20101"
+                                                },
+                                                {
+                                                    "no": 20102,
+                                                    "name": "三级20102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 202,
+                                            "name": "Sub202",
+                                            "subs": [
+                                                {
+                                                    "no": 20201,
+                                                    "name": "三级20201"
+                                                },
+                                                {
+                                                    "no": 20202,
+                                                    "name": "三级20202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "group": "group3"
+                    },
+                    {
+                        "name": "treeselect2",
+                        "is_func": false,
+                        "ui_title": "TreeSelect2",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 2,
+                            "subfield": "treeselect3",
+                            "trees": []
+                        },
+                        "group": "group3"
+                    },
+                    {
+                        "name": "treeselect3",
+                        "is_func": false,
+                        "ui_title": "TreeSelect3",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 3,
+                            "subfield": "",
+                            "trees": []
+                        },
+                        "group": "group3"
+                    }
+                ];
+                const row_1 = {
+                    "sid": "sid-1",
+                    "lable": "Lable-1",
+                    "textbox": "Textbox-1",
+                    "checkbox": true,
+                    "datebox": "2022/11/04",
+                    "richbox": "Richbox-1",
+                    "combobox": 2,
+                    "foreignkey": "sid-2",
+
+                    "numberbox": 10001.0199,
+                    "numberspinner": 9,
+                    "timespinner": "11:11",
+                    "datetimebox": "2022/11/04 11:11",
+                    "ncombobox": "1,2"
+                };
+                const titles_2 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    }
+                ];
+                const row_2 = {
+                    "sid": "sid-2",
+                    "lable": "Lable-2",
+                    "textbox": "Textbox-2",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                };
+
+                const model_1 = `<table>
+                <tbody>    
+                    <tr>
+                    <td><label id="lbl_textbox">Textbox</label></td>
+                    <td><input id="txt_textbox" type="text"></td>
+                    <td><label id="lbl_checkbox">Checkbox</label></td>
+                    <td><input id="txt_checkbox" type="text"></td>
+                </tr><tr>
+                    <td><label id="lbl_datebox">Datetbox</label></td>
+                    <td><input id="txt_datebox" type="text"></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                </tbody>
+            </table>`;
+                const model_2 = "";
+
+                const titles_3 = [ 
+                    {
+                        "c_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "c_username": "spring",
+                        "createtime": "2023/02/20 15:49:44",
+                        "decimal": null,
+                        "fd_type": "TEXT",
+                        "func": null,
+                        "is_func": 0,
+                        "length": null,
+                        "m_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "m_username": "spring",
+                        "modifytime": "2025/03/20 10:07:19",
+                        "name": "name",
+                        "queue": 2,
+                        "remark": "{\"files\":[],\"html\":\"\"}",
+                        "sid": "305ab55a-4fdb-4fc4-aa93-4dab59ff9f9e",
+                        "tb_id": "7cd25e52-9c07-46b1-bb35-a29505297263",
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "min": null,
+                            "max": null,
+                            "format": ""
+                        },
+                        "ui_readonly": 0,
+                        "ui_title": "站点名称",
+                        "ui_type": 2,
+                        "ui_visible": 1,
+                        "ui_width": 110,
+                        "group": "",
+                        "align": "left"
+                    },
+                    {
+                        "c_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "c_username": "spring",
+                        "createtime": "2023/02/20 15:49:44",
+                        "decimal": null,
+                        "fd_type": "TEXT",
+                        "func": null,
+                        "is_func": 0,
+                        "length": null,
+                        "m_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "m_username": "spring",
+                        "modifytime": "2025/03/20 10:07:19",
+                        "name": "describe",
+                        "queue": 3,
+                        "remark": "{\"files\":[],\"html\":\"\"}",
+                        "sid": "fc13e349-953f-4bab-b6aa-6bcf7ace3506",
+                        "tb_id": "7cd25e52-9c07-46b1-bb35-a29505297263",
+                        "ui_mask": {
+                            "default": "base",
+                            "types": [
+                                "base"
+                            ],
+                            "blank": true,
+                            "min": null,
+                            "max": null,
+                            "editModeW": 400,
+                            "editModeH": 300
+                        },
+                        "ui_readonly": 0,
+                        "ui_title": "描述",
+                        "ui_type": 5,
+                        "ui_visible": 1,
+                        "ui_width": 140,
+                        "group": "",
+                        "align": "left"
+                    },
+                    {
+                        "c_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "c_username": "spring",
+                        "createtime": "2023/02/20 15:49:44",
+                        "decimal": null,
+                        "fd_type": "TEXT",
+                        "func": null,
+                        "is_func": 0,
+                        "length": null,
+                        "m_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "m_username": "spring",
+                        "modifytime": "2026/03/28 05:29:34",
+                        "name": "site_info",
+                        "queue": 4,
+                        "remark": "{\"files\":[],\"html\":\"\"}",
+                        "sid": "a2b73384-1dd6-494f-8787-8a2f1363eac4",
+                        "tb_id": "7cd25e52-9c07-46b1-bb35-a29505297263",
+                        "ui_mask": {
+                            "default": {},
+                            "blank": false,
+                            "param": {
+                                "titles": [
+                                    {
+                                        "name": "title",
+                                        "ui_title": "Title",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "keywords",
+                                        "ui_title": "Keywords",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "description",
+                                        "ui_title": "Description",
+                                        "ui_type": 5,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {
+                                            "editModeW": 400,
+                                            "editModeH": 300,
+                                            "default": 123123213,
+                                            "types": [
+                                                "base"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "name": "index_url",
+                                        "ui_title": "PC",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "index_url1",
+                                        "ui_title": "Moble",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    }
+                                ],
+                                "model": [
+                                    {
+                                        "describe": "Html模板",
+                                        "model": "<table _n=\"_tb\">\n\t<tbody style=\"vertical-align: top;\">\n\t\t<tr>\n\t\t\t<td>\n\t\t\t\t<lable id=\"lbl_title\">Title\n\t\t\t\t</lable>\n\t\t\t</td>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" style=\"width: 202px;\" id=\"txt_title\">\n\t\t\t</td>\n\t\t\t<td>\n\t\t\t\t<lable id=\"lbl_keywords\">Keywords\n\t\t\t\t</lable>\n\t\t\t</td>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" style=\"width: 202px;\" id=\"txt_keywords\">\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>\n\t\t\t\t<lable id=\"lbl_description\">Description\n\t\t\t\t</lable>\n\t\t\t</td>\n\t\t\t<td colspan=\"3\">\n\t\t\t\t<textarea style=\"height: 102px; width: 477px;\" id=\"txt_description\">\n\t\t\t\t</textarea>\n\t\t\t</td>\n\t\t</tr>\n\t\t<tr>\n\t\t\t<td>\n\t\t\t\t<lable id=\"lbl_index_url\">PC\n\t\t\t\t</lable>\n\t\t\t</td>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" style=\"width: 202px;\" id=\"txt_index_url\">\n\t\t\t</td>\n\t\t\t<td>\n\t\t\t\t<lable id=\"lbl_index_url1\">Moble\n\t\t\t\t</lable>\n\t\t\t</td>\n\t\t\t<td>\n\t\t\t\t<input type=\"text\" style=\"width: 202px;\" id=\"txt_index_url1\">\n\t\t\t</td>\n\t\t</tr>\n\t</tbody>\n</table>\n",
+                                        "type": 2,
+                                        "no": "3"
+                                    }
+                                ]
+                            },
+                            "editType": 1,
+                            "editModeW": 450,
+                            "editModeH": 400,
+                            "modeNo": -1,
+                            "textbox": false,
+                            "modelNo": 3
+                        },
+                        "ui_readonly": false,
+                        "ui_title": "站点信息",
+                        "ui_type": 17,
+                        "ui_visible": true,
+                        "ui_width": 80,
+                        "group": "",
+                        "align": "left"
+                    },
+                    {
+                        "c_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "c_username": "spring",
+                        "createtime": "2023/02/20 15:49:44",
+                        "decimal": null,
+                        "fd_type": "TEXT",
+                        "func": null,
+                        "is_func": 0,
+                        "length": null,
+                        "m_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
+                        "m_username": "spring",
+                        "modifytime": "2026/03/28 05:29:43",
+                        "name": "navigation",
+                        "queue": 5,
+                        "remark": "{\"files\":[],\"html\":\"\"}",
+                        "sid": "53f45d23-55af-48fa-aa82-7d8fe588bef0",
+                        "tb_id": "7cd25e52-9c07-46b1-bb35-a29505297263",
+                        "ui_mask": {
+                            "blank": false,
+                            "displayMember": "name",
+                            "param": {
+                                "titles": [
+                                    {
+                                        "name": "name",
+                                        "ui_title": "名称",
+                                        "ui_type": 2,
+                                        "ui_width": 140,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "describe",
+                                        "ui_title": "标题",
+                                        "ui_type": 2,
+                                        "ui_width": 120,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "icon",
+                                        "ui_title": "icon",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "link_url",
+                                        "ui_title": "url地址",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "path",
+                                        "ui_title": "路径",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "blank",
+                                        "ui_title": "blank",
+                                        "ui_type": 3,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "list_url",
+                                        "ui_title": "PC列表页",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "show_url",
+                                        "ui_title": "PC内容页",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "list_url1",
+                                        "ui_title": "手机列表页",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "show_url1",
+                                        "ui_title": "手机内容页",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "tid",
+                                        "ui_title": "id",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "p_title",
+                                        "ui_title": "页面标题",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "p_keywords",
+                                        "ui_title": "页面关键词",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "p_describe",
+                                        "ui_title": "页面描述",
+                                        "ui_type": 2,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    },
+                                    {
+                                        "name": "is_del",
+                                        "ui_title": "isDel",
+                                        "ui_type": 3,
+                                        "ui_width": 80,
+                                        "ui_visible": true,
+                                        "ui_readonly": false,
+                                        "ui_mask": {}
+                                    }
+                                ],
+                                "model": []
+                            },
+                            "data": [],
+                            "editModeW": 800,
+                            "editModeH": 600,
+                            "editType": 2,
+                            "modelNo": -1,
+                            "panelWidth": 450,
+                            "panelHeight": 450,
+                            "textbox": false
+                        },
+                        "ui_readonly": 0,
+                        "ui_title": "导航信息",
+                        "ui_type": 16,
+                        "ui_visible": true,
+                        "ui_width": 80,
+                        "group": "",
+                        "align": "left"
+                    },
+                   ];
+                const row_3 = {};
+                const model_3 = `<table>
+    <tbody style="vertical-align: top;">
+		<tr>
+			<td>
+				<lable id="lbl_name">站点名称
+				</lable>
+			</td>
+			<td>
+				<input type="text" style="width: 360px;" id="txt_name">
+			</td>
+			<td>
+				<lable id="lbl_navigation">导航信息
+				</lable>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<lable id="lbl_describe">描述
+				</lable>
+			</td>
+			<td>
+				<textarea style="height: 60px; width: 364px;" id="txt_describe">
+				</textarea>
+			</td>
+			<td rowspan="2">
+				<div style="width:600px;height:475px;" id="txt_navigation">[导航信息]
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<lable id="lbl_site_info">站点信息
+				</lable>
+			</td>
+			<td>
+				<div edittype="1" modelno="-1" style="width:360px;height:419px;" id="txt_site_info">[站点信息]
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>`;
+
+                const changeTitle = ref("titles_3");
+                const titles_all = computed(() => {
+                    return [
+                        { name: "titles_1", value: "titles_1", titles: titles_1, model: model_1 },
+                        { name: "titles_2", value: "titles_2", titles: titles_2, model: model_2 },
+                        { name: "titles_3", value: "titles_3", titles: titles_3, model: model_3 }]
+                });
+                function changeTitles() {
+                    const item = titles_all.value.find(item => item.value === changeTitle.value);
+                    titles.value = item.titles;
+                    model.value = item.model;
+                }
+
+                const changeRow = ref("row_1")
+                const rows_all = computed(() => {
+                    return [
+                        { name: "row_1", value: "row_1", row: row_1 },
+                        { name: "row_2", value: "row_2", row: row_2 }]
+                });
+                function changeRows() {
+                    row.value = rows_all.value.find(item => item.value === changeRow.value).row
+                }
+
+                const titles = ref(titles_3);
+                const row = ref(row_3);
+                const model = ref(model_3);
+
+                const isEditBool = computed(() => isEdit.value === 'true');
+                const isViewBool = computed(() => isView.value === 'true');
+
+                const editType = ref('2');
+                const fkrows = ref([]);
+
+                return {
+                    titles,
+                    row,
+                    keyId,
+                    isEdit,
+                    isEditBool,
+                    isView,
+                    isViewBool,
+                    editType,
+                    fkrows,
+                    model,
+
+                    changeTitle,
+                    titles_all,
+                    changeTitles,
+                    changeRow,
+                    rows_all,
+                    changeRows,
+                }
+            },
+            computed: {
+                editTypeInt() {
+                    return this.editType === "1" ? 1 : 2
+                }
+            },
+            methods: {
+                handleGetRow() {
+                    const row = this.row.value
+                    console.log(`数据: ${JSON.stringify(row, null, 2)}`)
+                },
+                handleRowClick(data) {
+                    console.log(`行点击事件: ${JSON.stringify(data, null, 2)}`)
+                }
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

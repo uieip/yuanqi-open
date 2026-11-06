@@ -1,0 +1,331 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>图片上传示例 - Editor.md examples</title>
+  <link rel="stylesheet" href="/scripts/editor.md/css/editormd.css" />
+  <link rel="shortcut icon" href="https://pandao.github.io/editor.md/favicon.ico" type="image/x-icon" />
+</head>
+
+<body>
+  <a href="/scripts/editor.md/examples/">markdown</a>
+  <div id="layout" style="height: 2000px;background: #f6f6f6;">
+    <header>
+      <h1>图片上传示例</h1>
+      <p>Image upload example</p>
+    </header>
+    <div id="test-editormd">
+      <textarea style="display:none;">#### Settings
+
+```javascript
+{
+imageUpload    : false,
+imageFormats   : ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+imageUploadURL : "./php/upload.php",
+}
+```
+
+#### JSON data
+
+```json
+{
+success : 0 | 1,           // 0 表示上传失败，1 表示上传成功
+message : "提示的信息，上传成功或上传失败及错误信息等。",
+url     : "图片地址"        // 上传成功时才返回
+}
+```</textarea>
+    </div>
+  </div>
+  <script src="/scripts/jquery.min.js"></script>
+  <script src="/scripts/crypto/sha256.min.js"></script>
+  <script src="/scripts/editor.md/editormd.js"></script>
+  <script type="text/javascript">
+    $(function () {
+      //   var testEditor = editormd("test-editormd", {
+      //     width: "90%",
+      //     height: 640,
+      //     markdown: "",
+      //     path: '/scripts/editor.md/lib/',
+      //     //dialogLockScreen : false,   // 设置弹出层对话框不锁屏，全局通用，默认为 true
+      //     //dialogShowMask : false,     // 设置弹出层对话框显示透明遮罩层，全局通用，默认为 true
+      //     //dialogDraggable : false,    // 设置弹出层对话框不可拖动，全局通用，默认为 true
+      //     //dialogMaskOpacity : 0.4,    // 设置透明遮罩层的透明度，全局通用，默认值为 0.1
+      //     //dialogMaskBgColor : "#000", // 设置透明遮罩层的背景颜色，全局通用，默认为 #fff
+      //     imageUpload: true,
+      //     imageFormats: ["jpg", "jpeg", "gif", "png", "bmp", "webp"],
+      //     imageUploadURL: "_file.html",
+
+      //     fileAction: function (file, callback) {
+      //       fileAction(file,function(res){
+      //         callback(res);
+      //       })
+      //     },
+
+
+      //   });
+
+
+      var testEditor = editormd("test-editormd", {
+        width: "90%",
+        height: 640,
+        path: '/scripts/editor.md/lib/',
+        toolbarIcons: function () {
+          return [
+            "undo", "redo", "|",
+            "bold", "del", "italic", "quote", "ucwords", "uppercase", "lowercase", "|",
+            "h1", "h2", "h3", "h4", "h5", "h6", "|",
+            "list-ul", "list-ol", "hr", "|",
+            "link", "reference-link", "image_yq", "code", "preformatted-text", "code-block", "table", "html-entities", "pagebreak", "|",
+            "goto-line", "watch", "preview", "fullscreen", "clear", "search"
+          ];
+        },
+
+        toolbarCustomIcons: {
+          image_yq: '<a name="image_yq" title="添加图片" href="javascript:viod(0);"><i class="fa fa-picture-o"></i></a>'
+        },
+
+        onload: function () {
+          $("[name=\"image_yq\"]").bind("click", function () {
+            var dialogContent = `
+              <dic class="editormd-form">
+                <label>图片地址</label>
+                <input name="file-url" type="text">
+                <div class="editormd-file-input">
+                  <input type="file" name="editormd-image-file" accept="image/*">
+                  <input type="submit" value="本地上传">
+                </div>
+                <br>
+                <label>图片描述</label>
+                <input name="file-alt" type="text" value="">
+                <br>
+                <label>图片链接</label>
+                <input name="file-link" type="text" value="http://">
+                <br>
+              </div>
+            `;
+
+            var settings = testEditor.settings;
+            var dialog = testEditor.createDialog({
+              title: "添加图片",
+              width: 470,
+              height: 254,
+              name: "image",
+              content: dialogContent,
+              mask: settings.dialogShowMask,
+              drag: settings.dialogDraggable,
+              lockScreen: settings.dialogLockScreen,
+              maskStyle: {
+                opacity: settings.dialogMaskOpacity,
+                backgroundColor: settings.dialogMaskBgColor
+              },
+              buttons: {
+                enter: ["确定", function () {
+                  var url = this.find("[name='file-url']").val();
+                  var alt = this.find("[name='file-alt']").val();
+                  var link = this.find("[name='file-link']").val();
+                  var cursor = testEditor.cm.getCursor();
+
+                  if (url === "") {
+                    alert("imageLang.imageURLEmpty");
+                    return false;
+                  }
+
+                  var altAttr = (alt !== "") ? " \"" + alt + "\"" : "";
+
+                  if (link === "" || link === "http://") {
+                    testEditor.cm.replaceSelection("![" + alt + "](" + url + altAttr + ")");
+                  }
+                  else {
+                    testEditor.cm.replaceSelection("[![" + alt + "](" + url + altAttr + ")](" + link + altAttr + ")");
+                  }
+
+                  if (alt === "") {
+                    testEditor.cm.setCursor(cursor.line, cursor.ch + 2);
+                  }
+
+                  this.hide().lockScreen(false).hideMask();
+                  this.remove();
+                  return false;
+                }],
+
+                cancel: ["取消", function () {
+                  this.hide().lockScreen(false).hideMask();
+                  this.remove();
+                  return false;
+                }]
+              }
+            });
+
+            testEditor.dialogShowMask(dialog);
+            testEditor.dialogLockScreen();
+            dialog.show();
+
+            dialog.find("[type=\"text\"]").val("");
+            dialog.find("[type=\"file\"]").val("");
+            dialog.find("[name='file-link']").val("https://");
+
+            var fileInput = dialog.find("[type=\"file\"]");
+
+            fileInput.bind("change", function (event) {
+              var files = event.target.files;
+              var fileName = fileInput.val();
+              var isImage = new RegExp("(\\.(" + settings.imageFormats.join("|") + "))$", "i"); // /(\.(webp|jpg|jpeg|gif|bmp|png))$/
+              if (fileName === "") {
+                alert("imageLang.uploadFileEmpty");
+                return false;
+              }
+
+              if (!isImage.test(fileName)) {
+                alert(imageLang.formatNotAllowed + settings.imageFormats.join(", "));
+                return false;
+              }
+
+              fileAction(files[0], function (res) {
+                if (res.error == 0) {
+                  dialog.find("[name='file-url']").val(res.fileurl);
+                }
+              });
+
+              return false;
+            });
+          });
+        }
+      });
+    });
+  </script>
+
+  <script>
+
+
+
+
+
+
+
+
+
+
+    var imageUpload = true;
+    function fileAction(file, callback) {
+      if (imageUpload == false) {
+        callback({
+          error: 0,
+          fileurl: getFileUrl(file)
+        });
+        return;
+      }
+
+
+      yqFileUpload(file, {
+        ajaxUrl: '/_file.html',
+        sto_type: 2,         //1-数据库存储，2-外部存储
+        sto_name: "local",       //外部存储库名
+        // 上传完成
+        success: function (res) {
+          console.log(res);
+          if (res.error == 0) {
+            var img_url = res.file.finger;
+            if (res.file.name.lastIndexOf(".") > 0) {
+              img_url += res.file.name.substring(res.file.name.lastIndexOf("."), res.file.name.length);
+            }
+            callback({
+              error: 0,
+              fileurl: "^" + img_url
+            });
+          } else {
+            callback(res);
+          }
+        },
+      });
+    }
+
+    /**
+    * 从 file 域获取 本地图片 url
+    */
+    function getFileUrl(file) {
+      var url;
+      if (window.navigator.userAgent.indexOf("Chrome") >= 1 || window.navigator.userAgent.indexOf("Safari") >= 1) {
+        url = window.webkitURL.createObjectURL(file);
+      }
+      else {
+        url = window.URL.createObjectURL(file);
+      }
+      return url;
+    }
+
+    //文件上传
+    function yqFileUpload(file, opts) {
+      var options = jQuery.extend({
+        ajaxUrl: '/_file.html',
+        sto_type: 2,         //1-数据库存储，2-外部存储
+        sto_name: null,       //外部存储库名
+        // 上传完成
+        success: function (res) { },
+      }, opts);
+
+      var fileFingerprint = '';
+      function upload() {
+        var formData = new FormData();
+        formData.set('action', 'upload');
+        formData.set('sto_type', options.sto_type);
+        formData.set('sto_name', options.sto_name);
+        formData.set('file', file);
+        formData.set('name', file.name);
+        formData.set('type', file.type);
+        formData.set('size', file.size);
+        formData.set('finger', fileFingerprint);
+        $.ajax({
+          type: 'post',
+          url: options.ajaxUrl,
+          data: formData,
+          cache: false,
+          processData: false,
+          contentType: false,
+          dataType: 'json',
+          success: function (res) {
+            if (typeof options.success == 'function') {
+              options.success(res);
+            }
+          },
+          error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log(XMLHttpRequest.responseText);
+            if (typeof options.success == 'function') {
+              options.success({ error: 99, info: XMLHttpRequest.responseText });
+            }
+          }
+        });
+      }
+      var reader = new FileReader();
+      reader.onload = function () {
+        fileFingerprint = yqHashBase64(reader.result, 'SHA256');
+        upload();
+      }
+      reader.readAsArrayBuffer(file);
+    }
+
+    function yqHashBase64(str, protocol = 'SHA256') {
+      result = str
+      switch (protocol) {
+        case 'MD5':
+          result = String.fromCharCode(...md5.array(str))
+          break;
+        case 'SHA1':
+          result = String.fromCharCode(...sha1.array(str))
+          break;
+        case 'SHA224':
+          result = String.fromCharCode(...sha224.array(str))
+          break;
+        case 'SHA256':
+          result = String.fromCharCode(...sha256.array(str))
+          break;
+      }
+      result = btoa(result).replaceAll("\/", "_").replaceAll("+", "-");
+      return result;
+    }
+
+  </script>
+
+</body>
+
+</html>

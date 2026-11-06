@@ -1,0 +1,34 @@
+<script runat="server">
+    var breadcrumb = '<ol class="breadcrumb">';
+    breadcrumb += '  <li><a href="/">首页</a></li>';
+    var ui_data = request.data("cms.nav");
+    if (!(ui_data.nav === undefined)) {
+        for (let i = 0; i < ui_data.nav.length; i++) {
+            var href = "";
+            var path="";
+            if (ui_data.nav[i].LinkUrl != "") {
+                if (!(ui_data.nav[i].LinkUrl.substring(0, 7) == "http://" ||
+                    ui_data.nav[i].LinkUrl.substring(0, 8) == "https://")) {
+                    href = "/" + ui_data.nav[i].LinkUrl + "/";
+                } else {
+                    href = ui_data.nav[i].LinkUrl;
+                }
+            } else {
+                path=ui_data.nav[i].Path;
+                href = "/" + ui_data.nav[i].Path + "/";
+            }
+
+            breadcrumb += '  <li ' + (ui_data.path == path ? ' class="active"' : '') + '><a href="' + href + '"';
+            if(!ui_data.nav[i].Name){
+                breadcrumb +=' title="'+ui_data.nav[i].Describe+'"'
+            }
+            breadcrumb += '>';
+            if (ui_data.nav[i].Icon != "") {
+                breadcrumb += '<span class="' + ui_data.nav[i].Icon + '"></span>';
+            }
+            breadcrumb += ui_data.nav[i].Name + '</a></li>';
+        }
+    }
+    breadcrumb += '</ol>';
+    response.write(breadcrumb);
+</script>

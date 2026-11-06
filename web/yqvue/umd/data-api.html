@@ -1,0 +1,492 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>yqData API 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+            background-color: white;
+        }
+
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .right-panel {
+            width: 500px;
+            padding: 20px;
+            background-color: #fafafa;
+            border-left: 1px solid #e0e0e0;
+            overflow-y: auto;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #409eff;
+        }
+
+        .el-button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f0f9eb;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        .error {
+            background-color: #fff2f0;
+            border: 1px solid #ffccc7;
+        }
+
+        h1 {
+            color: #303133;
+            margin-bottom: 30px;
+        }
+
+        .file-upload {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container">
+        <!-- 左侧面板：测试条目 -->
+        <div class="left-panel">
+            <h1>yqData API 测试</h1>
+            <el-checkbox v-model="isDemo" style="margin-bottom: 20px;">使用测试数据</el-checkbox>
+
+            <!-- 数据库操作 -->
+            <div class="test-section">
+                <h3>数据库操作</h3>
+                <el-button type="primary" @click="testDbList">* dbList</el-button>
+                <el-button @click="testFormParams">formParams</el-button>
+                <el-button @click="testTbTitle">* tbTitle</el-button>
+                <el-button @click="testTbModel">* tbModel</el-button>
+                <el-button @click="testDbTbSelect">* dbTbSelect</el-button>
+                <el-button @click="testDbTbPaging">* dbTbPaging</el-button>
+                <el-button @click="testDbTbRow">* dbTbRow</el-button>
+                <el-button @click="testDbTbForienKey">* dbTbForienKey</el-button>
+                <el-button @click="testDbAction">* dbAction</el-button>
+            </div>
+
+            <!-- 文件操作 -->
+            <div class="test-section">
+                <h3>文件操作</h3>
+                <el-button @click="testFileList">fileList</el-button>
+                <el-button @click="testFileRelTypes">fileRelTypes</el-button>
+                <el-button @click="testFileRelPaging">fileRelPaging</el-button>
+                <el-button @click="testFileNullPaging">fileNullPaging</el-button>
+                <el-button @click="testFileInfo">fileInfo</el-button>
+                <div class="file-upload">
+                    <el-upload class="upload-demo" action="" :auto-upload="false" :on-change="handleFileChange"
+                        :limit="1">
+                        <el-button type="primary">选择文件</el-button>
+                        <template #tip>
+                            <div class="el-upload__tip">
+                                只能上传单个文件，用于测试文件上传功能
+                            </div>
+                        </template>
+                    </el-upload>
+                    <el-button v-if="uploadFile" @click="testFileUpload">fileUpload</el-button>
+                    <el-button v-if="uploadFile" @click="testFileChunkUpload">fileChunkUpload</el-button>
+                </div>
+            </div>
+
+            <!-- 其他功能 -->
+            <div class="test-section">
+                <h3>其他功能</h3>
+                <el-button @click="testHashBase64">hashBase64</el-button>
+                <el-button @click="testDataToExcel">dataToExcel</el-button>
+                <el-button @click="testDataToWord">dataToWord</el-button>
+                <el-button @click="testDbMenus">* dbMenus</el-button>
+                <el-button @click="testLoginstate">loginstate</el-button>
+                <el-button @click="testLogout">logout</el-button>
+            </div>
+
+            <!-- 表信息 -->
+            <div class="test-section">
+                <h3>表信息</h3>
+                <el-button @click="testTbInfo">tbInfo</el-button>
+                <el-button @click="testTbFields">tbFields</el-button>
+            </div>
+
+            <!-- 存储过程 -->
+            <div class="test-section">
+                <h3>存储过程</h3>
+                <el-button @click="testProcModel">procModel</el-button>
+                <el-button @click="testProcInfo">procInfo</el-button>
+                <el-button @click="testProcSave">procSave</el-button>
+            </div>
+        </div>
+
+        <!-- 右侧面板：测试结果 -->
+        <div class="right-panel">
+            <h3>测试结果</h3>
+            <div v-if="currentResult.data" class="result" :class="{ error: currentResult.data.error !== 0 }">
+                <strong>{{ currentResult.name }} 结果:</strong>
+                <br/>{{ JSON.stringify(currentResult.data, null, 2) }}
+            </div>
+            <div v-else class="result">
+                <strong>提示:</strong>
+                点击左侧测试按钮执行测试
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, reactive } = Vue;
+        const { initTheme, yqData } = YqwinPlus;
+        initTheme();
+
+        createApp({
+            setup() {
+                const isDemo = ref(true);
+
+                const currentResult = reactive({
+                    name: null,
+                    data: null
+                });
+
+                const uploadFile = ref(null);
+
+                const handleFileChange = (file) => {
+                    uploadFile.value = file.raw;
+                };
+
+                // 数据库操作测试
+                const testDbList = async () => {
+                    currentResult.name = 'dbList';
+                    currentResult.data = await yqData.dbList({}, isDemo.value);
+                };
+
+                const testFormParams = async () => {
+                    currentResult.name = 'formParams';
+                    currentResult.data = await yqData.formParams({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m'
+                    });
+                };
+
+                const testTbTitle = async () => {
+                    currentResult.name = 'tbTitle';
+                    currentResult.data = await yqData.tbTitle({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m'
+                    }, isDemo.value);
+                };
+
+                const testTbModel = async () => {
+                    currentResult.name = 'tbModel';
+                    currentResult.data = await yqData.tbModel({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m'
+                    }, isDemo.value);
+                };
+
+                const testDbTbSelect = async () => {
+                    currentResult.name = 'dbTbSelect';
+                    currentResult.data = await yqData.dbTbSelect({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m',
+                        where: '',
+                        order: 'sid desc'
+                    }, isDemo.value);
+                };
+
+                const testDbTbPaging = async () => {
+                    currentResult.name = 'dbTbPaging';
+                    currentResult.data = await yqData.dbTbPaging({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m',
+                        where: '',
+                        order: 'sid desc',
+                        pagesize: 5,
+                        pageno: 1
+                    }, isDemo.value);
+                };
+
+                const testDbTbRow = async () => {
+                    currentResult.name = 'dbTbRow';
+                    currentResult.data = await yqData.dbTbRow({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m',
+                        keyid: 'sid',
+                        keyval: 'a500e4ed-3400-4850-ace0-43ba3c4e57a5'
+                    }, isDemo.value);
+                };
+
+                const testDbTbForienKey = async () => {
+                    currentResult.name = 'dbTbForienKey';
+                    currentResult.data = await yqData.dbTbForienKey({
+                        rows: [{
+                            dbname: 'yqbase',
+                            tbname: 'ab_test_m',
+                            field: 'name',
+                            keyid: 'sid',
+                            ids: ['a500e4ed-3400-4850-ace0-43ba3c4e57a5']
+                        }]
+                    }, isDemo.value);
+                };
+
+                const testDbAction = async () => {
+                    currentResult.name = 'dbAction';
+                    const now = new Date();
+                    const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+                    currentResult.data = await yqData.dbAction({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m',
+                        rows: [{
+                            action: 'upp',
+                            row: {
+                                sid: "a500e4ed-3400-4850-ace0-43ba3c4e57a5",
+                                richbox: '测试数据' + formattedDate,
+                                textbox: 'test' + formattedDate
+                            }
+                        }]
+                    }, isDemo.value);
+                };
+
+                // 文件操作测试
+                const testFileList = async () => {
+                    currentResult.name = 'fileList';
+                    currentResult.data = await yqData.fileList();
+                };
+
+                const testFileRelTypes = async () => {
+                    currentResult.name = 'fileRelTypes';
+                    currentResult.data = await yqData.fileRelTypes();
+                };
+
+                const testFileRelPaging = async () => {
+                    currentResult.name = 'fileRelPaging';
+                    currentResult.data = await yqData.fileRelPaging({
+                        sto_type: 2,
+                        where: '',
+                        order: '',
+                        pagesize: 5,
+                        pageno: 1
+                    });
+                };
+
+                const testFileNullPaging = async () => {
+                    currentResult.name = 'fileNullPaging';
+                    currentResult.data = await yqData.fileNullPaging({
+                        sto_type: 2,
+                        where: '',
+                        order: '',
+                        pagesize: 5,
+                        pageno: 1
+                    });
+                };
+
+                const testFileUpload = async () => {
+                    if (!uploadFile.value) {
+                        alert('请先选择文件');
+                        return;
+                    }
+                    currentResult.name = 'fileUpload';
+                    currentResult.data = await yqData.fileUpload(uploadFile.value, {
+                        sto_type: 2
+                    });
+                };
+
+                const testFileChunkUpload = async () => {
+                    if (!uploadFile.value) {
+                        alert('请先选择文件');
+                        return;
+                    }
+                    currentResult.name = 'fileChunkUpload';
+                    currentResult.data = await yqData.fileChunkUpload(uploadFile.value, {
+                        sto_type: 2,
+                        chunkSize: 1024 * 1024
+                    });
+                };
+
+                const testFileInfo = async () => {
+                    currentResult.name = 'fileInfo';
+                    currentResult.data = await yqData.fileInfo({
+                        sto_type: 2,
+                        sid: 'test'
+                    });
+                };
+
+                // 其他功能测试
+                const testHashBase64 = async () => {
+                    currentResult.name = 'hashBase64';
+                    currentResult.data = {
+                        error: 0,
+                        info: 'ok',
+                        hash: await yqData.hashBase64('测试数据')
+                    };
+                };
+
+                const testDataToExcel = async () => {
+                    currentResult.name = 'dataToExcel';
+                    currentResult.data = await yqData.dataToExcel({
+                        header: [
+                            { name: 'name', title: '姓名' },
+                            { name: 'age', title: '年龄' }
+                        ],
+                        data: [
+                            { name: '张三', age: 20 },
+                            { name: '李四', age: 25 }
+                        ],
+                        filename: 'test.xlsx'
+                    });
+                };
+
+                const testDataToWord = async () => {
+                    currentResult.name = 'dataToWord';
+                    currentResult.data = await yqData.dataToWord({
+                        header: [
+                            { name: 'name', title: '姓名' },
+                            { name: 'age', title: '年龄' }
+                        ],
+                        data: [
+                            { name: '张三', age: 20 },
+                            { name: '李四', age: 25 }
+                        ],
+                        filename: 'test.docx'
+                    });
+                };
+
+                const testDbMenus = async () => {
+                    currentResult.name = 'dbMenus';
+                    currentResult.data = await yqData.dbMenus({
+                        appno: 0
+                    }, isDemo.value);
+                };
+
+                const testLoginstate = async () => {
+                    currentResult.name = 'loginstate';
+                    currentResult.data = await yqData.loginstate();
+                };
+
+                const testLogout = async () => {
+                    currentResult.name = 'logout';
+                    currentResult.data = await yqData.logout();
+                };
+
+                // 表信息测试
+                const testTbInfo = async () => {
+                    currentResult.name = 'tbInfo';
+                    currentResult.data = await yqData.tbInfo({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m'
+                    });
+                };
+
+                const testTbFields = async () => {
+                    currentResult.name = 'tbFields';
+                    currentResult.data = await yqData.tbFields({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m'
+                    });
+                };
+
+                // 存储过程测试
+                const testProcModel = async () => {
+                    currentResult.name = 'procModel';
+                    currentResult.data = await yqData.procModel({
+                        dbname: 'yqbase',
+                        tbname: 'ab_test_m',
+                        actionval: 'add'
+                    });
+                };
+
+                const testProcInfo = async () => {
+                    currentResult.name = 'procInfo';
+                    currentResult.data = await yqData.procInfo({
+                        dbname: 'yqbase',
+                        procname: 'test_proc'
+                    });
+                };
+
+                const testProcSave = async () => {
+                    currentResult.name = 'procSave';
+                    currentResult.data = await yqData.procSave({
+                        dbname: 'yqbase',
+                        proc: 'CREATE PROCEDURE test_proc AS BEGIN SELECT * FROM ab_test_m; END'
+                    });
+                };
+
+                return {
+                    isDemo,
+                    currentResult,
+                    uploadFile,
+                    handleFileChange,
+                    testDbList,
+                    testFormParams,
+                    testTbTitle,
+                    testTbModel,
+                    testDbTbSelect,
+                    testDbTbPaging,
+                    testDbTbRow,
+                    testDbTbForienKey,
+                    testDbAction,
+                    testFileList,
+                    testFileRelTypes,
+                    testFileRelPaging,
+                    testFileNullPaging,
+                    testFileUpload,
+                    testFileChunkUpload,
+                    testFileInfo,
+                    testHashBase64,
+                    testDataToExcel,
+                    testDataToWord,
+                    testDbMenus,
+                    testLoginstate,
+                    testLogout,
+                    testTbInfo,
+                    testTbFields,
+                    testProcModel,
+                    testProcInfo,
+                    testProcSave
+                };
+            }
+        })
+            .use(ElementPlus)
+            .mount('#app');
+    </script>
+</body>
+
+</html>

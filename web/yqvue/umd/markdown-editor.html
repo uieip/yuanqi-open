@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqMarkdownEditor 直接传递数据测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            overflow: hidden;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .container {
+            max-width: 100vw;
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        h1 {
+            color: #409eff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background-color: white;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 0;
+            box-shadow: none;
+            height: 100vh;
+        }
+        h2 {
+            color: #303133;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e4e7ed;
+            padding-bottom: 10px;
+        }
+        .button-group {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            background-color: #409eff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #66b1ff;
+        }
+        button.success {
+            background-color: #67c23a;
+        }
+        button.success:hover {
+            background-color: #85ce61;
+        }
+        button.warning {
+            background-color: #e6a23c;
+        }
+        button.warning:hover {
+            background-color: #f5c789;
+        }
+        .editor-wrapper {
+            min-height: 700px;
+            max-height: 100vh;
+            height: 100vh;
+        }
+        .tips {
+            background-color: #fdf6ec;
+            border: 1px solid #f5dab1;
+            border-radius: 4px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #e6a23c;
+        }
+        .tips strong {
+            color: #d48806;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-section">
+            <div id="editor-app">
+                <div class="button-group">
+                    <button onclick="setDataTest()">测试 setData</button>
+                    <button onclick="getDataTest()">测试 getData</button>
+                    <button onclick="clearDataTest()">测试 clearData</button>
+                    <button id="readOnlyButton" onclick="switchReadOnlyTest()">只读/编辑</button>
+                   
+                    <button class="warning" onclick="saveToDbWithActionTest()">保存</button>
+                </div>
+                <div class="editor-wrapper">
+                    <yq-markdown-editor
+                        ref="editorRef"
+                        :content="initialContent"
+                        :height="'500px'"
+                    ></yq-markdown-editor>
+                </div>
+            </div>      
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqMarkdownEditor, i18n } = YqwinPlus;
+        initTheme();
+
+        const markdownContent = `# 直接传递数据示例
+
+这是一个通过直接传递数据的方式使用 **YqMarkdownEditor** 组件的测试页面。
+
+## 使用方式
+
+\`\`\`vue
+<yq-markdown-editor
+    :content="yourContent"
+    :height="'600px'"
+></yq-markdown-editor>
+\`\`\`
+
+## 可用方法
+
+- **setData(content)**: 设置编辑器内容
+- **getData()**: 获取编辑器内容
+- **clearData()**: 清空编辑器内容
+`
+
+        const app = createApp({
+            components: {
+                YqMarkdownEditor
+            },
+            setup() {
+                const editorRef = ref(null)
+                const initialContent = ref(markdownContent)
+                
+                // 暴露编辑器引用到全局作用域
+                window.editorRef = editorRef
+                
+                return {
+                    editorRef,
+                    initialContent
+                }
+            }
+        })
+
+        app.use(i18n)
+        app.use(ElementPlus)
+        app.mount('#editor-app')
+
+        // 初始化按钮文本
+        window.onload = function() {
+            const button = document.getElementById('readOnlyButton')
+            if (button) {
+                button.textContent = '切换到只读'  // 默认不是只读状态
+            }
+        }
+
+        // 全局函数
+        window.setDataTest = function() {
+            const testContent = `# 测试 setData 方法
+
+这是通过 setData 方法设置的测试内容。
+
+## 测试信息
+- 测试时间: ${new Date().toLocaleString()}
+- 测试方法: setData
+`
+            if (window.editorRef && window.editorRef.value) {
+                window.editorRef.value.setData(testContent)
+                
+            }
+        }
+
+        window.getDataTest = function() {
+            if (window.editorRef && window.editorRef.value) {
+                const content = window.editorRef.value.getData()
+                alert('编辑器内容:\n\n' + content.substring(0, 200) + (content.length > 200 ? '...' : ''))
+            }
+        }
+
+        window.clearDataTest = function() {
+            if (window.editorRef && window.editorRef.value) {
+                window.editorRef.value.clearData()
+                
+            }
+        }
+
+        window.switchReadOnlyTest = function() {
+            if (window.editorRef && window.editorRef.value) {
+                window.editorRef.value.toggleReadOnly()
+                // 更新按钮文本
+                const button = document.getElementById('readOnlyButton')
+                const isReadOnly = window.editorRef.value.getReadOnly()
+                if (button) {
+                    button.textContent = isReadOnly ? '切换到编辑' : '切换到只读'
+                }
+            }
+        }
+
+        
+        window.saveToDbWithActionTest = function() {
+            if (window.editorRef && window.editorRef.value) {
+                try {
+                    window.editorRef.value.saveToDb('add')
+                    
+                } catch (error) {
+                    alert('保存操作失败: ' + error.message)
+                }
+            }
+        }
+
+       
+    </script>
+</body>
+</html>

@@ -1,0 +1,1664 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Element Plus 布局样式 */
+        .el-container {
+            height: 100%;
+        }
+
+        .el-header {
+            background-color: var(--wb-sidebar);
+            border-bottom: 1px solid var(--el-border-color);
+            display: flex;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        .el-main {
+            background-color: var(--el-bg-color);
+            border-radius: 4px;
+            box-shadow: var(--el-box-shadow-light);
+        }
+
+        .control-group {
+            background-color: var(--wb-sidebar);
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;">
+    <div id="app">
+        <yq-container :header-height="'45px'" v-model:footer-height="footerH">
+            <yq-con-header style="padding: 0 8px;">
+                <yq-edit :is-view="false" :titles="tbview.titles" :model="tbview.model" :row="tb_row" :is-edit="false"
+                    v-model:fkrows="tbview.fkrows"></yq-edit>
+            </yq-con-header>
+            <yq-con-main ref="mainRef" style="padding:0;margin: 0;">
+                <yq-container :aside-width="'360px'" aside-position="right">
+                    <yq-con-main style="padding:0; margin: 0;overflow: hidden;">
+                        <yq-data-grid ref="fieldRef" v-bind="fieldProps"></yq-data-grid>
+                    </yq-con-main>
+                    <yq-con-aside style="padding: 0 0 0 1px;">
+                        <yq-ui-mask-edit :ui_type="editUiType" :value="editUiMask" :is-edit="editIsEdit"
+                            @update:value="updateEditUiMask"></yq-ui-mask-edit>
+                    </yq-con-aside>
+                </yq-container>
+            </yq-con-main>
+            <yq-con-footer style="padding: 0;">
+                <yq-tabs v-model="activeTab" @tab-click="tabsClick" :label-dict="tabLabelDict">
+                    <yq-tab-pane label="模板" name="template">
+                        <div style="padding:4px 0; margin: 0;" class="control-group">
+                            <!-- 1-表格 2-Html模板 3-Code代码 -->
+                            <yq-menu type="inline" :menu-items="modelMenus"></yq-menu>
+                        </div>
+                        <div style="position: relative;height: calc(100% - 40px);" @contextmenu="onTbuiContextMenu">
+                            <yq-data-grid ref="tbuiRef" v-bind="tbuiProps"></yq-data-grid>
+                        </div>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="关联设置" name="link">
+                        <yq-data-grid ref="tbfkRef" v-bind="tbfkProps"></yq-data-grid>
+                    </yq-tab-pane>
+                </yq-tabs>
+            </yq-con-footer>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, onBeforeUnmount, createApp, nextTick, computed } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme,
+            YqMessage, YqEdit, YqDataGrid, YqWindowApi, YqMessageBox, YqIcon, YqUiMaskEdit, yqData, yqUiPub, YqTabs, YqTabPane, YqButton, YqMenu, YqContainer, YqConHeader, YqConAside, YqConMain, YqConFooter } = YqwinPlus;
+        initTheme();
+
+        //?dbname=yqbase&tb_id=6c93e540-0797-42c9-ae43-ad5db8184aaa
+        //dbname=yqbase&tb_id=ef6f49d0-46b0-4e87-b98d-37ff229a61f1
+        let mainParams = {
+            dbname: "yqbase",
+            tb_id: "f9542919-655f-4aae-b82a-f221e8c64427",
+            footerH: 260,
+        };
+
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            mainParams.dbname = urlParams.get('dbname') || mainParams.dbname;
+            mainParams.tb_id = urlParams.get('tb_id') || mainParams.tb_id;
+            console.log(mainParams);
+
+            mainParams.footerH = window.innerHeight * 0.32;
+            if (mainParams.footerH < 260) {
+                mainParams.footerH = 260;
+            }
+
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqEdit,
+                    YqDataGrid,
+                    YqUiMaskEdit,
+                    YqIcon,
+                    YqTabs,
+                    YqTabPane,
+                    YqButton,
+                    YqMenu,
+                    YqContainer,
+                    YqConHeader,
+                    YqConAside,
+                    YqConMain,
+                    YqConFooter,
+                },
+                data() {
+                    return {
+                        tbview: {
+                            titles: [{
+                                "name": "db_name",
+                                "ui_title": "数据库",
+                                "fd_type": "nvarchar",
+                                "length": 50,
+                                "decimal": 0,
+                                "ui_type": 2,
+                                "ui_width": 150,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {}
+                            },
+                            {
+                                "name": "name",
+                                "ui_title": "名称",
+                                "fd_type": "nvarchar",
+                                "length": 50,
+                                "decimal": 0,
+                                "ui_type": 2,
+                                "ui_width": 150,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {}
+                            }, {
+                                "name": "describe",
+                                "ui_title": "表描述",
+                                "fd_type": "nvarchar",
+                                "length": 0,
+                                "decimal": 0,
+                                "ui_type": 2,
+                                "ui_width": 150,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {}
+                            }, {
+                                "name": "tb_name",
+                                "ui_title": "实际表名",
+                                "fd_type": "nvarchar",
+                                "length": 0,
+                                "decimal": 0,
+                                "ui_type": 2,
+                                "ui_width": 150,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {}
+                            }, {
+                                "name": "vi_name",
+                                "ui_title": "视图名称",
+                                "fd_type": "nvarchar",
+                                "length": 0,
+                                "decimal": 0,
+                                "ui_type": 2,
+                                "ui_width": 150,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {}
+                            }, {
+                                "name": "proc",
+                                "ui_title": "存储过程",
+                                "fd_type": "nvarchar",
+                                "length": 0,
+                                "decimal": 0,
+                                "ui_type": 2,
+                                "ui_width": 150,
+                                "ui_visible": true,
+                                "ui_readonly": false,
+                                "ui_mask": {}
+                            }
+                            ],
+                            model: `
+<table style="white-space: nowrap;">
+    <tbody>    
+        <tr>
+            <td><label id="lbl_db_name" style="white-space: nowrap;">数据库</label></td>
+            <td><input id="txt_db_name" type="text" style="width: 80px;"></td>
+            <td><label id="lbl_name" style="white-space: nowrap;">名称</label></td>
+            <td><input id="txt_name" type="text"  style="width: 150px;"></td>
+            <td><label id="lbl_describe" style="white-space: nowrap;">描述</label></td>
+            <td><input id="txt_describe" type="text" style="width: 150px;"></td>
+            <td><label id="lbl_tb_name" style="white-space: nowrap;">实际表名</label></td>
+            <td><input id="txt_tb_name" type="text" style="width: 150px;"></td>
+        </tr>
+    </tbody>
+</table>`,
+                            fkrows: [],
+                        }
+                    }
+                },
+                setup() {
+                    const mainRef = ref(null);
+
+                    const footerH = ref(mainParams.footerH);
+
+                    const fieldRef = ref(null);
+                    const tbuiRef = ref(null);
+                    const tbfkRef = ref(null);
+
+                    const tb_row = ref({});
+
+                    const editUiType = ref(1);
+                    const editUiMask = ref({});
+                    const editIsEdit = ref(false);
+
+                    const field = ref({
+                        dbname: mainParams.dbname,
+                        tbname: 'sys_tb_field',
+                        keyId: 'sid',
+                        bindingKeyId: 'tb_id',
+                        bindingValue: mainParams.tb_id,
+                        tempno: 1,
+                        loadTitles: false, //是否加载标题
+                        loadData: false,
+                        isPage: false,
+                        order: "queue",
+                        editMode: 1,
+
+                        frozenNum: 2,
+
+                        moveModeW: "800",
+                        moveModeH: "600",
+                        moveModeNo: 1,
+
+                        dbClickEdit: true,
+
+                        showMenu: true,
+                        isEdit: true,
+                        btnMini: true,
+                        topnum: 6,  //水平菜单数量
+                        add: true,
+                        upp: true,
+                        del: true,
+                        move: true,
+                        toExcel: true,
+                        excelName: "excel导出",
+                        isSimple: false,
+                        isSeek: false,
+                    });
+
+                    const tbui = ref({
+                        dbname: mainParams.dbname,
+                        tbname: 'sys_tb_ui',
+                        keyId: 'sid',
+                        bindingKeyId: 'tb_id',
+                        bindingValue: mainParams.tb_id,
+                        tempno: 1,
+                        loadTitles: false, //是否加载标题
+                        loadData: false,
+                        isPage: false,
+                        order: "no",
+                        editMode: 3,
+                        dbClickEdit: false,
+                        showMenu: false,
+                        isEdit: false,
+                        isSimple: false,
+                        isSeek: false,
+                    });
+
+                    const tbfk = ref({
+                        dbname: mainParams.dbname,
+                        tbname: 'sys_tb_fk',
+                        keyId: 'sid',
+                        bindingKeyId: 'tb_id',
+                        bindingValue: mainParams.tb_id,
+                        tempno: 1,
+                        loadTitles: false, //是否加载标题
+                        loadData: true,
+                        isPage: false,
+                        order: "queue",
+                        editMode: 3,
+                        editModeW: 500,
+                        editModeH: 350,
+                        editPlacement: "popper",
+                        editModeNo: 1,
+
+                        moveModeW: "800",
+                        moveModeH: "600",
+                        moveModeNo: 1,
+
+                        dbClickEdit: true,
+
+                        showMenu: true,
+                        isEdit: true,
+                        btnMini: true,
+                        topnum: 7,  //水平菜单数量
+                        copy: false,
+                        add: true,
+                        upp: true,
+                        del: true,
+                        move: true,
+                        editLinks: [],
+                        isSimple: false,
+                        isSeek: false,
+                    });
+
+                    const transShow = (event) => {
+                        let height = mainRef.value?.$el.clientHeight ?? 630;
+                        let top = 30;
+                        let left = -50;
+                        let editH = height - 113;
+                        const s = YqWindowApi.show({
+                            containerRef: event.target,
+                            placement: 'popper',
+                            title: "语言",
+                            width: 625,
+                            height: height,
+                            left: left,
+                            top: top,
+                            type: 'iframe',
+                            content: `trans.html?dbname=${mainParams.dbname}&type=3&name=${mainParams.tbname}&height=${editH}`,
+                            parent: true,
+                            overflow: 'none',
+                            showFooter: false,
+                        });
+                    }
+
+                    const field_editLinks_r = ref([
+                        {
+                            name: 'delall',
+                            label: '删除全部字段',
+                            toptip: '删除全部字段',
+                            icon: 'fa fa-trash',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return false;
+                            }),
+                            click: async (e) => {
+                                await fieldRef.value.menuClick('delall');
+                            }
+                        },
+                        {
+                            name: 'loadfields',
+                            label: '加载字段信息',
+                            toptip: '加载字段信息',
+                            icon: 'fa fa-refresh',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return false;
+                            }),
+                            click: async (e) => {
+                                const res = await yqData.tbFields({
+                                    dbname: mainParams.dbname,
+                                    tbname: mainParams.tbname,
+                                });
+                                if (res.error != 0) {
+                                    YqMessage.error(res.info + '[' + res.error + ']');
+                                    return;
+                                }
+
+                                const rows = fieldRef.value.rows();
+                                console.log(res, rows);
+
+                                for (let i = 0; i < res.rows.length; i++) {
+                                    const row = res.rows[i];
+                                    let hasRow = false;
+                                    for (let j = 0; j < rows.length; j++) {
+                                        if (row.name == rows[j].name) {
+                                            if (row.name == rows[j].name) {
+                                                if (row.fd_type != rows[j].fd_type) {
+                                                    fieldRef.value.updateCellContent({ sid: rows[j].sid, name: "fd_type", value: row["fd_type"] });
+                                                }
+                                                if (row.length != rows[j].length) {
+                                                    fieldRef.value.updateCellContent({ sid: rows[j].sid, name: "length", value: row["length"] });
+                                                }
+                                                if (row.decimal != rows[j].decimal) {
+                                                    fieldRef.value.updateCellContent({ sid: rows[j].sid, name: "decimal", value: row["decimal"] });
+                                                }
+                                            }
+
+                                            hasRow = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!hasRow) {
+                                        fieldRef.value.addRow(row);
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            divided: true,
+                        },
+                        {
+                            name: 'viewdata',
+                            label: '查看数据',
+                            toptip: '查看数据',
+                            icon: 'fa fa-eye',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return false;
+                            }),
+                            click: async (e) => {
+
+                            }
+                        }, {
+                            name: "language",
+                            label: "语言",
+                            toptip: "语言",
+                            icon: "fa fa-language",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: (event) => {
+                                transShow(event);
+                            }
+                        }, {
+                            name: 'delcache',
+                            label: '清理登录缓存',
+                            toptip: '清理登录缓存',
+                            icon: 'fa fa-eraser',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return false;
+                            }),
+                            click: async (e) => {
+                                YqMessageBox.confirm({
+                                    message: '确定清理缓存...',
+                                    title: '提示',
+                                    type: 'message',
+                                    el: e.target,
+                                }).then(async () => {
+                                    await yqData.clearCache("ui:" + mainParams.tbname + ":");
+                                }).catch(() => {
+                                    //console.log('用户点击了取消');
+                                });
+                            }
+                        }
+                    ]);
+
+                    const field_markdown = () => {
+                        var rows = fieldRef.value.rows();
+                        if (rows.length == 0) {
+                            YqMessage.error({
+                                message: "请先加载字段信息",
+                                labelDict: {
+                                    "zh-CN": { message: "请先加载字段信息" },
+                                    "en": { message: "Please load field information first" },
+                                },
+                            });
+                            return;
+                        }
+
+                        var escapeMarkdown = function (text) {
+                            // 转义 Markdown 特殊字符
+                            return text
+                                .replace(/\|/g, "\\|") // 转义 |
+                                .replace(/#/g, "\\#") // 转义 #
+                                .replace(/\*/g, "\\*") // 转义 *
+                                .replace(/_/g, "\\_") // 转义 _
+                                .replace(/~/g, "\\~"); // 转义 ~
+                        }
+
+                        let md_tb = tb_row.value.describe + "[" + tb_row.value.name + "]\n\n";
+                        // 表头
+                        md_tb += "| No. | 字段名 | 标题 | 字段类型 | 备注 |\n";
+                        md_tb += "| -- | --- | --- | --- | --- |\n";
+                        // 遍历每一行数据
+                        rows.forEach((row, index) => {
+                            const no = index + 1; // 序号
+                            const name = escapeMarkdown(row.name || "");
+                            const ui_title = escapeMarkdown(row.ui_title || "");
+                            const fd_type = escapeMarkdown(row.fd_type || "");
+                            var remark = escapeMarkdown(row.remark?.html || "");
+                            if (row.ui_type == 6 || row.ui_type == 13) {
+                                if (row.ui_mask) {
+                                    var ui_mask_str = "";
+                                    const ui_mask = JSON.parse(row.ui_mask);
+                                    if (ui_mask.lists) {
+                                        ui_mask.lists.forEach((list, index_1) => {
+                                            ui_mask_str += (ui_mask_str == "" ? "" : ",") + `${list.no}:${list.name}`;
+                                        });
+                                    }
+                                    remark += escapeMarkdown(ui_mask_str);
+                                }
+                            }
+
+                            md_tb += `| ${no} | ${name} | ${ui_title} | ${fd_type} | ${remark} |\n`;
+                        });
+
+                        navigator.clipboard.writeText(md_tb).then(() => {
+                            YqMessage.success({
+                                message: "Markdown 已复制到剪贴板",
+                                labelDict: {
+                                    "zh-CN": { message: "Markdown 已复制到剪贴板" },
+                                    "en": { message: "Markdown copied to clipboard" },
+                                },
+                            });
+                        }).catch(() => {
+                            YqMessage.error({
+                                message: "复制失败",
+                                labelDict: {
+                                    "zh-CN": { message: "复制失败" },
+                                    "en": { message: "Copy failed" },
+                                },
+                            });
+                        });
+
+                        // 创建下载链接
+                        const blob = new Blob([md_tb], { type: 'text/markdown;charset=utf-8' });
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = tb_row.value.name + ".md";
+                        document.body.appendChild(link);
+                        link.click();
+                        // 清理
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }
+
+                    const field_editLinks = ref([{
+                        name: 'markdown',
+                        label: 'markdown导出',
+                        toptip: 'markdown导出',
+                        icon: 'fa fa-file-code-o',
+                        type: "primary",
+                        divided: false,
+                        disabled: (() => {
+                            return false;
+                        }),
+                        click: (e) => {
+                            field_markdown();
+                        }
+                    }]);
+
+                    const fieldAfterSetTitles = async () => {
+                        await tbuiRef.value.initTitles();
+                    };
+
+                    const fieldAfterSetData = async () => {
+                        await tbuiRef.value.loadData();
+                    };
+
+                    let editKey = -1;
+                    let titles = [];
+                    // 处理行点击
+                    const handleRowClick = ({ row, index, key }) => {
+                        if (row) {
+                            editKey = key;
+                            const ui_mask = (typeof row.ui_mask == 'string' ? JSON.parse(row.ui_mask) : row.ui_mask);
+                            //console.log('handleRowClick', ui_mask);
+
+                            editUiType.value = row.ui_type;
+                            editIsEdit.value = true;
+                            editUiMask.value = ui_mask;
+                        } else {
+                            editKey = -1;
+                            editUiType.value = 1;
+                            editUiMask.value = {};
+                            editIsEdit.value = false;
+                        }
+                    }
+
+                    // 处理单元格更新
+                    const handleUpdateCell = ({ value, row, column }) => {
+                        if (column.name == 'ui_type') {
+                            if (value != editUiType.value) {
+                                editUiType.value = value;
+                                editUiMask.value = {};
+                            }
+                        }
+                    }
+
+                    // 处理行更新
+                    const handleUpdateRows = (value) => {
+                        titles = value;
+                        //console.log('handleUpdateRows', value);
+                    }
+
+                    // 更新编辑UI掩码
+                    const updateEditUiMask = (value) => {
+                        //console.log('updateEditUiMask', value);
+                        fieldRef.value.updateCellContent({
+                            key: editKey,
+                            name: 'ui_mask',
+                            value: JSON.stringify(value),
+                        });
+                    }
+
+                    const activeTab = ref('template');
+
+                    const tabLabelDict = ref({
+                        "zh-CN": {
+                            template: "模板",
+                            link: "关联设置",
+                        },
+                        "en": {
+                            template: "Template",
+                            link: "Link Settings",
+                        },
+                    });
+
+                    let loadFkData = false;
+                    // 处理tab点击
+                    const tabsClick = (tab) => {
+                        //console.log('tabsClick', tab, tab.props.name);
+                        activeTab.value = tab.props.name;
+                        if (tab.props.name == 'link' && !loadFkData) {
+                            loadFkData = true;
+                            tbfkRef.value.initTitles();
+                        }
+                    }
+
+                    //-------------------------
+                    //tbui
+                    let modelTitles = [];
+                    let selectModelRow = null;
+                    let selectModelKey = -1;
+                    const tbuiAfterSetTitles = async () => {
+                        await fieldRef.value.loadData();
+                        modelTitles = [...tbuiRef.value.titles()];
+                        console.log('modelTitles', modelTitles);
+                        const typeTitle = modelTitles.find(item => item.name == 'type');
+                        typeTitle.ui_readonly = true;
+                    };
+
+                    const tbuiRowClick = ({ row, index, key }) => {
+                        if (!row) {
+                            selectModelRow = null;
+                            selectModelKey = -1;
+                            modelBtnEnable.value = {
+                                copy: false,
+                                table: true,
+                                html: true,
+                                code: true,
+                                upp: false,
+                                del: false
+                            };
+                        } else {
+                            selectModelRow = row;
+                            selectModelKey = key;
+                            modelBtnEnable.value = {
+                                copy: true,
+                                table: true,
+                                html: true,
+                                code: true,
+                                upp: true,
+                                del: true
+                            };
+                        }
+                    }
+                    const tbuiRowDblClick = ({ row, index, key }) => {
+                        modelBtnActive.value.upp();
+                    }
+
+                    const modelBtnEnable = ref({
+                        copy: false,
+                        table: true,
+                        html: true,
+                        code: true,
+                        upp: false,
+                        del: false
+                    });
+
+                    const modelBtnActive = ref({
+                        copy: () => {
+                            if (!selectModelRow) {
+                                return;
+                            }
+                            let _row = {
+                                ...selectModelRow,
+                                no: nextModelNo(),
+                            };
+                            delete _row['sid'];
+                            tbuiRef.value?.saveData([{ action: 'add', row: _row }]);
+                        },
+                        table: () => {
+                            tableOpen('add');
+                        },
+                        html: () => {
+                            htmlOpen('add');
+                        },
+                        code: () => {
+                            codeOpen('add');
+                        },
+                        upp: () => {
+                            if (!selectModelRow) {
+                                return;
+                            }
+
+                            if (selectModelRow.type == 1) {
+                                tableOpen('upp');
+                            } else if (selectModelRow.type == 2) {
+                                htmlOpen('upp');
+                            } else if (selectModelRow.type == 3) {
+                                codeOpen('upp');
+                            }
+                        },
+                        del: () => {
+                            if (!selectModelRow) {
+                                return;
+                            }
+                            tbuiRef.value?.saveData([{ action: 'del', row: { sid: selectModelRow.sid } }]);
+                        }
+                    });
+
+                    /* ---------------- 模板菜单（YqMenu inline 工具栏 + YqWindowApi popper 右键菜单） ---------------- */
+                    /** 当前右键菜单弹层 id（'' 表示未打开） */
+                    let tbuiMenuPopperId = '';
+                    /** 是否在 iframe 内（弹窗需委托父窗口） */
+                    const inIframe = () => !!(window.parent && window.parent !== window);
+                    /** 关闭模板右键菜单弹层 */
+                    const closeTbuiMenuPopper = () => {
+                        if (!tbuiMenuPopperId) return;
+                        const id = tbuiMenuPopperId;
+                        tbuiMenuPopperId = '';
+                        YqWindowApi.close(id, inIframe());
+                    };
+                    /** 点击弹层以外区域时关闭菜单（modal:false 的 popper 无遮罩，需自行处理） */
+                    const onTbuiMenuDocMouseDown = (e) => {
+                        if (!tbuiMenuPopperId) return;
+                        const root = document.getElementById(tbuiMenuPopperId);
+                        if (root && e.target instanceof Node && root.contains(e.target)) return;
+                        closeTbuiMenuPopper();
+                    };
+                    /**
+                     * 构建模板菜单项（原按钮组 copy/table/html/code | upp/del）。
+                     * disabled 闭包读取最新 modelBtnEnable 状态；顶部内联菜单与右键菜单共用。
+                     */
+                    const buildTbuiMenuItems = () => [
+                        {
+                            name: 'copy', label: '拷贝模板', toptip: '拷贝模板', icon: 'fa fa-copy', type: 'primary',
+                            disabled: () => !modelBtnEnable.value.copy,
+                            click: () => { closeTbuiMenuPopper(); modelBtnActive.value.copy(); }
+                        },
+                        {
+                            name: 'table', label: '表格模板', toptip: '表格模板', icon: 'fa fa-table', type: 'primary',
+                            disabled: () => !modelBtnEnable.value.table,
+                            click: () => { closeTbuiMenuPopper(); modelBtnActive.value.table(); }
+                        },
+                        {
+                            name: 'html', label: 'Html模板', toptip: 'Html模板', icon: 'fa fa-file-code-o', type: 'primary',
+                            disabled: () => !modelBtnEnable.value.html,
+                            click: () => { closeTbuiMenuPopper(); modelBtnActive.value.html(); }
+                        },
+                        {
+                            name: 'code', label: 'Code代码', toptip: 'Code代码', icon: 'fa fa-code', type: 'primary',
+                            disabled: () => !modelBtnEnable.value.code,
+                            click: () => { closeTbuiMenuPopper(); modelBtnActive.value.code(); }
+                        },
+                        { name: 'divider1', divided: true },
+                        {
+                            name: 'upp', label: '修改', toptip: '修改', icon: 'fa fa-pencil-square', type: 'primary',
+                            disabled: () => !modelBtnEnable.value.upp,
+                            click: () => { closeTbuiMenuPopper(); modelBtnActive.value.upp(); }
+                        },
+                        {
+                            name: 'del', label: '删除', toptip: '删除', icon: 'fa fa-trash', type: 'primary',
+                            disabled: () => !modelBtnEnable.value.del,
+                            click: () => { closeTbuiMenuPopper(); modelBtnActive.value.del(); }
+                        }
+                    ];
+                    /** 顶部内联菜单项：computed 建立对 modelBtnEnable 的响应式依赖，行选中变化时刷新禁用态 */
+                    const modelMenus = computed(() => {
+                        modelBtnEnable.value;
+                        return buildTbuiMenuItems();
+                    });
+                    /** 打开模板右键菜单（popper 定位用鼠标相对目标元素的偏移） */
+                    const tbuiMenuOpen = (e) => {
+                        closeTbuiMenuPopper();
+                        const el = e.target;
+                        const rect = el.getBoundingClientRect();
+                        tbuiMenuPopperId = YqWindowApi.show({
+                            containerRef: el,
+                            placement: 'popper',
+                            showTitle: false,
+                            showClose: false,
+                            modal: false,
+                            top: e.clientY - rect.top,
+                            left: e.clientX - rect.left,
+                            width: 120,
+                            height: 200,
+                            fullscreen: false,
+                            type: 'param',
+                            content: {
+                                h: 'YqMenu',
+                                props: { type: 'vertical', menuItems: buildTbuiMenuItems() }
+                            },
+                            overflow: 'hidden',
+                            showFooter: false,
+                            parent: inIframe(),
+                            onClosed: () => { tbuiMenuPopperId = ''; }
+                        });
+                    };
+                    /** yq-data-grid 右键事件：阻止默认菜单并打开自定义菜单 */
+                    const onTbuiContextMenu = (e) => {
+                        e.preventDefault();
+                        tbuiMenuOpen(e);
+                    };
+                    onMounted(() => {
+                        document.addEventListener('mousedown', onTbuiMenuDocMouseDown, true);
+                    });
+                    onBeforeUnmount(() => {
+                        document.removeEventListener('mousedown', onTbuiMenuDocMouseDown, true);
+                        closeTbuiMenuPopper();
+                    });
+
+                    const popoverVisible = ref(false)
+                    const nextModelNo = () => {
+                        const modelRows = tbuiRef.value.rows();
+                        let no = 0;
+                        for (let i = 0; i < modelRows.length; i++) {
+                            if (modelRows[i].no > no) {
+                                no = modelRows[i].no;
+                            }
+                        }
+                        return no + 1;
+                    }
+                    const modelModel = `<table>
+                <tbody>    
+                    <tr>
+                    <td><label id="lbl_no">编码</label></td>
+                    <td><input id="txt_no" type="text" style="width: 90px;"></td>
+                    <td><label id="lbl_describe">描述</label></td>
+                    <td><input id="txt_describe" type="text" style="width: 150px;"></td>
+                    <td><label id="lbl_type">类型</label></td>
+                    <td><input id="txt_type" type="text" style="width: 150px;"></td>
+                </tr>
+                </tbody>
+            </table>`;
+
+                    const tableOpen = (action) => {
+                        popoverVisible.value = true
+
+                        let parent = true
+                        if (!window.parent || window.parent === window) {
+                            parent = false
+                        }
+
+                        let rect = {
+                            top: 0,
+                            left: 0,
+                            width: window.top.innerWidth - 10,
+                            height: window.top.innerHeight - 10,
+                        };
+                        if (rect.width > 950) rect.width = 950;
+                        if (rect.height > 800) rect.height = 800;
+
+                        const _titles = [
+                            {
+                                name: "is_func",
+                                ui_title: "函数",
+                                ui_type: 3,
+                                ui_width: 60,
+                                ui_visible: true,
+                                ui_readonly: true,
+                                ui_mask: {
+                                    default: false
+                                }
+                            }, {
+                                name: "name",
+                                ui_title: "字段名",
+                                fd_type: "nvarchar",
+                                length: 100,
+                                decimal: 0,
+                                ui_type: 2,
+                                ui_width: 130,
+                                ui_visible: true,
+                                ui_readonly: true,
+                                ui_mask: {
+                                    default: "",
+                                    blank: false,
+                                    format: null
+                                }
+                            }, {
+                                name: "ui_title",
+                                ui_title: "字段描述",
+                                fd_type: "nvarchar",
+                                length: 130,
+                                decimal: 0,
+                                ui_type: 2,
+                                ui_width: 90,
+                                ui_visible: true,
+                                ui_readonly: true,
+                                ui_mask: {
+                                    default: "",
+                                    blank: false,
+                                    format: null
+                                }
+                            }, {
+                                name: "ui_type",
+                                is_func: false,
+                                ui_title: "UI类型",
+                                fd_type: "int",
+                                length: 16,
+                                decimal: 0,
+                                ui_type: 6,
+                                ui_width: 135,
+                                ui_visible: true,
+                                ui_readonly: true,
+                                ui_mask: {
+                                    default: 2,
+                                    blank: false,
+                                    lists: [
+                                        {
+                                            no: 1,
+                                            name: "Lable"
+                                        }, {
+                                            no: 2,
+                                            name: "Textbox"
+                                        }, {
+                                            no: 3,
+                                            name: "Checkbox"
+                                        }, {
+                                            no: 4,
+                                            name: "Datetbox"
+                                        }, {
+                                            no: 5,
+                                            name: "Richbox"
+                                        }, {
+                                            no: 6,
+                                            name: "Combobox"
+                                        }, {
+                                            no: 7,
+                                            name: "ForeignKey"
+                                        }, {
+                                            no: 8,
+                                            name: "TreeSelect"
+                                        }, {
+                                            no: 9,
+                                            name: "Numberbox"
+                                        }, {
+                                            no: 10,
+                                            name: "Numberspinner"
+                                        }, {
+                                            no: 11,
+                                            name: "TimeSpinner"
+                                        }, {
+                                            no: 12,
+                                            name: "DateTimebox"
+                                        }, {
+                                            no: 13,
+                                            name: "NCheckBox"
+                                        }, {
+                                            no: 14,
+                                            name: "NForeignKey"
+                                        }, {
+                                            no: 15,
+                                            name: "Table"
+                                        }, {
+                                            no: 16,
+                                            name: "Tree"
+                                        }, {
+                                            no: 17,
+                                            name: "Attr"
+                                        }, {
+                                            no: 18,
+                                            name: "File"
+                                        }, {
+                                            no: 19,
+                                            name: "Html"
+                                        }, {
+                                            no: 20,
+                                            name: "SCV"
+                                        }, {
+                                            no: 21,
+                                            name: "Func"
+                                        }, {
+                                            no: 900,
+                                            name: "ui_type"
+                                        }, {
+                                            no: 901,
+                                            name: "titles"
+                                        }
+                                    ]
+                                }
+                            }, {
+                                name: "group",
+                                ui_title: "分组名称",
+                                fd_type: "nvarchar",
+                                length: 100,
+                                decimal: 0,
+                                ui_type: 2,
+                                ui_width: 90,
+                                ui_visible: true,
+                                ui_readonly: false,
+                                ui_mask: {
+                                    default: "默认值",
+                                    min: 0,
+                                    max: 50,
+                                    blank: false,
+                                    format: null
+                                }
+                            }, {
+                                name: "ui_width",
+                                ui_title: "宽度",
+                                fd_type: "int",
+                                length: 10,
+                                decimal: 0,
+                                ui_type: 10,
+                                ui_width: 80,
+                                ui_visible: true,
+                                ui_readonly: false,
+                                ui_mask: {
+                                    default: "默认值",
+                                    min: 10,
+                                    max: 900,
+                                    blank: false,
+                                    format: "phone"
+                                }
+                            }, {
+                                name: "ui_visible",
+                                is_func: false,
+                                ui_title: "ui可见",
+                                fd_type: "boolean",
+                                length: 1,
+                                decimal: 0,
+                                ui_type: 3,
+                                ui_width: 70,
+                                ui_visible: true,
+                                ui_readonly: false,
+                                ui_mask: {
+                                    default: true
+                                }
+                            }, {
+                                name: "ui_readonly",
+                                is_func: false,
+                                ui_title: "只读",
+                                fd_type: "boolean",
+                                length: 1,
+                                decimal: 0,
+                                ui_type: 3,
+                                ui_width: 60,
+                                ui_visible: true,
+                                ui_readonly: false,
+                                ui_mask: {
+                                    default: false
+                                }
+                            }, {
+                                name: "ui_mask",
+                                is_func: false,
+                                ui_title: "掩码",
+                                fd_type: "nvarchar",
+                                length: -1,
+                                decimal: 0,
+                                ui_type: 1,
+                                ui_width: 130,
+                                ui_visible: false,
+                                ui_readonly: true,
+                                ui_mask: {}
+                            }, {
+                                name: "func",
+                                ui_title: "函数表达式",
+                                fd_type: "nvarchar",
+                                length: 170,
+                                decimal: 0,
+                                ui_type: 2,
+                                ui_width: 120,
+                                ui_visible: true,
+                                ui_readonly: true,
+                                ui_mask: {
+                                    default: "",
+                                    blank: false,
+                                    format: null
+                                }
+                            }
+                        ];
+
+                        let _row = {}
+                        let _model = [];
+                        if (action == 'add') {
+                            _row = {
+                                no: nextModelNo(),
+                                type: 1,
+                                describe: ''
+                            };
+                            _model = JSON.parse(JSON.stringify(titles));
+                        } else {
+                            if (!selectModelRow) {
+                                return;
+                            }
+                            _row = selectModelRow;
+                            _model = JSON.parse(_row.model);
+                            let tmpModel = [];
+                            for (let i = 0; i < _model.length; i++) {
+                                let itemExist = titles.find((item) => item.name == _model[i].name);
+                                if (itemExist) {
+                                    for (let i2 = 0; i2 < _titles.length; i2++) {
+                                        if (_titles[i2].ui_readonly) {
+                                            _model[i][_titles[i2].name] = itemExist[_titles[i2].name];
+                                        }
+                                    }
+                                    tmpModel.push(_model[i]);
+                                }
+                            }
+
+                            for (let i = 0; i < titles.length; i++) {
+                                let itemExist = tmpModel.find((item) => item.name == titles[i].name);
+                                if (!itemExist) {
+                                    tmpModel.push(titles[i]);
+                                }
+                            }
+
+                            _model = tmpModel;
+                        }
+
+
+                        let popperId = ''
+
+                        const content = {
+                            h: 'div',
+                            props: {
+                                style: {
+                                    padding: '0 5px',
+                                    background: '#f5f7fa',
+                                }
+                            },
+                            children: [{
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '0',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqEdit',
+                                    props: {
+                                        titles: modelTitles,
+                                        model: modelModel,
+                                        row: _row,
+                                        isEdit: true,
+                                        'onUpdate:row': (val) => {
+                                            _row = val;
+                                        },
+                                    }
+                                }
+                            }, {
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '0px',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqTableEdit',
+                                    props: {
+                                        titles: _titles,
+                                        rows: _model,
+                                        isEdit: true,
+                                        editType: 0,
+                                        mini: true,
+                                        add: false,
+                                        copy: false,
+                                        del: false,
+                                        move: true,
+                                        height: rect.height - 90,
+                                        border: false,
+                                        'onUpdate:rows': (val) => {
+                                            _model = val;
+                                        },
+                                    }
+                                }
+                            }]
+                        }
+
+                        let children = {
+                            h: "div",
+                            props: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            },
+                            children: [{
+                                h: "YqButton",
+                                props: {
+                                    type: 'danger',
+                                    label: '取消',
+                                    labelDict: { 'zh-CN': '取消', 'en': 'Cancel' },
+                                    onClick: () => {
+                                        YqWindowApi.close(popperId, parent);
+                                    }
+                                }
+                            },
+                            {
+                                h: "YqButton",
+                                props: {
+                                    type: 'primary',
+                                    label: '确定',
+                                    labelDict: { 'zh-CN': '确定', 'en': 'Confirm' },
+                                    onClick: async () => {
+                                        _model = yqUiPub.transtoRows(_titles, _model, false);
+                                        let __model = [..._model.filter((item) => item.ui_visible == true), ..._model.filter((item) => item.ui_visible != true)];
+                                        _row.model = JSON.stringify(__model);
+                                        //console.log('确定', _row);
+
+                                        if (action == 'add') {
+                                            tbuiRef.value?.saveData([{ action: 'add', row: _row }]);
+                                        } else {
+                                            tbuiRef.value?.saveData([{ action: 'upp', key: selectModelKey, row: _row }]);
+                                        }
+
+                                        YqWindowApi.close(popperId, parent);
+                                    }
+                                }
+                            }]
+                        }
+
+                        const options = {
+                            //containerRef: el,
+                            placement: 'center',
+                            showTitle: false,
+                            modal: true,
+                            top: 0,
+                            left: 0,
+                            width: rect.width,
+                            height: rect.height,
+                            fullscreen: false,
+                            type: 'param',
+                            content: content,
+                            overflow: 'auto',
+                            showFooter: true,
+                            children: children,
+                            parent: parent
+                        }
+
+                        popperId = YqWindowApi.show(options);
+                    }
+
+                    const htmlOpen = (action) => {
+                        popoverVisible.value = true
+
+                        let parent = true
+                        if (!window.parent || window.parent === window) {
+                            parent = false
+                        }
+
+                        let rect = {
+                            top: 0,
+                            left: 0,
+                            width: window.top.innerWidth - 10,
+                            height: window.top.innerHeight - 10,
+                        };
+                        console.log('rect', rect);
+                        if (rect.width > 1500) rect.width = 1500;
+                        if (rect.height > 950) rect.height = 950;
+
+                        let _row = {}
+                        let _model = '';
+                        if (action == 'add') {
+                            _row = {
+                                no: nextModelNo(),
+                                type: 2,
+                                describe: ''
+                            };
+                            _model = '';
+                        } else {
+                            if (!selectModelRow) {
+                                return;
+                            }
+                            _row = selectModelRow;
+                            _model = _row.model;
+                        }
+
+                        let popperId = ''
+
+                        const content = {
+                            h: 'div',
+                            props: {
+                                style: {
+                                    padding: '0 5px',
+                                    background: '#f5f7fa',
+                                }
+                            },
+                            children: [{
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '0',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqEdit',
+                                    props: {
+                                        titles: modelTitles,
+                                        model: modelModel,
+                                        row: _row,
+                                        isEdit: true,
+                                        'onUpdate:row': (val) => {
+                                            _row = val;
+                                        },
+                                    }
+                                }
+                            }, {
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '0px',
+                                        height: (rect.height - 88) + 'px',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqTmplHtmlEdit',
+                                    props: {
+                                        value: _model,
+                                        titles: titles,
+                                        isEdit: true,
+                                        'onUpdate:value': (val) => {
+                                            _model = val;
+                                        },
+                                    }
+                                }
+                            }]
+                        }
+
+                        let children = {
+                            h: "div",
+                            props: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            },
+                            children: [{
+                                h: "YqButton",
+                                props: {
+                                    type: 'danger',
+                                    label: '取消',
+                                    labelDict: { 'zh-CN': '取消', 'en': 'Cancel' },
+                                    onClick: () => {
+                                        YqWindowApi.close(popperId, parent);
+                                    }
+                                }
+                            },
+                            {
+                                h: "YqButton",
+                                props: {
+                                    type: 'primary',
+                                    label: '确定',
+                                    labelDict: { 'zh-CN': '确定', 'en': 'Confirm' },
+                                    onClick: async () => {
+                                        _row.model = _model;
+                                        //console.log('确定', _row);
+
+                                        if (action == 'add') {
+                                            tbuiRef.value?.saveData([{ action: 'add', row: _row }]);
+                                        } else {
+                                            tbuiRef.value?.saveData([{ action: 'upp', key: selectModelKey, row: _row }]);
+                                        }
+
+                                        YqWindowApi.close(popperId, parent);
+                                    }
+                                }
+                            }]
+                        }
+
+                        const options = {
+                            //containerRef: el,
+                            placement: 'center',
+                            showTitle: false,
+                            modal: true,
+                            top: 0,
+                            left: 0,
+                            width: rect.width,
+                            height: rect.height,
+                            fullscreen: false,
+                            type: 'param',
+                            content: content,
+                            overflow: 'auto',
+                            showFooter: true,
+                            children: children,
+                            parent: parent
+                        }
+
+                        popperId = YqWindowApi.show(options);
+                    }
+
+                    const codeOpen = (action) => {
+                        popoverVisible.value = true
+
+                        let parent = true
+                        if (!window.parent || window.parent === window) {
+                            parent = false
+                        }
+
+                        let rect = {
+                            top: 0,
+                            left: 0,
+                            width: window.top.innerWidth - 10,
+                            height: window.top.innerHeight - 10,
+                        };
+                        if (rect.width > 950) rect.width = 950;
+                        if (rect.height > 800) rect.height = 800;
+
+                        let _row = {}
+                        let _model = '';
+                        if (action == 'add') {
+                            _row = {
+                                no: nextModelNo(),
+                                type: 3,
+                                describe: ''
+                            };
+                            _model = '';
+                        } else {
+                            if (!selectModelRow) {
+                                return;
+                            }
+                            _row = selectModelRow;
+                            _model = _row.model;
+                        }
+
+                        let popperId = ''
+
+                        const content = {
+                            h: 'div',
+                            props: {
+                                style: {
+                                    padding: '0 5px',
+                                    background: '#f5f7fa',
+                                }
+                            },
+                            children: [{
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '0',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqEdit',
+                                    props: {
+
+                                        titles: modelTitles,
+                                        model: modelModel,
+                                        row: _row,
+                                        isEdit: true,
+                                        'onUpdate:row': (val) => {
+                                            _row = val;
+                                        },
+                                    }
+                                }
+                            }, {
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '0px',
+                                        height: (rect.height - 88) + 'px',
+                                    }
+                                },
+                                children: {
+                                    h: 'YqCodeEdit',
+                                    props: {
+                                        code: _model,
+                                        isEdit: true,
+                                        mode: 'js',            // 初始模式为python
+                                        types: ['js'],
+                                        indentSize: 2,             // 设置缩进宽度为2个空格
+                                        autoCompletion: true,      // 开启自动完成
+                                        autoFold: true,            // 开启自动折叠
+                                        highlightActiveLine: true, // 开启高亮当前行
+                                        tabSize: 2,                // 设置Tab键宽度为2个空格
+                                        clear: true,                 // 是否清空代码
+                                        'onUpdate:code': (val) => {
+                                            _model = val;
+                                        },
+                                    }
+                                }
+                            }]
+                        }
+
+                        let children = {
+                            h: "div",
+                            props: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            },
+                            children: [{
+                                h: "YqButton",
+                                props: {
+                                    type: 'danger',
+                                    label: '取消',
+                                    labelDict: { 'zh-CN': '取消', 'en': 'Cancel' },
+                                    onClick: () => {
+                                        YqWindowApi.close(popperId, parent);
+                                    }
+                                }
+                            },
+                            {
+                                h: "YqButton",
+                                props: {
+                                    type: 'primary',
+                                    label: '确定',
+                                    labelDict: { 'zh-CN': '确定', 'en': 'Confirm' },
+                                    onClick: async () => {
+                                        _row.model = _model;
+                                        //console.log('确定', _row);
+
+                                        if (action == 'add') {
+                                            tbuiRef.value?.saveData([{ action: 'add', row: _row }]);
+                                        } else {
+                                            tbuiRef.value?.saveData([{ action: 'upp', key: selectModelKey, row: _row }]);
+                                        }
+
+                                        YqWindowApi.close(popperId, parent);
+                                    }
+                                }
+                            }]
+                        }
+
+                        const options = {
+                            //containerRef: el,
+                            placement: 'center',
+                            showTitle: false,
+                            modal: true,
+                            top: 0,
+                            left: 0,
+                            width: rect.width,
+                            height: rect.height,
+                            fullscreen: false,
+                            type: 'param',
+                            content: content,
+                            overflow: 'auto',
+                            showFooter: true,
+                            children: children,
+                            parent: parent
+                        }
+
+                        popperId = YqWindowApi.show(options);
+                    }
+
+                    //-------------------
+
+                    onMounted(async () => {
+                        try {
+                            const res = await yqData.dbTbRow({
+                                dbname: mainParams.dbname,
+                                tbname: 'sys_tb',
+                                keyid: 'sid',
+                                keyval: mainParams.tb_id
+                            });
+                            //console.log(res);
+                            if (res.error == 0) {
+                                res.row.db_name = mainParams.dbname;
+                                tb_row.value = res.row;
+                                mainParams.tbname = res.row.name;
+                                await fieldRef.value.initTitles();
+                            }
+                        } catch (error) {
+                            console.error('Error in onMounted:', error);
+                        }
+                    });
+
+                    const fieldProps = computed(() => ({
+                        ...field.value,
+                        menuType: 3,
+                        editLinks: field_editLinks.value,
+                        editLinks_r: field_editLinks_r.value,
+                        afterSetTitles: fieldAfterSetTitles,
+                        afterSetData: fieldAfterSetData,
+                        onRowClick: handleRowClick,
+                        'onUpdate:cell': handleUpdateCell,
+                        'onUpdate:rows': handleUpdateRows,
+                    }));
+
+                    const tbuiProps = computed(() => ({
+                        ...tbui.value,
+                        menuType: 3,
+                        afterSetTitles: tbuiAfterSetTitles,
+                        onRowClick: tbuiRowClick,
+                        onRowDblClick: tbuiRowDblClick,
+                    }));
+
+                    const tbfkProps = computed(() => ({
+                        ...tbfk.value,
+                        menuType: 3,
+                    }));
+
+                    return {
+                        mainRef,
+                        footerH,
+
+                        fieldRef,
+                        tbuiRef,
+                        tbfkRef,
+
+                        fieldProps,
+                        tbuiProps,
+                        tbfkProps,
+
+                        tb_row,
+
+                        field_editLinks,
+                        field_editLinks_r,
+
+                        editUiType,
+                        editUiMask,
+                        editIsEdit,
+                        fieldAfterSetTitles,
+                        fieldAfterSetData,
+                        handleRowClick,
+                        handleUpdateCell,
+                        handleUpdateRows,
+                        updateEditUiMask,
+
+                        activeTab,
+                        tabsClick,
+                        tabLabelDict,
+
+                        tbuiAfterSetTitles,
+                        tbuiRowClick,
+                        tbuiRowDblClick,
+                        modelBtnEnable,
+                        modelBtnActive,
+                        modelMenus,
+                        onTbuiContextMenu,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+    </script>
+
+    <style scoped>
+        .el-tabs__header {
+            margin: 0;
+        }
+    </style>
+</body>
+
+</html>

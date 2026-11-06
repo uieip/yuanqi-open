@@ -1,0 +1,340 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Table 行拖拽示例</title>
+</head>
+
+<body style="height: auto;">
+    <div id="app">
+        <div style="margin: 20px;">
+            <h2>vuedraggable Table 行拖拽示例</h2>
+            <div class="yq-draggable" style="width: 100%;">
+                <div class="header">
+                    <div class="cell">
+                        <yq-icon icon="fa fa-home"></yq-icon>
+                    </div>
+                    <div v-for="title in titles.filter(title => title.ui_visible)" :key="title.name" class="cell"
+                        :style="{ width: title.ui_width + 'px' }">{{ title.ui_title }}</div>
+                </div>
+                <draggable v-model="rows" item-key="sid" ghost-class="ghost-row" chosen-class="chosen-row"
+                    animation="200" style="width: 100%; height: 20vh; overflow: auto;">
+                    <template #item="{ element, index }">
+                        <div class="row">
+                            <div class="cell">
+                                {{ (index +1) }}
+                            </div>
+                            <div v-for="title  in titles.filter(title => title.ui_visible)" :key="title.name"
+                                class="cell" :style="{ width: title.ui_width + 'px' }">
+                                {{ element[title.name] }}
+                            </div>
+                        </div>
+                    </template>
+                </draggable>
+            </div>
+            <h2>YqQueue 示例</h2>
+            <div style="width: 100%; height: 250px; border: 1px solid #409eff">
+                <yq-queue :titles="titles" v-model:rows="rows" height="250px">
+                </yq-queue>
+            </div>
+            <el-button class="show-queue-popper" type="primary" @click="showQueuePopper">打开队列弹窗</el-button>
+            <el-card style="margin-top: 20px;">
+                <template #header>
+                    <div class="card-header">
+                        <span>拖拽结果</span>
+                    </div>
+                </template>
+                <pre style="height: 20vh; overflow: auto;">{{ JSON.stringify(rows, null, 2) }}</pre>
+            </el-card>
+        </div>
+    </div>
+    <script src="/scripts/vue/Sortable.min.js"></script>
+    <script src="/scripts/vue/vuedraggable.umd.min.js"></script>
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqIcon, YqQueue, YqPopperShow } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqIcon,
+                YqQueue,
+                draggable: vuedraggable,
+                YqPopperShow 
+            },
+            setup() {
+                const titles_2 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    }
+                ];
+                const rows_2 = [{
+                    "sid": "sid-1",
+                    "lable": "Lable-1",
+                    "textbox": "Textbox-1",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }, {
+                    "sid": "sid-2",
+                    "lable": "Lable-2",
+                    "textbox": "Textbox-2",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }, {
+                    "sid": "sid-3",
+                    "lable": "Lable-3",
+                    "textbox": "Textbox-3",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }, {
+                    "sid": "sid-4",
+                    "lable": "Lable-4",
+                    "textbox": "Textbox-4",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }, {
+                    "sid": "sid-5",
+                    "lable": "Lable-5",
+                    "textbox": "Textbox-5",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }, {
+                    "sid": "sid-6",
+                    "lable": "Lable-6",
+                    "textbox": "Textbox-6",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }];
+
+                const titles = ref(titles_2);
+                const rows = ref(rows_2);
+
+                return {
+                    titles,
+                    rows
+                };
+            },
+            methods: {
+                showQueuePopper() {
+                    const btn = document.querySelector('.show-queue-popper')
+                    const rect = document.querySelector('.show-queue-popper')?.getBoundingClientRect()  
+
+                    const options = {
+                        ajaxUrl: "",
+                        titles: this.titles,
+                        rows: this.rows,
+                        keyId: "sid",
+                        fkrows: [], // 关联数据
+
+                        containerRef: btn,
+                        top: rect.height,
+                        left: 0,
+                        width: 600,
+                        height: 250,
+                    }
+
+                    YqPopperShow.queue(options, (val) => {
+                        this.rows = val
+                    })
+                }
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .drag-icon {
+            cursor: move;
+            color: #909399;
+            user-select: none;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        pre {
+            background: #f5f7fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+
+        /* 拖拽表格样式 */
+        .yq-draggable {
+            border: 1px solid #ebeef5;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 表头样式 */
+        .yq-draggable .header {
+            display: flex;
+            background-color: #ecf1f8;
+            border-bottom: 1px solid #ebeef5;
+            font-weight: 500;
+            color: #303133;
+        }
+
+        /* 行样式 */
+        .yq-draggable .row {
+            display: flex;
+            border-bottom: 1px solid #ebeef5;
+            transition: background-color 0.2s;
+            align-items: center;
+        }
+
+        /* 行悬停效果 */
+        .yq-draggable .row:hover {
+            background-color: #ecf5ff;
+        }
+
+        /* 单元格样式 */
+        .yq-draggable .cell {
+            padding: 12px;
+            box-sizing: border-box;
+            border-right: 1px solid #ebeef5;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 最后一个单元格 */
+        .yq-draggable .cell:last-child {
+            border-right: none;
+            flex: 1;
+        }
+
+        /* 拖拽图标单元格 */
+        .yq-draggable .cell:first-child {
+            width: 50px;
+            justify-content: center;
+        }
+
+        /* 拖拽图标 */
+        .yq-draggable .drag-icon {
+            cursor: move;
+            color: #909399;
+            user-select: none;
+            font-size: 14px;
+            padding: 4px;
+            border-radius: 2px;
+        }
+
+        /* 拖拽图标悬停 */
+        .yq-draggable .drag-icon:hover {
+            color: #409eff;
+            background-color: rgba(64, 158, 255, 0.1);
+        }
+
+        /* 单元格文本 */
+        .yq-draggable .cell {
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 数据单元格 */
+        .yq-draggable .row .cell {
+            color: #606266;
+        }
+
+        /* 拖拽状态 */
+        .yq-draggable .ghost-row {
+            opacity: 0.5;
+            background-color: #ecf5ff;
+            border: 1px dashed #409eff;
+        }
+
+        .yq-draggable .chosen-row {
+            background-color: #ecf5ff;
+        }
+
+        /* 空状态 */
+        .yq-draggable .empty {
+            padding: 48px 24px;
+            text-align: center;
+            color: #909399;
+            font-size: 14px;
+        }
+    </style>
+</body>
+
+</html>

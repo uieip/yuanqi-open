@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+    <title>flowview</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .test-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 8px 12px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+            flex-shrink: 0;
+        }
+
+        .flow-container {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .preview-panel {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            border-top: 2px solid #e4e7ed;
+            flex-shrink: 0;
+        }
+
+        .preview-header {
+            padding: 6px 12px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+            font-weight: bold;
+            font-size: 13px;
+            color: #303133;
+        }
+
+        .preview-content {
+            flex: 1;
+            overflow: auto;
+            padding: 8px;
+            background-color: #fff;
+        }
+
+        .json-preview {
+            margin: 0;
+            font-size: 13px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="test-header">
+            <a href="javascript:window.history.back();">返回</a>
+            <el-button type="primary" @click="onGetValue">getValue</el-button>
+            <el-button type="success" @click="loadSampleData">加载示例数据</el-button>
+        </div>
+        <div class="flow-container">
+            <yq-flow-view ref="viewRef" v-model="flowData" v-model:is-flow="isFlow" :type="testType" :users="users"
+                :admin="admin" @change="onChange" />
+        </div>
+        <div class="preview-panel">
+            <div class="preview-header">流程数据预览</div>
+            <div class="preview-content">
+                <pre class="json-preview">{{ savedModel }}</pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqFlowView, yqWf, yqData } = YqwinPlus;
+
+        initTheme();
+
+        // 演示页无登录会话：YqFlowView 挂载时会调用 yqData.dbList()，
+        // 未登录时后端返回 error=404，YqData.dataErrCheck 会自动跳转
+        // /login/login.html?backurl=...。这里桩掉该请求，保证 demo 可直接打开。
+        yqData.dbList = async () => ({ error: 0, rows: [{ name: 'yqbase' }], total: 1 });
+
+        const flowDemo = {
+            "info": {
+                "ver": 1,
+                "current": true,
+                "name": "版本1",
+                "params": [
+                    {
+                        "name": "name1",
+                        "desc": "参数1",
+                        "type": 3,
+                        "ui_mask": { "default": true },
+                        "source_type": 1,
+                        "value": true
+                    },
+                    {
+                        "name": "name2",
+                        "desc": "参数2",
+                        "type": 9,
+                        "ui_mask": { "default": 80, "groupSeparator": "" },
+                        "source_type": 1,
+                        "value": 80
+                    },
+                    {
+                        "name": "table",
+                        "desc": "Table",
+                        "type": 15,
+                        "ui_mask": {
+                            "editModeW": 450,
+                            "editModeH": 450,
+                            "editType": 0,
+                            "modelNo": -1,
+                            "panelWidth": 500,
+                            "panelHeight": 400,
+                            "param": {
+                                "titles": [
+                                    { "name": "no", "ui_title": "No", "ui_type": 2, "ui_width": 90, "ui_visible": true, "ui_readonly": false, "ui_mask": {} },
+                                    { "name": "name", "ui_title": "Name", "ui_type": 2, "ui_width": 150, "ui_visible": true, "ui_readonly": false, "ui_mask": {} }
+                                ],
+                                "model": []
+                            },
+                            "rows": []
+                        },
+                        "source_type": 2
+                    }
+                ],
+                "describe": "描述",
+                "case_when": "条件",
+                "remark": "备注",
+                "func": "程序地址",
+                "db_name": "yqbase",
+                "tb_name": "ab_test_m",
+                "state_field": "state",
+                "state_func": "状态程序",
+                "state_start": "0,1",
+                "state_start_name": "草噶",
+                "state": 9,
+                "foreignkey": "0c740ec8-2ca4-43d0-82f8-36dcad69d06f",
+                "foreignkeyVal": "11111111111111",
+                "wfstate": 9,
+                "wfname": "版本1",
+                "topic": "qaz1二尔",
+                "tb_id": "428b1d6c-e038-4f4b-9c2d-9a92af885b13",
+                "s_time": "2025-02-01 20:40:08",
+                "e_time": "2025-02-01 20:40:36"
+            },
+            "node": [
+                {
+                    "category": "Start", "text": "Start", "key": 1, "loc": "-811 -394", "desc": "Start", "size": "115 60", "class": 1,
+                    "params": [
+                        { "name": "name1", "desc": "参数1" },
+                        { "name": "name2", "desc": "参数2" }
+                    ],
+                    "users": [
+                        { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring", "mmdId": 1, "e_time": "2025-02-01 20:40:19" }
+                    ],
+                    "todo": 9, "s_time": "2025-02-01 20:40:08", "duplicateType": 1, "e_time": "2025-02-01 20:40:19"
+                },
+                {
+                    "category": "Return", "text": "Return", "key": 2, "loc": "-810 -275", "size": "115 60", "class": 2, "desc": "Return",
+                    "users": [
+                        { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring" }
+                    ]
+                },
+                {
+                    "category": "Exec", "text": "最小通过人数2", "key": 3, "loc": "-591.50 -389", "desc": "Exec",
+                    "roleType": 3, "remark": null, "state": null, "stateName": "",
+                    "roleMark": [
+                        { "name": "ocean", "sid": "ef8b83ec-18b9-4740-89b3-a11147392819" },
+                        { "name": "设计工程师", "sid": "ef8b83ec-18b9-4740-89b3-a11147392819" }
+                    ],
+                    "roleIsNull": "", "roleIsEdit": true, "rolePass": false, "duplicateType": 2, "duplicateNum": 2,
+                    "size": "140 80", "class": 5, "code": "11",
+                    "users": [
+                        { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring", "mmdId": 1, "e_time": "2025-02-01 20:40:23" },
+                        { "id": "b21313cb-5db7-430f-8ffe-d9281589b6fa", "name": "test1", "mmdId": 1, "e_time": "2025-02-01 20:40:27", "checkin": "22bd7aed-f114-4c59-9590-204e7d563245" }
+                    ],
+                    "s_time": "2025-02-01 20:40:19", "todo": 9, "e_time": "2025-02-01 20:40:27"
+                },
+                { "category": "Judge", "text": "判断", "key": 4, "loc": "-662.50 -185", "size": "140 60", "desc": "判断", "class": 6, "s_time": "2025-02-01 20:40:27", "todo": 9 },
+                {
+                    "category": "Exec", "text": "最小通过百分比50%", "key": 5, "loc": "-647 -70", "desc": "Exec", "size": "175 60",
+                    "class": 5, "duplicateType": 3, "duplicateNum": 50, "roleIsEdit": true, "code": "33",
+                    "users": [
+                        { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "user_name": "spring" }
+                    ],
+                    "s_time": "2025-02-01 20:40:27", "todo": 1
+                },
+                {
+                    "category": "Exec", "text": "全部通过", "key": 6, "loc": "-426.50 -195", "desc": "Exec", "roleType": 2,
+                    "remark": null, "state": "", "stateName": "", "roleIsNull": "", "roleIsEdit": false, "rolePass": true,
+                    "duplicateType": 4, "size": "120 60", "class": 5,
+                    "roleMark": [
+                        { "name": "ocean", "sid": "68f10864-d343-4b9c-8f13-e07d57505785" },
+                        { "name": "spring", "sid": "22bd7aed-f114-4c59-9590-204e7d563245" }
+                    ],
+                    "code": "22",
+                    "users": [
+                        { "id": "68f10864-d343-4b9c-8f13-e07d57505785", "name": "ocean", "mmdId": 1, "e_time": "2025-02-01 20:40:32", "checkin": "22bd7aed-f114-4c59-9590-204e7d563245" },
+                        { "name": "spring", "id": "22bd7aed-f114-4c59-9590-204e7d563245", "mmdId": 1, "e_time": "2025-02-01 20:40:36" }
+                    ],
+                    "s_time": "2025-02-01 20:40:27", "todo": 9, "e_time": "2025-02-01 20:40:36"
+                },
+                {
+                    "category": "Exec", "text": "外部程序获取用户", "key": 7, "loc": "-703 87", "size": "160 60", "roleType": 99,
+                    "roleMark": "getUser_demo", "desc": "外部程序获取用户", "class": 5, "duplicateType": 1, "code": "44",
+                    "users": [
+                        { "id": "1111", "name": "name111" }
+                    ]
+                },
+                { "category": "Proc", "text": "程序节点", "key": 8, "loc": "-243.50 -175", "type": 2, "size": "120 60", "desc": "程序节点", "class": 7 },
+                { "category": "Cancle", "text": "Cancle", "key": 9, "loc": "-299.50 63", "size": "120 60", "desc": "Cancle", "class": 8 },
+                { "category": "End", "text": "End", "key": 10, "loc": "-381.50 -44", "desc": "End", "size": "120 60", "class": 9, "s_time": "2025-02-01 20:40:36", "todo": 9 },
+                {
+                    "category": "Comment", "text": "描述1", "key": 11, "loc": "-309.50 -349", "size": "240 160",
+                    "desc": "1、内容1\n2、内容\n3、我是进行测试的，我是进行测试的，我是进行测试的，我是进行测试的，我是进行测试的，我是进行测试的。",
+                    "class": 10
+                }
+            ],
+            "link": [
+                {
+                    "from": 1, "to": 3, "text": "提交", "mmdId": 1, "visible": true,
+                    "points": [-753.5, -394, -743.5, -394, -715.5, -394, -715.5, -409, -687.5, -409, -661.5, -409],
+                    "desc": "提交", "expression": "@name1==true && @name2<100", "todo": 9
+                },
+                {
+                    "from": 6, "to": 10, "text": "同意", "mmdId": 1,
+                    "points": [-426.5, -165, -426.5, -155, -426.5, -119.5, -381.5, -119.5, -381.5, -84, -381.5, -74],
+                    "desc": "同意", "todo": 9
+                },
+                {
+                    "from": 4, "to": 6, "text": "同意", "mmdId": 1,
+                    "points": [-592.5, -185, -582.5, -185, -539.5, -185, -539.5, -185, -496.5, -185, -486.5, -185],
+                    "desc": "同意", "todo": 9
+                },
+                {
+                    "from": 3, "to": 4, "text": "同意", "mmdId": 1,
+                    "points": [-591.5, -349, -591.5, -339, -591.5, -282, -662.5, -282, -662.5, -225, -662.5, -215],
+                    "desc": "同意", "todo": 9
+                },
+                {
+                    "from": 4, "to": 5, "text": "不同意", "mmdId": 1,
+                    "points": [-662.5, -155, -662.5, -145, -662.5, -131.5, -617.83, -131.5, -617.83, -118, -617.83, -100],
+                    "desc": "不同意", "todo": 9
+                },
+                {
+                    "from": 5, "to": 2, "text": "退回", "mmdId": 0,
+                    "points": [-676.17, -100, -676.17, -110, -676.17, -110, -810, -110, -810, -235, -810, -245],
+                    "desc": "退回"
+                },
+                {
+                    "from": 6, "to": 2, "text": "退回", "mmdId": 0,
+                    "points": [-486.5, -205, -496.5, -205, -500, -205, -500, -275, -742.5, -275, -752.5, -275],
+                    "desc": "退回"
+                },
+                {
+                    "from": 3, "to": 2, "text": "退回", "mmdId": 0,
+                    "points": [-661.5, -369, -671.5, -369, -707, -369, -707, -275, -742.5, -275, -752.5, -275],
+                    "desc": "退回"
+                },
+                {
+                    "from": 5, "to": 9, "text": "取消", "mmdId": 8,
+                    "points": [-617.83, -40, -617.83, -30, -617.83, -28, -604, -28, -604, 63, -369.5, 63, -359.5, 63],
+                    "desc": "取消"
+                },
+                {
+                    "from": 6, "to": 8, "text": "取消", "mmdId": 1,
+                    "points": [-366.5, -195, -356.5, -195, -335, -195, -335, -175, -313.5, -175, -303.5, -175],
+                    "desc": "取消"
+                },
+                {
+                    "from": 8, "to": 10, "text": "同意", "mmdId": 1,
+                    "points": [-263.5, -145, -263.5, -135, -263.5, -44, -287.5, -44, -311.5, -44, -321.5, -44],
+                    "desc": "同意"
+                },
+                {
+                    "from": 8, "to": 9, "text": "取消", "mmdId": 8,
+                    "points": [-223.5, -145, -223.5, -127, -223.5, -52, -299.5, -52, -299.5, 23, -299.5, 33],
+                    "desc": "取消"
+                },
+                {
+                    "from": 2, "to": 3, "text": "重新提交", "mmdId": 2,
+                    "points": [-752.5, -275, -742.5, -275, -711, -275, -711, -389, -679.5, -389, -661.5, -389],
+                    "desc": "重新提交"
+                },
+                {
+                    "from": 7, "to": 9, "text": "取消", "mmdId": 8,
+                    "points": [-623, 87, -613, 87, -491.25, 87, -491.25, 63, -369.5, 63, -359.5, 63],
+                    "desc": "取消"
+                },
+                {
+                    "from": 7, "to": 2, "text": "退回", "mmdId": 0,
+                    "points": [-743, 57, -743, 47, -743, 44, -810, 44, -810, -235, -810, -245],
+                    "desc": "退回"
+                },
+                {
+                    "from": 7, "to": 10, "text": "同意", "mmdId": 1,
+                    "points": [-663, 57, -663, 47, -663, 44, -548, 44, -548, -44, -451.5, -44, -441.5, -44],
+                    "desc": "同意"
+                },
+                {
+                    "from": 5, "to": 7, "text": "同意", "mmdId": 1,
+                    "points": [-676.17, -40, -676.17, -30, -676.17, 4.5, -703, 4.5, -703, 39, -703, 57],
+                    "desc": "同意"
+                }
+            ],
+            "submit": [
+                {
+                    "mmdId": 1, "mmdDesc": "微软微软为", "params": { "name1": true, "name2": 80 }, "key": 1,
+                    "user": { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring" }, "time": "2025-02-01 20:40:19"
+                },
+                {
+                    "mmdId": 1, "mmdDesc": "温热微软", "params": {}, "key": 3,
+                    "user": { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring" }, "time": "2025-02-01 20:40:23"
+                },
+                {
+                    "mmdId": 1, "mmdDesc": "委任为", "params": {}, "key": 3,
+                    "user": { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring", "self": "b21313cb-5db7-430f-8ffe-d9281589b6fa" }, "time": "2025-02-01 20:40:27"
+                },
+                {
+                    "mmdId": 1, "mmdDesc": "委任为", "params": {}, "key": 6,
+                    "user": { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring", "self": "68f10864-d343-4b9c-8f13-e07d57505785" }, "time": "2025-02-01 20:40:32"
+                },
+                {
+                    "mmdId": 1, "mmdDesc": "委任为", "params": {}, "key": 6,
+                    "user": { "id": "22bd7aed-f114-4c59-9590-204e7d563245", "name": "spring" }, "time": "2025-02-01 20:40:36"
+                }
+            ]
+        };
+
+        const cloneData = (v) => JSON.parse(JSON.stringify(v));
+        const formatJson = (v) => JSON.stringify(v, null, 2);
+
+        const app = createApp({
+            components: {
+                YqFlowView
+            },
+            setup() {
+                const viewRef = ref(null);
+                const testType = ref(0);
+                const isFlow = ref(false);
+                const users = ref([]);
+                const admin = ref(false);
+
+                // 与旧版 $_yqFlow.localinit(jsonVal) 等价
+                const initModel = () => yqWf.localinit(cloneData(flowDemo));
+
+                const flowData = ref(initModel());
+                const savedModel = ref(formatJson(flowData.value));
+
+                const onChange = (data) => {
+                    savedModel.value = formatJson(data);
+                };
+
+                const onGetValue = () => {
+                    const v = viewRef.value ? viewRef.value.getValue() : flowData.value;
+                    savedModel.value = formatJson(v);
+                };
+
+                const loadSampleData = () => {
+                    flowData.value = initModel();
+                    savedModel.value = formatJson(flowData.value);
+                };
+
+                return {
+                    viewRef,
+                    testType,
+                    isFlow,
+                    users,
+                    admin,
+                    flowData,
+                    savedModel,
+                    onChange,
+                    onGetValue,
+                    loadSampleData
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,54 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>数据表格测试</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+    </style>
+</head>
+
+<body style="padding: 0;margin: 0;">
+    <div id="app">
+        <yq-ai-chat :chat-url="'/_aichat.html'" :select-first="false" :load-agents-log="false"
+            :load-sessions-log="false" :process-message-log="true" :tool-call="true" :show-title="true"></yq-ai-chat>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        const { initTheme, YqAiChat } = YqwinPlus;
+        initTheme();
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqAiChat
+                },
+
+                setup() {
+
+                    return {
+
+                    }
+                }
+            })
+
+            app.use(ElementPlus)
+            app.mount('#app')
+        }
+
+        window.onload = async function () {
+            initApp();
+        }
+    </script>
+</body>
+
+</html>

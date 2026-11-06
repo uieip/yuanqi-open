@@ -1,0 +1,732 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-container aside-position="right" aside-width="400px">
+            <yq-con-main style="padding: 1px 0 0 0 0;">
+                <yq-data-grid ref="kbsRef" v-bind="kbsProps"></yq-data-grid>
+            </yq-con-main>
+            <yq-con-aside style="margin: 0 0 0 3px;">
+                <div style="height: 32px;font-size: 16px;line-height: 32px; text-align: left;">
+                    <yq-label label="角色权限" :label-dict="{ 'zh-CN': '角色权限', 'en': 'Role Permissions' }"></yq-label>
+                </div>
+                <div style="height: calc(100vh - 32px);">
+                    <yq-data-tree ref="treeRef" v-bind="treeProps"></yq-data-tree>
+                </div>
+            </yq-con-aside>
+        </yq-container>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed, h } = Vue;
+        const { initTheme, YqMessage, YqWindowApi, yqData, YqDataGrid, YqDataTree, YqMessageBox, YqLabel, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            kbs: {
+                tbname: 'bi_kbs',
+                keyId: 'sid',
+                tempno: 1,
+                loadTitles: false, //是否加载标题
+                loadData: true,
+                isPage: false,
+                order: "queue",
+                linkField: ["name"],
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 500,
+                editModeNo: 2,
+
+                moveModeW: "600",
+                moveModeH: "400",
+                moveModeNo: 1,
+
+                dbClickEdit: true,
+
+                showMenu: true,
+                isEdit: true,
+                btnMini: true,
+                topnum: 10,
+                add: true,
+                upp: true,
+                del: true,
+                move: true,
+                isdel: true,
+                isSimple: false,
+                isSeek: false,
+            },
+            roles: {
+                tbname: "sys_roles",
+                keyId: "sid",
+                pKeyId: "pid",
+                pKeyValue: null,
+                loadDataType: 2,
+                displayMember: "name",
+                loadTitles: false,
+                loadDataType: 1,  //1-全部加载 其他-分级加载
+                loadData: false,  //是否加载数据
+                menuType: 3,
+                overflowY: true,
+
+                showMenu: false,
+                isEdit: false,
+
+                defaultExpandAll: true,
+                getNodeIcon: (node) => {
+                    if (node.roles_type === 0) {
+                        return "fa fa-folder-o";
+                    }
+                    if (node.roles_type === 1) {
+                        return "fa fa-file-text-o";
+                    }
+
+                    return "fa fa-folder-o";
+                },
+                cursor: "default",
+            }
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid,
+                    YqDataTree,
+                    YqLabel,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain,
+                },
+                setup() {
+                    const treeWidth = ref('40%');
+                    const dbname = ref(mainParams.dbname);
+                    const kbsRef = ref(null);
+                    const treeRef = ref(null);
+
+                    const selectedRow = ref(null);
+                    //选中的角色id
+                    const selectRoles = ref([]);
+                    const getRolesIds = async () => {
+                        if (selectedRow.value === null) {
+                            selectRoles.value = [];
+                            return;
+                        }
+
+                        const opts = {
+                            dbname: dbname.value,                //数据库
+                            tbname: "sys_roles_bi_kbs_rel",                      //表
+                            where: "kbs_id = '" + selectedRow.value.sid + "'",
+                            order: "sid"
+                        };
+                        const res = await yqData.dbTbSelect(opts);
+
+                        let rolesIds = [];
+                        if (res.error === 0) {
+                            selectRoles.value = res.rows;
+                        } else {
+                            selectRoles.value = [];
+                        }
+                    };
+
+                    //重新加载配置
+                    const aiReload = async (element) => {
+                        try {
+                            await YqMessageBox.confirm({
+                                el: element.target,
+                                title: '重新加载',
+                                message: '是否确认重新加载配置？',
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            });
+
+                            var formData = new FormData();
+                            formData.append("action", "ai:reload");
+                            const res = await yqData.post("/_runtime.html", formData);
+                            //console.log("ai_reload", res);
+                            if (res.error === 0) {
+                                YqMessage.success({
+                                    message: "重新加载成功",
+                                    labelDict: {
+                                        "zh-CN": { message: "重新加载成功" },
+                                        "en": { message: "Reload succeeded" },
+                                    },
+                                });
+                            } else {
+                                YqMessage.error(res.info + '[' + res.error + ']');
+                            }
+                        } catch (error) {
+                            console.log(error);
+                        }
+                    }
+
+                    const aiQuery = async (name, query, chat) => {
+                        const res = await yqData.get("/_ai_" + name + ".html", {
+                            action: "query",
+                            query,
+                            chat,
+                        });
+                        if (res.error !== 0) {
+                            YqMessage.error(res.info);
+                            return {
+                                rows: [],
+                                chat: "",
+                            };
+                        }
+                        //console.log(res);
+                        return res;
+                    }
+
+                    const aiTest = async (element) => {
+                        let parent = true;
+                        if (!window.parent || window.parent === window) {
+                            parent = false;
+                        }
+
+                        let dialogId = "";
+                        const params = ref({
+                            txt_query: "介绍一下自己",
+                            txt_chat: true,
+                            rows: [],
+                            chat: "",
+                        });
+
+                        let w = window.innerWidth;
+                        let h = window.innerHeight - 70;
+                        if (w > 800) {
+                            w = 800;
+                        }
+                        if (w < 400) {
+                            w = 400;
+                        }
+                        if (h < 400) {
+                            h = 400;
+                        }
+
+                        // 创建完整内容，包括按钮
+                        const content = {
+                            h: 'div',
+                            props: {
+                                style: {
+                                    height: '100%',
+                                    width: '100%',
+                                    padding: '5px 6px 4px 6px',
+                                    backgroundColor: '#f5f7fa',
+                                    overflow: 'hide'
+                                }
+                            },
+                            children: [
+                                {
+                                    h: "div",
+                                    props: {
+                                        style: {
+                                            display: "flex",
+                                            alignItems: "flex-end",
+                                            gap: "12px",
+                                            width: "100%",
+                                            backgroundColor: "#fff",
+                                            borderRadius: "0px",
+                                            padding: "8px 10px",
+                                            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                                        }
+                                    },
+                                    children: [
+                                        {
+                                            h: "div",
+                                            props: {
+                                                style: {
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                }
+                                            },
+                                            children: [
+                                                {
+                                                    h: 'YqEdit',
+                                                    props: {
+                                                        isEdit: true,
+                                                        titles: [
+                                                            {
+                                                                "name": "query",
+                                                                "ui_title": "查询",
+                                                                "ui_type": 5,
+                                                                "ui_width": 150,
+                                                                "ui_visible": true,
+                                                                "ui_readonly": false,
+                                                                "ui_mask": {
+                                                                    "textbox": false,
+                                                                    "default": "默认值",
+                                                                    "min": 0,
+                                                                    "max": 50,
+                                                                    "blank": true,
+                                                                    "format": ""
+                                                                },
+                                                            }, {
+                                                                "name": "chat",
+                                                                "ui_title": "对话",
+                                                                "ui_type": 3,
+                                                                "ui_width": 150,
+                                                                "ui_visible": true,
+                                                                "ui_readonly": false,
+                                                                "ui_mask": {
+                                                                    "default": false
+                                                                },
+                                                            },
+                                                        ],
+                                                        model: `
+                                                        <div style="display: flex; flex-direction: column; gap: 0px; width: 100%;">
+                                                            <div style="display: flex; align-items: center; gap: 10px;">
+                                                                <div style="width: 20px;">
+                                                                    <checkbox id="txt_chat" style="margin-left: 0;">对话</checkbox>
+                                                                </div>
+                                                                
+                                                                <label id="lbl_chat" style="font-size: 13px; color: #606266;">对话</label>
+                                                            </div>
+                                                            <textarea id="txt_query" textbox="false" style="width: 100%; height: 45px;"></textarea>
+                                                        </div>
+                                                        `,
+                                                        row: {
+                                                            query: params.value.txt_query,
+                                                            chat: params.value.txt_chat,
+                                                        },
+                                                        'onUpdate:value': (val) => {
+                                                            if (val.name === "chat") {
+                                                                params.value.txt_chat = val.value;
+                                                            } else if (val.name === "query") {
+                                                                params.value.txt_query = val.value;
+                                                            }
+                                                            YqWindowApi.setParams(dialogId, params.value, parent);
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }, {
+                                            h: "div",
+                                            props: {
+                                                style: {
+                                                    flexShrink: 0,
+                                                    display: "flex",
+                                                    alignItems: "flex-end",
+                                                    paddingBottom: "2px",
+                                                }
+                                            },
+                                            children: [
+                                                {
+                                                    h: "YqButton",
+                                                    props: {
+                                                        type: "primary",
+                                                        label: '查询',
+                                                        labelDict: { 'zh-CN': '查询', 'en': 'Search' },
+                                                        disabled: (windowState) => {
+                                                            return !(windowState?.txt_query ?? params.value.txt_query);
+                                                        },
+                                                        onClick: async (windowState) => {
+                                                            let query = (windowState?.txt_query ?? params.value.txt_query);
+                                                            let chat = (windowState?.txt_chat ?? params.value.txt_chat);
+                                                            let res = await aiQuery(selectedRow.value.code, query, chat);
+
+                                                            params.value.rows = res.rows;
+                                                            params.value.chat = res.chat;
+                                                            YqWindowApi.setParams(dialogId, params.value, parent);
+                                                        }
+                                                    },
+                                                    children: [
+                                                        {
+                                                            h: "YqIcon",
+                                                            props: {
+                                                                icon: "fa fa-search",
+                                                                style: {
+                                                                    marginRight: "5px"
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }, {
+                                    h: "div",
+                                    props: {
+                                        style: {
+                                            listStyle: "none",
+                                            padding: 0,
+                                            margin: "10px 0 0 0",
+                                            maxHeight: (h - 147) + "px",
+                                            overflowY: "auto",
+                                        }
+                                    },
+                                    children: (windowState) => [
+                                        ...((windowState?.txt_chat ?? params.value.txt_chat) ? [{
+                                            h: "div",
+                                            props: {
+                                                style: {
+                                                    backgroundColor: "#f0f9eb",
+                                                    borderRadius: "8px",
+                                                    padding: "12px 16px",
+                                                    marginBottom: "12px",
+                                                    borderLeft: "3px solid #67c23a",
+                                                    borderTop: "1px solid #e1f3d8",
+                                                    borderRight: "1px solid #e1f3d8",
+                                                    borderBottom: "1px solid #e1f3d8",
+                                                }
+                                            },
+                                            children: [{
+                                                h: "YqMdDiv",
+                                                props: {
+                                                    content: (ws) => (ws?.chat ?? params.value.chat),
+                                                }
+                                            }]
+                                        }] : []),
+                                        {
+                                            h: "ul",
+                                            props: {
+                                                style: {
+                                                    listStyle: "none",
+                                                    padding: 0,
+                                                    margin: 0,
+                                                }
+                                            },
+                                            children: (windowState?.rows ?? params.value.rows).map((item) => ({
+                                                h: "li",
+                                                props: {
+                                                    style: {
+                                                        background: "linear-gradient(135deg, #f8faff 0%, #ffffff 100%)",
+                                                        borderRadius: "10px",
+                                                        padding: "16px 18px",
+                                                        marginBottom: "12px",
+                                                        boxShadow: "0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)",
+                                                        borderLeft: "3px solid #e4e7ed",
+                                                        borderTop: "1px solid #edf0f5",
+                                                        borderRight: "1px solid #edf0f5",
+                                                        borderBottom: "1px solid #edf0f5",
+                                                        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                                                        cursor: "default",
+                                                        position: "relative",
+                                                    },
+                                                    onMouseenter: (e) => {
+                                                        e.target.style.borderLeftColor = "#409eff";
+                                                        e.target.style.borderTopColor = "#d9ecff";
+                                                        e.target.style.borderRightColor = "#d9ecff";
+                                                        e.target.style.borderBottomColor = "#d9ecff";
+                                                        e.target.style.boxShadow = "0 6px 20px rgba(64,158,255,0.12), 0 2px 6px rgba(64,158,255,0.06)";
+                                                        e.target.style.transform = "translateY(-2px)";
+                                                        e.target.style.background = "linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%)";
+                                                    },
+                                                    onMouseleave: (e) => {
+                                                        e.target.style.borderLeftColor = "#e4e7ed";
+                                                        e.target.style.borderTopColor = "#edf0f5";
+                                                        e.target.style.borderRightColor = "#edf0f5";
+                                                        e.target.style.borderBottomColor = "#edf0f5";
+                                                        e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)";
+                                                        e.target.style.transform = "translateY(0)";
+                                                        e.target.style.background = "linear-gradient(135deg, #f8faff 0%, #ffffff 100%)";
+                                                    },
+                                                },
+                                                children: [
+                                                    {
+                                                        h: "div",
+                                                        props: {
+                                                            style: {
+                                                                display: "flex",
+                                                                alignItems: "flex-start",
+                                                                justifyContent: "space-between",
+                                                                gap: "12px",
+                                                            }
+                                                        },
+                                                        children: [
+                                                            {
+                                                                h: "h3",
+                                                                props: {
+                                                                    style: {
+                                                                        fontSize: "15px",
+                                                                        fontWeight: 600,
+                                                                        color: "#2c3e50",
+                                                                        lineHeight: 1.5,
+                                                                        margin: 0,
+                                                                        flex: 1,
+                                                                        overflow: "hidden",
+                                                                        textOverflow: "ellipsis",
+                                                                        whiteSpace: "nowrap",
+                                                                    },
+                                                                },
+                                                                children: item.name
+                                                            },
+                                                            {
+                                                                h: "a",
+                                                                props: {
+                                                                    href: item.url,
+                                                                    target: "_blank",
+                                                                    style: {
+                                                                        fontSize: "12px",
+                                                                        color: "#c0c4cc",
+                                                                        textDecoration: "none",
+                                                                        whiteSpace: "nowrap",
+                                                                        flexShrink: 0,
+                                                                        fontWeight: 500,
+                                                                        padding: "2px 8px",
+                                                                        borderRadius: "4px",
+                                                                        background: "transparent",
+                                                                        transition: "all 0.2s ease",
+                                                                    },
+                                                                    onMouseenter: (e) => {
+                                                                        e.target.style.color = "#fff";
+                                                                        e.target.style.background = "#409eff";
+                                                                    },
+                                                                    onMouseleave: (e) => {
+                                                                        e.target.style.color = "#c0c4cc";
+                                                                        e.target.style.background = "transparent";
+                                                                    },
+                                                                },
+                                                                children: "详情 →"
+                                                            }
+                                                        ]
+                                                    }, {
+                                                        h: "p",
+                                                        props: {
+                                                            style: {
+                                                                margin: "8px 0 0 0",
+                                                                fontSize: "13px",
+                                                                color: "#8e99a4",
+                                                                lineHeight: 1.6,
+                                                                display: "-webkit-box",
+                                                                WebkitLineClamp: 2,
+                                                                WebkitBoxOrient: "vertical",
+                                                                overflow: "hidden",
+                                                                textOverflow: "ellipsis",
+                                                            }
+                                                        },
+                                                        children: item.content
+                                                    }
+                                                ]
+                                            }))
+                                        }
+                                    ]
+                                },
+                            ]
+                        };
+
+                        dialogId = YqWindowApi.show({
+                            containerRef: element.target || null,
+                            placement: "popper",
+                            title: "查询测试",
+                            icon: 'fa fa-chrome',
+                            showTitle: true,
+                            showClose: true,
+                            type: "param",
+                            content: content,
+                            top: 35,
+                            left: 0,
+                            width: w,
+                            height: h,
+                            parent: true,
+                            fullscreen: false,
+                            showFooter: false,
+                        });
+
+                        YqWindowApi.setParams(dialogId, params.value, parent);
+                        // 添加参数变化监听器
+                        YqWindowApi.addParamsListener(dialogId, (newParams) => {
+                            //console.log('参数变化:', newParams);
+                            params.value = newParams;
+                        }, parent);
+                    }
+
+                    const kbsProps = computed(() => {
+                        return {
+                            dbname: dbname.value,
+                            ...mainParams.kbs,
+                            menuType: 3,
+                            editLinks_r: [{
+                                name: "test",
+                                label: "测试",
+                                toptip: "测试",
+                                icon: "fa fa-chrome",
+                                type: "primary",
+                                divided: false,
+                                disabled: () => {
+                                    return !selectedRow.value;
+                                },
+                                click: async (e) => {
+                                    await aiTest(e);
+                                }
+                            }, {
+                                divided: true,
+                            }, {
+                                name: "reload",
+                                label: "重新加载",
+                                toptip: "重新加载配置文件",
+                                icon: "fa fa-refresh",
+                                type: "primary",
+                                divided: false,
+                                disabled: () => false,
+                                click: async (e) => {
+                                    await aiReload(e);
+                                },
+                            }], //右侧附加菜单
+                            afterSetTitles: async () => {
+                                await kbsRef.value.loadData();
+                                await treeRef.value.loadData();
+                            },
+                            onRowClick: async ({ row }) => {
+                                selectedRow.value = row;
+                                await getRolesIds();
+                            }
+                        }
+                    });
+
+                    const treeProps = computed(() => {
+                        return {
+                            ...mainParams.roles,
+                            dbname: dbname.value,
+                            getRightInfo: (data) => {
+                                const selected = (sid) => {
+                                    return h("a", {
+                                        style: {
+                                            fontSize: '16px'
+                                        },
+                                        href: 'javascript:void(0);',
+                                        tag: sid,
+                                        onClick: async (e) => {
+                                            let row = {
+                                                sid: e.currentTarget.getAttribute("tag"),
+                                            }
+                                            const opts = {
+                                                dbname: dbname.value,
+                                                tbname: "sys_roles_bi_kbs_rel",                     //表
+                                                rows: [
+                                                    {
+                                                        action: "del",
+                                                        row: row,
+                                                    }
+                                                ]
+                                            };
+                                            const res = await yqData.dbAction(opts);
+                                            if (res.error == 0) {
+                                                YqMessage.success({
+                                                    message: "删除成功",
+                                                    labelDict: {
+                                                        "zh-CN": { message: "删除成功" },
+                                                        "en": { message: "Delete succeeded" },
+                                                    },
+                                                });
+                                                selectRoles.value = selectRoles.value.filter(item => item.sid != res.rows[0].sid);
+                                            } else {
+                                                YqMessage.error(res.msg);
+                                            }
+                                        }
+                                    }, h("span", {
+                                        class: 'fa fa-check-square-o',
+                                        title: '删除选择',
+                                    }, ""));
+                                }
+
+                                const unselected = (roles_id) => {
+                                    return h("a", {
+                                        style: {
+                                            fontSize: '16px'
+                                        },
+                                        href: 'javascript:void(0);',
+                                        tag: roles_id,
+                                        onClick: async (e) => {
+                                            let row = {
+                                                roles_id: e.currentTarget.getAttribute("tag"),
+                                                kbs_id: selectedRow.value.sid,
+                                            }
+                                            const opts = {
+                                                dbname: dbname.value,
+                                                tbname: "sys_roles_bi_kbs_rel",                     //表
+                                                rows: [
+                                                    {
+                                                        action: "add",
+                                                        row: row,
+                                                    }
+                                                ]
+                                            };
+                                            const res = await yqData.dbAction(opts);
+                                            if (res.error == 0) {
+                                                YqMessage.success({
+                                                    message: "添加成功",
+                                                    labelDict: {
+                                                        "zh-CN": { message: "添加成功" },
+                                                        "en": { message: "Add succeeded" },
+                                                    },
+                                                });
+                                                row.sid = res.rows[0].sid;
+                                                selectRoles.value.push(row);
+                                            } else {
+                                                YqMessage.error(res.msg);
+                                            }
+                                        }
+                                    }, h("span", {
+                                        class: 'fa fa-square-o',
+                                        title: '添加选择',
+                                    }, ""));
+                                }
+
+                                if (data.roles_type !== 1 || !selectedRow.value) {
+                                    return null;
+                                }
+
+                                if (selectRoles.value.length === 0) {
+                                    return unselected(data.sid);
+                                }
+
+                                let role = selectRoles.value.find((item) => item.roles_id === data.sid);
+                                if (role) {
+                                    return selected(role.sid);
+                                } else {
+                                    return unselected(data.sid);
+                                }
+                            },
+
+                        }
+                    });
+
+                    onMounted(async () => {
+                        const res = await yqData.dbList({});
+                        if (res.error == 0 && res.rows.length > 0) {
+                            dbname.value = res.rows[0].name;
+                            await kbsRef.value.initTitles();
+                        }
+                    });
+
+                    return {
+                        treeWidth,
+                        kbsRef,
+                        treeRef,
+                        kbsProps,
+                        treeProps,
+                    }
+                }
+            })
+            app.use(ElementPlus, {
+
+            });
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

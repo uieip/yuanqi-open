@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Document>from-file</title>
+    <!-- 引入基础样式 -->
+    <style>
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h2>17.文件(单文件)</h2>
+        参数：
+        <div style="margin-bottom: 15px; padding: 10px; background-color: #f0f2f5; border-radius: 4px;">
+            <el-switch v-model="directup" :active-value="true" :inactive-value="false" active-text="直接上传"
+                inactive-text="选择后上传"></el-switch> |
+            <el-switch v-model="chunk" :active-value="true" :inactive-value="false" active-text="分片上传"
+                inactive-text="普通上传" style="margin-right: 20px;"></el-switch> |
+            <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑"
+                inactive-text="查看"></el-switch>
+        </div>
+        <div style="width: 350px;height: 200px;">
+            <yq-file :storage-type="storageType" :storage-name="storageName" :accept="accept" :chunk="chunk"
+                :directup="directup" v-model:data="data" :is-edit="isEdit" />
+        </div>
+        <p>--------------------------------------------------------------</p>
+        <div style="margin-bottom: 20px;width: 260px;">
+            <yq-file-text :storage-type="storageType" :storage-name="storageName" :accept="accept" :chunk="chunk"
+                :directup="directup" v-model:data="data" :is-edit="isEdit" />
+        </div>
+        <el-button type="primary" @click="data = null">清空文件</el-button>
+        <el-button type="primary" @click="data = data_2">设置文件</el-button>
+        <p>--------------------------------------------------------------</p>
+        <h2>data:</h2>
+        <pre>{{ data === null ? '' : JSON.stringify(data, null, 2) }}</pre>
+    </div>
+    <script>
+        const { createApp } = Vue;
+        const { initTheme, YqIcon, YqFileText, YqFile } = YqwinPlus;
+        initTheme();
+        const app = createApp({
+            components: {
+                YqIcon,
+                YqFileText,
+                YqFile
+            },
+            data() {
+                return {
+                    storageType: 2,
+                    storageName: "sqlite",
+                    accept: "image/*",
+                    chunk: false,
+                    directup: false,
+                    data: {
+                        "sid": "a4a29bc5-441e-464c-9a42-9301ea85d07a",
+                        "sto_type": 2,
+                        "sto_name": "sqlite",
+                        "name": "公司简介.jpg",
+                        "size": 74583,
+                        "type": "image/jpeg"
+                    },
+                    data_2: {
+                        "sid": "9a429bc5-441e-464c-9a42-9301ea85d07a",
+                        "sto_type": 2,
+                        "sto_name": "sqlite",
+                        "name": "公司简介.jpg",
+                        "size": 74583,
+                        "type": "image/jpeg"
+                    },
+                    isEdit: true,
+                }
+            }
+        })
+            .use(ElementPlus)
+            .mount('#app')
+    </script>
+    <style>
+        .el-input-group__append {
+            width: 40px;
+            padding: 0;
+        }
+
+        .el-input-group__append a.enable {
+            color: #878c99;
+            cursor: pointer;
+        }
+
+        .el-input-group__append a.disabled {
+            color: #cacdd4;
+            cursor: not-allowed;
+        }
+    </style>
+</body>
+
+</html>

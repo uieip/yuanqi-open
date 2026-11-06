@@ -1,0 +1,282 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqWindow 组件测试</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .test-link {
+      display: inline-block;
+      margin: 5px 10px;
+      padding: 8px 16px;
+      background-color: #409eff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+
+    .test-link:hover {
+      background-color: #66b1ff;
+    }
+
+    .test-button {
+      padding: 8px 16px;
+      margin: 15px 8px;
+      background-color: #67c23a;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body style="height: auto;">
+  <div class="test-container">
+    <h1>YqWindow 组件测试</h1>
+
+    <div id="app">
+      <h2>parent</h2>
+
+      <el-switch style="display: block" v-model="parent" :active-value="true" :inactive-value="false"
+        active-color="#13ce66" inactive-color="#ff4949" active-text="父页面" inactive-text="当前页面">
+      </el-switch>
+
+      <el-switch style="display: block" v-model="showTitle" :active-value="true" :inactive-value="false"
+        active-color="#13ce66" inactive-color="#ff4949" active-text="显示标题" inactive-text="隐藏标题">
+      </el-switch>
+      <el-switch style="display: block" v-model="showClose" :active-value="true" :inactive-value="false"
+        active-color="#13ce66" inactive-color="#ff4949" active-text="显示关闭按钮" inactive-text="隐藏关闭按钮">
+      </el-switch>
+      <el-switch style="display: block" v-model="showFooter" :active-value="true" :inactive-value="false"
+        active-color="#13ce66" inactive-color="#ff4949" active-text="显示底部按钮" inactive-text="隐藏底部按钮">
+      </el-switch>
+      <el-switch style="display: block" v-model="fullscreen" :active-value="true" :inactive-value="false"
+        active-color="#13ce66" inactive-color="#ff4949" active-text="全屏" inactive-text="非全屏">
+      </el-switch>
+      <el-switch style="display: block" v-model="modal" :active-value="true" :inactive-value="false"
+        active-color="#13ce66" inactive-color="#ff4949" active-text="显示遮罩" inactive-text="隐藏遮罩">
+      </el-switch>
+      <h2>position</h2>
+      <el-radio-group v-model="placement">
+        <el-radio value="center">居中</el-radio>
+        <el-radio value="top">顶部</el-radio>
+        <el-radio value="bottom">底部</el-radio>
+        <el-radio value="left">左侧</el-radio>
+        <el-radio value="right">右侧</el-radio>
+        <el-radio value="popper">popper</el-radio>
+      </el-radio-group>
+      <h2>type</h2>
+      <el-radio-group v-model="type">
+        <el-radio value="html">HTML 内容</el-radio>
+        <el-radio value="iframe">IFrame 内容</el-radio>
+        <el-radio value="vue">Vue 组件内容</el-radio>
+        <el-radio value="param">ParamVue</el-radio>
+      </el-radio-group>
+      <p></p>
+      <span>width</span><el-input-number v-model="width" :min="1" :max="100"></el-input-number>
+      <span>height</span><el-input-number v-model="height" :min="1" :max="100"></el-input-number>
+      <div>
+        <h3>函数调用</h3>
+        <button ref="btn_show" class="test-button" @click="handleCreateWindow()">show</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref, computed, h } = Vue;
+    const { initTheme, YqDialog, YqWindowApi, YqAttr } = YqwinPlus;
+    const { ElButton } = ElementPlus;
+    initTheme();
+    console.log('Element Plus 导入成功:', ElementPlus)
+    console.log('YqWindowApi 导入成功:', YqWindowApi)
+
+    const app = createApp({
+      components: {
+        ElButton,
+        YqAttr,
+      },
+      setup() {
+        // 响应式数据
+        const showTitle = ref(true)
+        const parent = ref(true)
+        const placement = ref('center')
+        const type = ref('vue')
+        const dialogId = ref(null)
+        const parentDialogId = ref(null)
+        const width = ref(80)
+        const height = ref(50)
+        const fullscreen = ref(false)
+        const showClose = ref(true)
+        const showFooter = ref(true)
+        const modal = ref(true)
+
+        // 计算属性
+        const title = computed(() => {
+          return parent.value ? 'YqWindow 对话框 (父页面)' : 'YqWindow 对话框 (当前页面)'
+        })
+
+        const content = computed(() => {
+          if (type.value === 'html') {
+            return '<div style="padding: 20px;"><h3>HTML 内容</h3><p>这是一个 HTML 内容对话框</p></div>'
+          } else if (type.value === 'iframe') {
+            return '/yqvue/test/window-dialog-childen.html'
+          } else if (type.value === 'vue') {
+            // 创建一个完整的 Vue 组件
+            return {
+              name: 'TestComponent',
+              components: {
+                ElButton
+              },
+              setup() {
+                return () => h('div', { style: 'padding: 20px;' }, [
+                  h('h3', {}, 'Vue 组件内容'),
+                  h('p', {}, '这是一个 Vue 组件对话框'),
+                  h(ElButton, {
+                    type: 'primary',
+                    onClick: () => console.log('Vue 组件按钮被点击')
+                  }, () => '点击我')
+                ]);
+              }
+            };
+          } else if (type.value === 'param') {
+            return {
+              h: 'div',
+              props: { style: 'padding: 20px;' },
+              children: [
+                {
+                  h: 'h3',
+                  children: 'ParamVue 内容'
+                },
+                {
+                  h: ElButton,
+                  props: {
+                    type: 'primary',
+                    onClick: () => console.log('ParamVue 按钮被点击')
+                  },
+                  children: '确定'
+                }
+              ]
+            };
+          }
+          return ''
+        })
+
+        // 方法
+        const handleCreateWindow = () => {
+          const buttonElement = document.querySelector('.test-button')
+          console.log("handleCreateWindow", buttonElement)
+
+          const dialogIdVal = YqWindowApi.show({
+            containerRef: placement.value === 'popper' ? buttonElement : null,
+            placement: placement.value,
+            showTitle: showTitle.value,
+            title: title.value,
+            icon: '/icon/远齐.jpg',
+            showClose: showClose.value,
+            modal: modal.value,
+            type: type.value,
+            content: content.value,
+            top: 0,
+            left: 0,
+            width: width.value + 'vw',
+            height: height.value + 'vh',
+            parent: parent.value,
+            fullscreen: fullscreen.value,
+            showFooter: showFooter.value,
+            overflow: 'auto',
+            children: showFooter.value ? {
+              h: "div",
+              props: {
+                style: 'display: flex; gap: 10px; justify-content: flex-end; padding: 10px;'
+              },
+              children: [{
+                h: ElButton,
+                props: {
+                  type: 'primary',
+                  onClick: () => {
+                    console.log('确定按钮被点击');
+                    YqWindowApi.close(dialogIdVal, parent.value);
+                  }
+                },
+                children: '确定'
+              }, {
+                h: ElButton,
+                props: {
+                  type: 'default',
+                  onClick: () => {
+                    console.log('取消按钮被点击');
+                    YqWindowApi.close(dialogIdVal, parent.value);
+                  }
+                },
+                children: '取消'
+              }]
+            } : null,
+            onOpened: () => {
+              console.log('对话框已打开');
+            },
+            onClosed: () => {
+              console.log('对话框已关闭');
+              if (parent.value) {
+                parentDialogId.value = null
+              } else {
+                dialogId.value = null
+              }
+            }
+          })
+
+          if (parent.value) {
+            parentDialogId.value = dialogIdVal
+          } else {
+            dialogId.value = dialogIdVal
+          }
+          console.log('对话框 ID:', dialogIdVal)
+        }
+
+        return {
+          // 响应式数据
+          showTitle,
+          parent,
+          placement,
+          type,
+          dialogId,
+          parentDialogId,
+          width,
+          height,
+          fullscreen,
+          showClose,
+          showFooter,
+          modal,
+          // 计算属性
+          title,
+          content,
+          // 方法
+          handleCreateWindow,
+        }
+      }
+    })
+
+    app.use(ElementPlus)
+
+    // 注册 YqDialog 组件
+    app.component('yq-dialog', YqDialog)
+    const mountedApp = app.mount('#app')
+    console.log('Vue应用挂载成功:', mountedApp)
+  </script>
+
+</body>
+
+</html>

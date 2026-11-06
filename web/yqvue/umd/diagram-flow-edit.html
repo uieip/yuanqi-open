@@ -1,0 +1,428 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqFlowEdit 流程图编辑组件测试</title>
+    <link rel="stylesheet" type="text/css" href="/font-awesome.min.css">
+    <style>
+        @font-face {
+            font-family: 'FontAwesome';
+            src: url('/fonts/fontawesome-webfont.woff2?v=4.7.0') format('woff2'),
+                url('/fonts/fontawesome-webfont.woff?v=4.7.0') format('woff');
+            font-display: swap;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: auto;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+        }
+
+        .test-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px 20px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+        }
+
+        .flow-container {
+            width: 100%;
+            height: calc(100% - 150px);
+        }
+
+        .test-content {
+            padding: 10px 20px;
+            background-color: #fff;
+            border-top: 1px solid #e4e7ed;
+            height: 300px;
+            overflow: auto;
+        }
+
+        .json-preview {
+            font-size: 14px;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .json-preview pre {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="test-header">
+            <h2>YqFlowEdit 流程图编辑组件</h2>
+            <el-switch v-model="mini" active-text="迷你模式" inactive-text="正常模式"></el-switch>
+            <el-switch v-model="isEdit" active-text="编辑模式" inactive-text="预览模式模式"></el-switch>
+            <el-button type="primary" @click="loadSampleData">加载示例数据</el-button>
+            <el-button type="success" @click="clearData">清空画布</el-button>
+        </div>
+        <div class="flow-container">
+            <yq-flow-edit v-model="flowData" :is-edit="isEdit" :mini="mini" :on-save="onSave" @change="handleChange" />
+        </div>
+        <div class="test-container">
+            <div class="test-header">
+                <h2>流程图数据预览</h2>
+            </div>
+            <div class="test-content">
+                <pre id="flowDataPreview" class="json-preview">{{ flowData }}</pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, watch, onMounted } = Vue;
+        const { YqFlowEdit } = YqwinPlus;
+
+        const formatJson = (obj) => {
+            return JSON.stringify(obj, null, 2);
+        };
+
+        const flowDemo = {
+            "info": {
+                "ver": "beta1.0.0",
+                "current": "",
+                "name": "测试流程图",
+                "describe": "这是一个测试流程图",
+                "func": "",
+                "db_name": "",
+                "tb_name": "",
+                "state_field": "",
+                "state_func": "",
+                "state_start": "",
+                "state_start_name": "",
+                "case_when": "",
+                "parameter": "",
+                "remark": null,
+                "params": null
+            },
+            "node": [
+                {
+                    "category": "Start",
+                    "key": 1,
+                    "loc": "-172.50 -45",
+                    "text": "Start",
+                    "desc": "Start",
+                    "size": "100 60"
+                },
+                {
+                    "category": "Return",
+                    "text": "Return",
+                    "key": 2,
+                    "loc": "345.50 55",
+                    "desc": "Return",
+                    "size": "100 60"
+                },
+                {
+                    "category": "Judge",
+                    "text": "Is data\ntree-like?",
+                    "key": 3,
+                    "loc": "85 259",
+                    "desc": "Is data\ntree-like?",
+                    "size": "140 60"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Use a TreeModel",
+                    "key": 4,
+                    "loc": "-167.50 199",
+                    "desc": "Use a TreeModel",
+                    "size": "135 60"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Use a GraphLinksModel",
+                    "key": 5,
+                    "loc": "364 296",
+                    "desc": "Use a GraphLinksModel",
+                    "size": "120 80"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Create DIV for Diagram",
+                    "key": 6,
+                    "loc": "3 99",
+                    "desc": "Create DIV for Diagram",
+                    "size": "140 80"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Create new Diagram associated with DIV",
+                    "key": 7,
+                    "loc": "193 122",
+                    "desc": "Create new Diagram associated with DIV",
+                    "size": "120 80"
+                },
+                {
+                    "category": "Proc",
+                    "text": "Style node templates",
+                    "key": 8,
+                    "loc": "-107.50 670",
+                    "type": 2,
+                    "desc": "Style node templates",
+                    "size": "155 60"
+                },
+                {
+                    "category": "Proc",
+                    "text": "Add data to node/linkDataArray",
+                    "key": 9,
+                    "loc": "138 348",
+                    "type": 2,
+                    "desc": "Add data to node/linkDataArray",
+                    "size": "120 80"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Add data to nodeDataArray, including parent",
+                    "key": 10,
+                    "loc": "-176.50 374",
+                    "desc": "Add data to nodeDataArray, including parent",
+                    "size": "155 100"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Style link templates",
+                    "key": 11,
+                    "loc": "128.50 672",
+                    "desc": "Style link templates",
+                    "size": "135 60"
+                },
+                {
+                    "category": "Judge",
+                    "text": "Should nodes be auto-positioned?",
+                    "key": 12,
+                    "loc": "61 466",
+                    "desc": "Should nodes be auto-positioned?",
+                    "size": "220 60"
+                },
+                {
+                    "category": "Exec",
+                    "text": "Choose a layout",
+                    "key": 13,
+                    "loc": "61 563",
+                    "desc": "Choose a layout",
+                    "size": "180 40"
+                },
+                {
+                    "category": "Cancle",
+                    "text": "Cancle",
+                    "key": 14,
+                    "loc": "347 539",
+                    "desc": "Cancle",
+                    "size": "95 60"
+                },
+                {
+                    "category": "End",
+                    "key": 15,
+                    "loc": "356 671",
+                    "text": "End",
+                    "desc": "End",
+                    "size": "95 60"
+                },
+                {
+                    "category": "Comment",
+                    "text": "标题",
+                    "key": 16,
+                    "loc": "171.50 -75",
+                    "desc": "1、232\n2、lso allows Gr \n3、这是测试，这是测试，这是测试，这是测试这是测试这是测试这是测试这是测试",
+                    "size": "200 140",
+                    "class": 10
+                }
+            ],
+            "link": [
+                {
+                    "from": 1,
+                    "to": 6,
+                    "text": "提交aaaa",
+                    "mmdId": 1,
+                    "points": "-122.5,-45,-112.5,-45,-112.5,42,-77,42,-77,-19,3,-19,3,49,3,59",
+                    "desc": "提交"
+                },
+                {
+                    "from": 6,
+                    "to": 7,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "73,99,83,99,103,99,103,122,123,122,133,122",
+                    "desc": "同意"
+                },
+                {
+                    "from": 4,
+                    "to": 10,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "-167.5,229,-167.5,239,-167.5,276.5,-176.5,276.5,-176.5,314,-176.5,324",
+                    "desc": "同意"
+                },
+                {
+                    "from": 5,
+                    "to": 9,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "304,296,294,296,251,296,251,348,208,348,198,348",
+                    "desc": "同意"
+                },
+                {
+                    "from": 11,
+                    "to": 15,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "196,672,206,672,252.25,672,252.25,671,298.5,671,308.5,671",
+                    "desc": "同意"
+                },
+                {
+                    "from": 3,
+                    "to": 4,
+                    "text": "Yes",
+                    "mmdId": 1,
+                    "points": "15,259,5,259,-42.5,259,-42.5,199,-90,199,-100,199",
+                    "desc": "Yes"
+                },
+                {
+                    "from": 3,
+                    "to": 2,
+                    "text": "No",
+                    "mmdId": 0,
+                    "points": "155,259,165,259,164,259,164,259,260,259,260,55,285.5,55,295.5,55",
+                    "desc": "No"
+                },
+                {
+                    "from": 7,
+                    "to": 3,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "193,162,193,172,193,195.5,85,195.5,85,219,85,229",
+                    "desc": "同意"
+                },
+                {
+                    "from": 10,
+                    "to": 12,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "-99,374,-89,374,-74,374,-74,466,-59,466,-49,466",
+                    "desc": "同意"
+                },
+                {
+                    "from": 9,
+                    "to": 12,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "138,388,138,398,138,412,61,412,61,426,61,436",
+                    "desc": "同意"
+                },
+                {
+                    "from": 12,
+                    "to": 13,
+                    "text": "Yes",
+                    "mmdId": 1,
+                    "points": "61,496,61,506,61,519.5,61,519.5,61,533,61,543",
+                    "desc": "Yes"
+                },
+                {
+                    "from": 12,
+                    "to": 14,
+                    "text": "No",
+                    "mmdId": 8,
+                    "points": "171,466,181,466,235.25,466,235.25,539,289.5,539,299.5,539",
+                    "desc": "No"
+                },
+                {
+                    "from": 13,
+                    "to": 8,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "61,583,61,593,61,611.5,-107.5,611.5,-107.5,630,-107.5,640",
+                    "desc": "同意"
+                },
+                {
+                    "from": 8,
+                    "to": 11,
+                    "text": "同意",
+                    "mmdId": 1,
+                    "points": "-30,670,-20,670,15.5,670,15.5,672,51,672,61,672",
+                    "desc": "同意"
+                },
+                {
+                    "from": 2,
+                    "to": 5,
+                    "text": "重新提交",
+                    "mmdId": 2,
+                    "points": "345.5,85,345.5,95,345.5,170.5,364,170.5,364,246,364,256",
+                    "desc": "重新提交"
+                }
+            ]
+        };
+
+        const app = createApp({
+            components: {
+                YqFlowEdit
+            },
+            setup() {
+                const isEdit = ref(true);
+                const flowData = ref(JSON.parse(JSON.stringify(flowDemo)));
+                const mini = ref(false);
+                const onSave = (event , data ) => {
+                    console.log(event, data);
+                };
+                
+                const handleChange = (data) => {
+                    document.getElementById('jsonOutput').textContent = formatJson(data);
+                };
+
+                const loadSampleData = () => {
+                    flowData.value = JSON.parse(JSON.stringify(flowDemo));
+                };
+
+                const clearData = () => {
+                    flowData.value = {
+                        info: {},
+                        node: [],
+                        link: []
+                    };
+                };
+
+                const updateJsonOutput = (val) => {
+                    const jsonOutput = document.getElementById('jsonOutput');
+                    if (jsonOutput) {
+                        jsonOutput.textContent = formatJson(val);
+                    }
+                };
+
+                watch(flowData, (val) => {
+                    updateJsonOutput(val);
+                }, { deep: true });
+
+                onMounted(() => {
+                    updateJsonOutput(flowData.value);
+                });
+
+                return {
+                    isEdit,
+                    flowData,
+                    mini,
+                    onSave,
+                    handleChange,
+                    loadSampleData,
+                    clearData
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

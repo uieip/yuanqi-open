@@ -1,0 +1,45 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console"></uieip>
+<html lang="zh">
+
+<head>
+	<uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+	<title>tmpl.base</title>
+	<meta name="keywords" content="yuanqi ltd.">
+</head>
+
+<body>
+	<uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+	<div class="container">
+		<h1>tmpl.base</h1>
+		<uieip id="ui_tmpl1" type="tmpl" value="tmpl.base">
+			<p>1) hello word.</p>
+		</uieip>
+		<uieip id="ui_tmpl2" type="tmpl" value="tmpl.base">
+			<p>test</p>
+		</uieip>
+		<uieip id="ui_tmpl3" type="tmpl" value="tmpl.base" js="funbase"></uieip>
+		<h1>默认赋值模式</h1>
+		<uieip>ui_tmpl4</uieip>
+		<uieip>ui_tmpl5()</uieip>
+		<script runat="server">
+			response.write("<p>6) hello word.</p>");
+		</script>
+		<script runat="server">
+			var data = request.data("ui_tmpl2");
+			response.set("ui_tmpl2", "<p>2) hello word.</p>");
+			request.dataset("ui_tmpl3", "hello word.");
+			function funbase(res) {
+				return "<p>3) " + res + "</p>";
+			}
+			var ui_tmpl4="<p>4) hello word.</p>";
+			function ui_tmpl5(){
+				return "<p>5) hello word.</p>";
+			}
+		</script>
+		<uieip type="file" value="code" src="tmpl.base.html"></uieip>
+	</div>
+	<uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+</body>
+
+</html>

@@ -1,0 +1,95 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+    <title>登录</title>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-4 col-md-4 col-md-offset-3 col-md-5" style="padding: 30px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">用户登录</div>
+                    <div class="panel-body">
+                        <uieip>login_info</uieip>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+    <script runat="server">
+        /* 
+            第三方集成登录
+            1. 调用第三方登录接口，获取code
+            2. 调用第三方登录接口，获取用户信息
+            3. 调用登录接口，登录用户
+            4. 跳转到登录前的页面
+        */
+        var login_info;
+        init();
+
+        function init() {
+            var backurl = request.param("backurl");
+            if (login.state()) {
+                if (backurl === null) {
+                    response.redirect(request.baseurl());
+                } else {
+                    response.redirect(backurl);
+                }
+                return;
+            }
+
+            var link_type;
+
+            var code = request.param("code");
+            if (code === null) {
+                if (!(backurl === null)) {
+                    session.set("backurl", backurl);
+                }
+                var redirect_uri = request.baseurl() + "/" + request.url();
+
+                link_type = request.param("type");
+                if (link_type === null) {
+                    link_type = "weixin";
+                }
+                login.third_login(link_type, redirect_uri, "state");
+                return;
+            }
+
+            var state = request.param("state");
+            if (state === null) {
+                state = "";
+                link_type = "weixin";
+            } else {
+                var vals = state.split("@");
+                link_type = vals[0];
+                if (vals.length > 1) {
+                    state = vals[1];
+                }
+            }
+
+            var backurl = session.getValue("backurl");
+            if (backurl === null) {
+                backurl = "/login/index.html";
+            }
+            var res = login.third_check(link_type, code);
+            if (res.error == 0) {
+                response.redirect(backurl);
+                return;
+            } else if (res.error == 1) {
+                response.redirect("/login/index.html?backurl=" + encodeURIComponent(backurl));
+                return;
+            }
+
+            login_info = JSON.stringify(res);
+        }
+    </script>
+</body>
+
+</html>

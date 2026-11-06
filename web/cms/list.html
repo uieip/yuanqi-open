@@ -1,0 +1,107 @@
+<!doctype html>
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,cms"></uieip>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_inc.html"></uieip>   
+    <uieip id="div_title" type="tmpl" value="cms.title"></uieip>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+    <div class="container">
+        <uieip type="file" value="exec" src="/cms/inc/pc_breadcrumb_exec.html"></uieip>
+        <div class="row">
+            <div class="col-md-7 col-sm-5">
+                <uieip id="div_list" type="tmpl" value="cms.datalist" dbname="yqbase" tbname="cms_news" pageno="1"
+                    pagesize="12" where="" order="time desc" js="datalist_js"></uieip>
+            </div>
+            <div class="col-md-5 col-sm-7">
+                <uieip id="div_row" type="tmpl" value="cms.datarow" dbname="yqbase" tbname="cms_oneshot"
+                    seek="tid='jrh6rshlz'" js="datarow_js"></uieip>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+    <script runat="server">
+        function datalist_js(data) {
+            var t_url = "/" + data.path + "/";
+            var h_ = `<div class="card yq-list-card"><div class="list-group list-group-flush">`;
+            for (var i = 0; i < data.rows.length; i++) {
+                h_ += `   <a href="` + data.rows[i].tid + `.html" class="list-group-item">`;
+
+                if (data.rows[i].img) {
+                    var img = JSON.parse(data.rows[i].img);
+                    var img_url = (img.sto_type == 1 ? "!" : "@") + img.sto_name + "_" + img.sid;
+                    h_ += '      <div class="media">';
+                    h_ += '        <div class="media-left media-middle">';
+                    h_ += '           <img class="media-object" src="' + img_url + '">';
+                    h_ += '       </div>';
+                    h_ += '       <div class="media-body">';
+                    h_ += '          <div class="item-main"><span class="item-title">'+data.rows[i].title+'</span>';
+                    h_ += '          <span class="item-date">' + data.rows[i].time.substring(0, data.rows[i].time.indexOf(" ")) + '</span></div>';
+                    h_ += '        </div>';
+                    h_ += '      </div>';
+                } else {
+                    h_ += '      <div class="item-main">';
+                    h_ += '        <span class="item-title">'+data.rows[i].title+'</span>';
+                    h_ += '        <span class="item-date">' + data.rows[i].time.substring(0, data.rows[i].time.indexOf(" ")) + '</span>';
+                    h_ += '      </div>';
+                    h_ += '      <div class="item-meta">';
+                    h_ += '        <div class="uieip-tongji-list" data-type="view,like,fav,comment" data-link="'+ data.url + data.rows[i].tid + '.html" style="display: none;">';
+                    h_ += '        <span class="t-view">阅读数量</span><i class="view"></i>';
+                    h_ += '        <span class="like"><i class="bi bi-hand-thumbs-up"></i></span>';
+                    h_ += '        <span class="fav"><i class="bi bi-star"></i></span>';
+                    h_ += '        <span class="comment"><i class="bi bi-chat"></i></span></div>';
+                    h_ += '      </div>';
+                }
+
+                h_ += `   </a>`;
+            }
+            h_ += `</div></div>`;
+
+            if (data.pagecount > 1) {
+                h_ += `<ul class="pagination">`
+                if (data.pageno > 1) {
+                    var firsturl = t_url;
+                    var prevurl = t_url;
+                    if (data.pageno > 2) {
+                        prevurl += "page" + (data.pageno - 1) + ".html";
+                    }
+                    h_ += `    <li class="page-item"><a class="page-link" href="` + firsturl + `"><i class="bi bi-skip-backward" title="首页"></i></a></li>`;
+                    h_ += `    <li class="page-item"><a class="page-link" href="` + prevurl + `"><i class="bi bi-chevron-left" title="上一页"></i></a></li>`;
+                } else {
+                    h_ += `    <li class="page-item disabled"><a class="page-link" href="javascript:void(0);"><i class="bi bi-skip-backward" title="首页"></i></a></li>`;
+                    h_ += `    <li class="page-item disabled"><a class="page-link" href="javascript:void(0);"><i class="bi bi-chevron-left" title="上一页"></i></a></li>`;
+                }
+
+                if (data.pageno < data.pagecount) {
+                    h_ += `    <li class="page-item"><a class="page-link" href="` + "page" + (data.pageno + 1) + `.html"><i class="bi bi-chevron-right" title="下一页"></i></a></li>`
+                    h_ += `    <li class="page-item"><a class="page-link" href="` + "page" + (data.pagecount) + `.html"><i class="bi bi-skip-forward" title="末页"></i></a></li>`
+                } else {
+                    h_ += `    <li class="page-item disabled"><a class="page-link" href="javascript:void(0);"><i class="bi bi-chevron-right" title="下一页"></i></a></li>`;
+                    h_ += `    <li class="page-item disabled"><a class="page-link" href="javascript:void(0);"><i class="bi bi-skip-forward" title="末页"></i></a></li>`
+                }
+                h_ += `    <li class="page-item disabled"><a class="page-link" href="javascript:void(0);">` + (data.pageno + `/` + data.pagecount) + `</a></li>`;
+                h_ += `  </ul>`
+            }
+
+            return h_;
+        }
+
+        function datarow_js(data) {
+            //response.write(JSON.stringify(data));
+            if (data.row) {
+                var h_ = '<div class="card author-card"><div class="card-body">';
+                h_ += JSON.parse(data.row.body).html;
+                h_ +='</div></div>';
+                return h_;
+            } else {
+                return "";
+            }
+        }
+    </script>
+</body>
+
+</html>

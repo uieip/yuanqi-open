@@ -1,0 +1,304 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            margin: 20px;
+        }
+    </style>
+</head>
+
+<body style="height: auto;">
+    <div id="app">
+        <div style="margin-left: 40px;">
+            <el-switch v-model="isEdit" active-value="true" inactive-value="false" active-text="编辑"
+                inactive-text="查看"></el-switch> |
+            <el-button type="primary" @click="handleGetRow">getRow</el-button> |
+            titles <el-select v-model="changeTitle" placeholder="请选择" style="width: 120px;" @change="changeTitles">
+                <el-option v-for="item in titles_all" :key="item.name" :label="item.name"
+                    :value="item.value"></el-option>
+            </el-select> |
+            rows <el-select v-model="changeRow" placeholder="请选择" style="width: 120px;" @change="changeRows">
+                <el-option v-for="item in rows_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+            </el-select> |
+            <p>-------------------------------------</p>
+            <el-radio-group v-model="editType" style="margin-bottom: 10px;">
+                <el-radio value="1">属性编辑模式</el-radio>
+                <el-radio value="2">form编辑模式</el-radio>
+            </el-radio-group>
+        </div>
+        <div style="margin-left: 40px;width: 350px;">
+            <yq-attr-text :is-demo="isDemo" v-model:row="row" v-model:fkrows="fkrows" :titles="titles"
+                :edit-type="editTypeInt" :model="model" :key-id="keyId" :is-edit="isEditBool" :edit-mode-w="450"
+                :edit-mode-h="500" @row-click="handleRowClick">
+            </yq-attr-text>
+        </div>
+        <p>----------------------------------------------------------------------</p>
+        <div style="height: 50vh;width: 500px;  overflow: auto;">
+            <yq-attr ref="attrRef" :is-demo="isDemo" :titles="titles" v-model:row="row" v-model:fkrows="fkrows"
+                :key-id="keyId" :is-edit="isEditBool" @row-click="handleRowClick">
+            </yq-attr>
+        </div>
+        <p>----------------------------------------------------------------------</p>
+        <div>{{row}}</div>
+    </div>
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { initTheme, YqAttr, YqAttrText, yqUiPub } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqAttr,
+                YqAttrText
+            },
+            data() {
+                return {
+                    isDemo: true,
+                    editType: "1",
+                }
+            },
+            setup() {
+                const keyId = ref("sid");
+                const isEdit = ref('true');
+                const model = ref('');
+
+                const titles_1 = [{
+                    name: 'name',
+                    ui_title: '组件类型',
+                    ui_type: 2,
+                    ui_readonly: true,
+                    ui_visible: true,
+                    ui_mask: {}
+                }, {
+                    name: 'id',
+                    ui_title: 'ID',
+                    ui_type: 2,
+                    ui_readonly: true,
+                    ui_visible: true,
+                    ui_mask: {}
+                }, {
+
+                    name: 'title',
+                    ui_title: '标题',
+                    ui_type: 2,
+                    ui_readonly: true,
+                    ui_visible: true,
+                    ui_mask: {}
+                }];
+                const row_1 = {
+                    name: '',
+                    id: '',
+                    title: ''
+                };
+
+                const titles_2 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    }
+                ];
+                const row_2 = {
+                    "sid": "sid-2",
+                    "lable": "Lable-2",
+                    "textbox": "Textbox-2",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                };
+
+                const titles_3 = [
+                    {
+                        "is_func": false,
+                        "name": "name",
+                        "ui_title": "kbs名称",
+                        "ui_width": 90,
+                        "ui_type": 2,
+                        "ui_mask": {
+                            "blank": false
+                        }
+                    },
+                    {
+                        "is_func": false,
+                        "name": "collection",
+                        "ui_title": "数据集名称",
+                        "ui_width": 90,
+                        "ui_type": 2,
+                        "ui_mask": {
+                            "blank": false
+                        }
+                    },
+                    {
+                        "is_func": false,
+                        "name": "content",
+                        "ui_title": "内容字段",
+                        "ui_type": 2,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false
+                        }
+                    },
+                    {
+                        "is_func": false,
+                        "name": "metadata",
+                        "ui_title": "metadata",
+                        "ui_type": 20,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {}
+                    }
+                ];
+                const row_3 = [];
+
+                const changeTitle = ref("titles_3");
+                const titles_all = computed(() => {
+                    return [
+                        { name: "titles_1", value: "titles_1", titles: titles_1 },
+                        { name: "titles_2", value: "titles_2", titles: titles_2 },
+                        { name: "titles_3", value: "titles_3", titles: titles_3 }]
+                });
+                function changeTitles() {
+                    titles.value = titles_all.value.find(item => item.value === changeTitle.value).titles;
+                }
+
+                const changeRow = ref("row_3")
+                const rows_all = computed(() => {
+                    return [
+                        { name: "row_1", value: "row_1", row: row_1 },
+                        { name: "row_2", value: "row_2", row: row_2 },
+                        { name: "row_3", value: "row_3", row: row_3 }]
+                });
+                function changeRows() {
+                    row.value = rows_all.value.find(item => item.value === changeRow.value).row
+                }
+
+                const titles_params = yqUiPub.formatUiTitles(titles_3);
+                const titles = ref(titles_params);
+                //console.log(titles_params.titles);
+
+                const row = ref(row_1);
+
+                const isEditBool = computed(() => isEdit.value === 'true');
+
+                const fkrows = ref([])
+                watch(fkrows, (newValue, oldValue) => {
+                    console.log("fkrows", newValue)
+                }, { deep: true })
+
+
+                return {
+                    titles,
+                    row,
+                    fkrows,
+                    keyId,
+                    isEdit,
+                    isEditBool,
+                    model,
+
+                    changeTitle,
+                    titles_all,
+                    changeTitles,
+                    changeRow,
+                    rows_all,
+                    changeRows,
+                }
+            },
+            computed: {
+                editTypeInt() {
+                    return this.editType === "1" ? 1 : 2
+                }
+            },
+            methods: {
+                handleGetRow() {
+                    const row = this.$refs.editRef.getRow()
+                    console.log(`数据: ${JSON.stringify(row, null, 2)}`)
+                },
+                handleGetRow() {
+                    const row = this.$refs.attrRef.formRow()
+                    console.log(`数据: ${JSON.stringify(row, null, 2)}`)
+                },
+                handleRowClick({ name, value }) {
+                    console.log(`点击: ${JSON.stringify({ name, value }, null, 2)}`)
+                }
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

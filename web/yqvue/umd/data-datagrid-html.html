@@ -1,0 +1,311 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>数据表格测试</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .divider {
+            margin: 0 10px;
+            color: #909399;
+        }
+
+        .yq-data-grid-container {
+            height: calc(100vh - 350px);
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .yq-data-grid .warning-row {
+            background-color: #fdf5e6;
+        }
+
+        .yq-data-grid .success-row {
+            background-color: #e6f5e9;
+        }
+
+        .data-log {
+            height: 200px;
+            overflow: auto;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .data-log pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #409eff;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #606266;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>数据表格测试</h1>
+        
+        <div class="control-panel">
+            <div class="control-group">
+                <el-switch v-model="isPage" active-text="分页" inactive-text="不分页"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="rownumbers" active-text="显示行号" inactive-text="不显示行号"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="showMenu" active-text="显示菜单" inactive-text="不显示菜单"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>冻结列数设置</label>
+                <el-input-number v-model="frozenNum" :min="0" :max="10" :step="1" label="冻结列数" style="width: 100px;"></el-input-number>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>编辑模式</label>
+                <el-select v-model="editMode" placeholder="请选择编辑模式" style="width: 150px;">
+                    <el-option label="自由编辑1" value="1"></el-option>
+                    <el-option label="自由编辑2" value="2"></el-option>
+                    <el-option label="编辑(模态窗体)" value="3"></el-option>
+                    <el-option label="编辑(独立)" value="4"></el-option>
+                </el-select>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>编辑类型</label>
+                <el-select v-model="editType" placeholder="请选择编辑类型" style="width: 150px;">
+                    <el-option label="属性编辑模式" value="1"></el-option>
+                    <el-option label="form编辑模式" value="2"></el-option>
+                </el-select>
+            </div>
+        </div>
+        
+        <div class="section-title">数据表格</div>
+        <div class="yq-data-grid-container">
+            <yq-data-grid ref="singleTable" :is-demo="isDemo" :ajax-url="ajaxUrl" :dbname="dbname" :tbname="tbname"
+                :key-id="keyId" :binding-key-id="bindingKeyId" :binding-value="bindingValue" :p-key-id="pKeyId"
+                :p-key-value="pKeyValue" :tempno="tempno" :add-where="addWhere" :order="order" :is-page="isPage"
+                :page-size="pageSize" :rownumbers="rownumbers" :frozen-num="frozenNum" :row-class-name="rowClassName"
+                :border="true" :load-data="loadData" :height="height" :edit-title="editTitle" :edit-mode="editModeInt"
+                :edit-type="editTypeInt" :edit-mode-w="editModeW" :edit-mode-h="editModeH" :edit-mode-no="editModeNo"
+                :edit-url="editUrl" :is-edit="isEdit" :copy="copy" :add="add" :upp="upp" :del="del" :isdel="isdel"
+                :isdel-edit="isdelEdit" :move="move" :toexcel="toexcel" :excel-name="excelName" :inexcel="inexcel"
+                :show-menu="showMenu" @change="dataChange" @row-click="rowClick"></yq-data-grid>
+        </div>
+        
+        <div class="section-title">数据日志</div>
+        <div class="data-log">
+            <pre>{{data}}</pre>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+        const { initTheme, yqData, YqDataGrid } = YqwinPlus;
+        initTheme();
+
+        let dbname = "yqbase"
+        
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    // 响应式数据
+                    const editMode = ref("3")
+                    const editType = ref("2")
+                    const isDemo = ref(false)
+                    const ajaxUrl = ref("/_db.html")
+                    const tbname = ref("ab_test_html")
+                    const keyId = ref("sid")
+                    const bindingKeyId = ref(null)
+                    const bindingValue = ref(null)
+                    const pKeyId = ref(null)
+                    const pKeyValue = ref(null)
+                    const tempno = ref(1)
+                    const addWhere = ref("")
+                    const order = ref("createtime desc")
+                    const frozenNum = ref(2)
+                    const editModeW = ref(900)
+                    const editModeH = ref(700)
+                    const editModeNo = ref(1)
+                    const loadData = ref(true)
+                    const isPage = ref(true)
+                    const pageSize = ref(10)
+                    const isEdit = ref(true)
+                    const copy = ref(true)
+                    const add = ref(true)
+                    const upp = ref(true)
+                    const del = ref(true)
+                    const isdel = ref(false)
+                    const isdelEdit = ref(false)
+                    const move = ref(false)
+                    const toexcel = ref(true)
+                    const excelName = ref("excel导出")
+                    const inexcel = ref(false)
+                    const rownumbers = ref(true)
+                    const showMenu = ref(true)
+                    const editTitle = ref("编辑")
+                    const rowClassName = ref(null)
+                    const selectedId = ref(null)
+                    const data = ref({ rows: [] })
+                    const height = ref('calc(100vh - 350px)')
+
+                    // 计算属性
+                    const editModeInt = computed(() => parseInt(editMode.value))
+                    const editTypeInt = computed(() => parseInt(editType.value))
+                    const editUrl = computed(() => "data-datagrid-edit.html")
+
+                    // 方法
+                    const dataChange = (rows) => {
+                        selectedId.value = null
+                        console.log('数据改变:', rows)
+                        data.value.rows = rows
+                    }
+
+                    const rowClick = (row) => {
+                        if (row === null) {
+                            return
+                        }
+                        selectedId.value = row.sid
+                        console.log('点击行:', row)
+                    }
+
+                    return {
+                        // 响应式数据
+                        editMode,
+                        editType,
+                        isDemo,
+                        ajaxUrl,
+                        dbname,
+                        tbname,
+                        keyId,
+                        bindingKeyId,
+                        bindingValue,
+                        pKeyId,
+                        pKeyValue,
+                        tempno,
+                        addWhere,
+                        order,
+                        frozenNum,
+                        editModeW,
+                        editModeH,
+                        editModeNo,
+                        loadData,
+                        isPage,
+                        pageSize,
+                        isEdit,
+                        copy,
+                        add,
+                        upp,
+                        del,
+                        isdel,
+                        isdelEdit,
+                        move,
+                        toexcel,
+                        excelName,
+                        inexcel,
+                        rownumbers,
+                        showMenu,
+                        editTitle,
+                        rowClassName,
+                        selectedId,
+                        data,
+                        height,
+                        // 计算属性
+                        editModeInt,
+                        editTypeInt,
+                        editUrl,
+                        // 方法
+                        dataChange,
+                        rowClick
+                    }
+                }
+            })
+            
+            app.use(ElementPlus)
+            app.mount('#app')
+        }
+        
+        // 初始化应用
+        window.onload = async function () {
+            try {
+                const res = await yqData.dbList()
+                if (res.error === 0 && res.rows && res.rows.length > 0) {
+                    dbname = res.rows[0].name
+                }
+            } catch (error) {
+                console.error('获取数据库列表失败:', error)
+            } finally {
+                initApp()
+            }
+        }
+    </script>
+</body>
+
+</html>

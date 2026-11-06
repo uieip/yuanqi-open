@@ -1,0 +1,194 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>数据树测试</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .yq-data-tree-container {
+            height: 400px;
+            width: 600px;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        isdel:<el-checkbox v-model="isdel"></el-checkbox>
+        isdelEdit:<el-checkbox v-model="isdelEdit"></el-checkbox>
+        state:<el-checkbox v-model="state"></el-checkbox>
+        topnum: <el-input-number v-model="topnum" :min="3" :max="99" :step="1" label="顶部菜单个数设置"
+            style="width: 100px;"></el-input-number>
+        <p>-------------------------------------</p>
+        <div style="display: flex; gap: 20px;">
+            <div class="yq-data-tree-container">
+                <yq-data-tree ref="treeRef" :is-demo="isDemo" :ajax-url="ajaxUrl" :dbname="dbname" :tbname="tbname"
+                    :key-id="keyId" :display-member="displayMember" :binding-key-id="bindingKeyId"
+                    :binding-value="bindingValue" :p-key-id="pKeyId" :p-key-value="pKeyValue" :titles="titles"
+                    :tempno="tempno" :add-where="addWhere" :order="order" :load-data-type="loadDataType"
+                    :check-blank="checkBlank" :loadTitles="loadTitles" :load-data-type="loadDataType"
+                    :load-data="loadData" :topnum="topnum" :isdel="isdel" :isdel-field="isdelField"
+                    :isdel-edit="isdelEdit" :state="state" :state-field="stateField"
+                    :before-set-topmenus="beforeSetTopmenus" :before-set-titles="beforeSetTitles"
+                    :before-set-data="beforeSetData" :after-rowclick="afterRowclick" :after-set-titles="afterSetTitles"
+                    @row-click="handleRowClick"></yq-data-tree>
+            </div>
+
+            <div style="width: 600px;height: 400px; overflow: auto;">
+                <yq-edit ref="editRef" :is-demo="false" :titles="titles" :model="model" v-model:row="row"
+                    :is-edit="false"></yq-edit>
+            </div>
+        </div>
+        <div style="padding-top: 20px; width: 600px;height: 400px; overflow: hidden;">
+            <yq-attr ref="attrRef" :is-demo="false" :titles="titles" v-model:row="row" :is-edit="false"></yq-attr>
+        </div>
+
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, yqData, YqDataTree, YqEdit, YqAttr } = YqwinPlus;
+        initTheme();
+
+        // 页面参数
+        const eipParams = {
+            $treeRef: null,
+            dbname: '',
+            tbname: 'ab_test_tree',
+        }
+
+        // 页面加载完成后处理
+        const eipLoaded = async () => {
+            if (!eipParams.$treeRef) {
+                return
+            }
+            await eipParams.$treeRef.loadData();
+        }
+
+        // 初始化应用
+        window.onload = async function () {
+            try {
+                const res = await yqData.dbList()
+                if (res.error === 0 && res.rows && res.rows.length > 0) {
+                    eipParams.dbname = res.rows[0].name
+                }
+            } catch (error) {
+                console.error('获取数据库列表失败:', error)
+            } finally {
+                initApp()
+            }
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataTree,
+                    YqEdit,
+                    YqAttr,
+                },
+                data() {
+                    return {
+                        isDemo: false,
+                        ajaxUrl: "/_db.html",
+                        dbname: eipParams.dbname,
+                        tbname: eipParams.tbname,
+                        keyId: "sid",
+                        displayMember: "name",
+                        bindingKeyId: null,
+                        bindingValue: null,
+                        pKeyId: "pid",
+                        pKeyValue: null,
+
+                        tempno: -1,
+                        addWhere: "",
+                        order: "queue",
+                        loadTitles: true,
+                        //1-全部加载 其他-分级加载
+                        loadDataType: 2,
+                        loadData: false,
+                        checkBlank: true,
+
+                        topnum: 6, //最大显示数量
+                        isdel: true, //可注销
+                        isdelField: "wflock", //注销使用的字段
+                        isdelEdit: true, //注销是否可编辑
+                        state: true,   //可状态编辑
+                        stateField: "state",//状态字段
+                    }
+                },
+                setup() {
+                    const treeRef = ref(null);
+
+                    const titles = ref([]);
+                    const model = ref('');
+                    const row = ref({});
+
+                    // 方法
+                    const beforeSetTopmenus = (menus) => {
+                        console.log('beforeSetTopmenus:', menus)
+                        return menus
+                    }
+                    const beforeSetTitles = async (titles) => {
+                        console.log('beforeSetTitles:', titles)
+                        return titles
+                    }
+                    const beforeSetData = async (rows) => {
+                        console.log('beforeSetData:', rows)
+                        return rows
+                    }
+                    const afterRowclick = async (row, params) => {
+                        console.log("afterRowclick:", row, params)
+                        return params
+                    }
+                    const afterSetTitles = async () => {
+                        if (treeRef.value) {
+                            eipParams.$treeRef = treeRef.value;
+                        }
+
+                        console.log('afterSetTitles');
+
+                        model.value = await eipParams.$treeRef.model();
+                        titles.value = eipParams.$treeRef.titles();
+                        //console.log('afterSetTitles:', titles.value)
+                        //console.log('afterSetTitles:', model.value)
+
+                        eipLoaded();
+                    }
+
+                    const handleRowClick = (res) => {
+                        row.value = { ...res.row };
+                        console.log('handleRowClick:', row.value)
+                    }
+
+                    return {
+                        titles,
+                        model,
+                        row,
+
+                        treeRef,
+                        beforeSetTopmenus,
+                        beforeSetTitles,
+                        beforeSetData,
+                        afterRowclick,
+                        afterSetTitles,
+                        handleRowClick,
+                    }
+                }
+            });
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+    </script>
+</body>
+
+</html>

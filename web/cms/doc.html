@@ -1,0 +1,434 @@
+<!doctype html>
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,cms,login,resource"></uieip>
+<html lang="zh">
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_inc.html"></uieip>
+    <uieip type="tmpl" value="cms.title"></uieip>
+    <script src="/scripts/marked/marked.min.js"></script>
+    <script src="/scripts/marked/highlight.min.js"></script>
+    <script src="/scripts/marked/highlightjs-line-numbers.min.js"></script>
+    <link href="/scripts/marked/css/font.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/scripts/marked/css/markdown-light.css" />
+    <style>
+        .markdown-title {
+            position: relative;
+            margin: 20px 0px 0px 0px;
+            padding: 0;
+        }
+
+        .markdown-title ul {
+            padding: 0 0 5px 15px;
+        }
+
+        .markdown-title ul li {
+            padding: 0 0 2px 10px;
+            list-style: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+        <div id="sidebar">
+            <div id="sidebar-content" style="text-align: left;">
+                <uieip>_html</uieip>
+            </div>
+            <div class="markdown-title" id="custom-toc-container">
+            </div>
+        </div>
+        <div id="editormd-body">
+            <div id="editormd-view">
+            </div>
+            <div style=" float: right;margin: 12px 15px 5px 0;">
+                <span class="uieip-tongji-view" style="display: none;">阅读数量<i class="view"></i></span>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+    <script type="text/javascript">
+        var md_url = "/<uieip>select_file</uieip>";
+
+        function onresize() {
+            var bodyEl = document.getElementById("editormd-body");
+            if (bodyEl) {
+                bodyEl.style.marginBottom = "0px";
+            }
+            var footEl = document.querySelector(".footer .container");
+            if (footEl) {
+                var footRect = footEl.getBoundingClientRect();
+                var h_ = parseInt(document.documentElement.scrollHeight - (footRect.top + footRect.height + 15));
+                if (h_ > 0 && bodyEl) {
+                    bodyEl.style.marginBottom = h_ + "px";
+                }
+            }
+            h_ = parseInt(window.innerHeight - 90);
+            if (h_ > 0) {
+                var sidebar = document.getElementById("sidebar");
+                if (sidebar) sidebar.style.height = h_ + "px";
+            }
+            if (footEl) footEl.style.paddingLeft = (window.innerWidth > 767) ? "310px" : "";
+        }
+
+        function getFileType(sFileTitle) {
+            let pattern = /\.{1}[A-Za-z]{1,}$/;
+            let fileType01 = sFileTitle.substring(pattern.exec(sFileTitle).index + 1, sFileTitle.length);
+            return fileType01;
+        }
+
+        function fileget(fileid, callback) {
+            var formData = new FormData();
+            formData.append("action", "downfile");
+            formData.append("errhtml", "false");
+            formData.append("file", fileid);
+            fetch("_resource.html", {
+                method: 'POST',
+                body: formData
+            }).then(function(response) {
+                return response.text();
+            }).then(function(text) {
+                callback({ error: 0, text: text });
+            }).catch(function(err) {
+                console.log(err);
+                callback({ error: 1, text: err.message });
+            });
+        }
+
+        // ------ markdown view -----------
+        var shortID = 0;
+        function getShortID() {
+            shortID++;
+            return 'link_' + shortID.toString();
+        }
+
+        function yqMdView(opts) {
+            if (opts.mdText === undefined) {
+                opts.mdText = "";
+            }
+            var doc = generateMarkdownWithToc(opts.mdText);
+            if (opts.$title !== undefined && opts.$title !== null) {
+                opts.$title.classList.add("markdown-title");
+                opts.$title.innerHTML = doc.toc;
+            }
+            if (opts.$view === undefined || opts.$view === null) {
+                return;
+            }
+            opts.$view.classList.add("markdown-body");
+            opts.$view.innerHTML = doc.html;
+            // 高亮代码块
+            opts.$view.querySelectorAll('pre code').forEach(function(block) {
+                try {
+                    hljs.highlightElement(block);
+                    hljs.lineNumbersBlock(block);
+                } catch (error) {
+                    console.error('代码块高亮失败:', error);
+                }
+                // 获取代码块的语言类型
+                const codeLang = block.className.replace('hljs', '').replace('language-', '').trim();
+                // 创建代码块标题
+                const codeTitle = document.createElement('div');
+                codeTitle.className = 'code-title';
+                codeTitle.textContent = codeLang;
+                // 创建复制按钮
+                const copyButton = createCopyButton(block);
+                // 将代码块标题和复制按钮添加到代码块的父元素（pre）中
+                const preElement = block.parentElement;
+                preElement.style.position = 'relative';
+                preElement.prepend(codeTitle);
+                preElement.appendChild(copyButton);
+            });
+        }
+
+        function createCopyButton(block) {
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.textContent = '复制';
+            // 复制按钮点击事件
+            copyButton.addEventListener('click', async function() {
+                const codeContent = block.textContent.trim();
+                if (!codeContent) {
+                    console.warn('代码块内容为空');
+                    return;
+                }
+                try {
+                    await copyToClipboard(codeContent);
+                    copyButton.textContent = '已复制';
+                    setTimeout(() => {
+                        copyButton.textContent = '复制';
+                    }, 3000);
+                } catch (err) {
+                    console.error('复制失败:', err);
+                }
+            });
+            return copyButton;
+        }
+
+        async function copyToClipboard(text) {
+            if (navigator.clipboard) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    console.log('文本已成功拷贝到剪贴板: ' + text);
+                } catch (err) {
+                    console.error('无法拷贝文本: ', err);
+                    copyToClipboardFallback(text);
+                }
+            } else {
+                console.error('当前浏览器不支持 navigator.clipboard');
+                copyToClipboardFallback(text);
+            }
+        }
+
+        function copyToClipboardFallback(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                const successful = document.execCommand('copy');
+                const msg = successful ? '成功' : '失败';
+                console.log('拷贝文本 ' + msg);
+            } catch (err) {
+                console.error('无法拷贝文本: ', err);
+            } finally {
+                textarea.remove();
+            }
+        }
+
+        function generateMarkdownWithToc(markdown) {
+            const headings = [];
+            // 自定义 renderer
+            const renderer = {
+                heading(token) {
+                    return `<h${token.depth} id="${token.id}">${token.text}</h${token.depth}>`;
+                }
+            };
+            // 使用自定义 renderer
+            marked.use({ renderer });
+            const html = marked.parse(markdown, {
+                walkTokens: function (token) {
+                    if (token.type === 'heading') {
+                        token.id = getShortID();
+                        headings.push({ level: token.depth, text: token.text, id: token.id });
+                    }
+                }
+            });
+            let toc = '<ul>';
+            let currentLevel = 1;
+            headings.forEach(heading => {
+                if (heading.level > currentLevel) {
+                    toc += '<ul>';
+                } else if (heading.level < currentLevel) {
+                    toc += '</ul>'.repeat(currentLevel - heading.level);
+                }
+                toc += `<li><a href="#${heading.id}">${heading.text}</a></li>`;
+                currentLevel = heading.level;
+            });
+            toc += '</ul>'.repeat(currentLevel - 1);
+            return { html, toc };
+        }
+
+        // ------ DOM Ready ------
+        document.addEventListener('DOMContentLoaded', function() {
+            var filetype = getFileType(md_url);
+            var editormdView = document.getElementById('editormd-view');
+            var tocContainer = document.getElementById('custom-toc-container');
+
+            if (filetype == "md") {
+                fileget(md_url, function (res) {
+                    if (res.error == 0) {
+                        yqMdView({
+                            mdText: res.text,
+                            $view: editormdView,
+                            $title: tocContainer
+                        });
+                    } else {
+                        if (editormdView) editormdView.insertAdjacentHTML('beforeend', res.text);
+                    }
+                    onresize();
+                });
+            } else if (filetype == "htmls") {
+                fileget(md_url, function (res) {
+                    var htmls = "";
+                    if (res.error == 0) {
+                        htmls = res.text;
+                    } else {
+                        if (editormdView) editormdView.insertAdjacentHTML('beforeend', res.text);
+                        onresize();
+                        return;
+                    }
+
+                    var titles_ = "";
+                    var htmlsDiv = document.createElement('div');
+                    htmlsDiv.innerHTML = htmls;
+                    var i = 1;
+                    while (i < 10) {
+                        if (htmlsDiv.querySelectorAll('h' + i).length == 0) {
+                            i++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    var hsNodes = htmlsDiv.querySelectorAll('h' + i);
+                    if (hsNodes.length > 0) {
+                        titles_ += '<div class="markdown-toc editormd-markdown-toc">';
+                        titles_ += '<ul class="markdown-toc-list">';
+                        for (var i_ = 0; i_ < hsNodes.length; i_++) {
+                            var li = hsNodes[i_];
+                            li.insertAdjacentHTML('beforebegin', '<a id="link_' + i_ + '"></a>');
+                            titles_ += '<li>';
+                            titles_ += '   <a href="#' + ("link_" + i_) + '">' + li.textContent + '</a>';
+
+                            var hsSubs = [];
+                            var liNext = li.nextElementSibling;
+                            while (liNext != null) {
+                                var tagname = liNext.tagName.toLowerCase();
+                                if (tagname == 'h' + (i + 1)) {
+                                    hsSubs.push(liNext);
+                                }
+                                if (tagname == 'h' + i) {
+                                    break;
+                                }
+                                liNext = liNext.nextElementSibling;
+                            }
+
+                            if (hsSubs.length > 0) {
+                                titles_ += '<ul>';
+                                for (var j = 0; j < hsSubs.length; j++) {
+                                    var liSub = hsSubs[j];
+                                    liSub.insertAdjacentHTML('beforebegin', '<a id="link_' + i_ + "_" + j + '"></a>');
+                                    titles_ += '<li>';
+                                    titles_ += '   <a href="#' + ("link_" + i_ + "_" + j) + '">' + liSub.textContent + '</a>';
+                                    titles_ += '</li>';
+                                }
+                                titles_ += '</ul>';
+                            }
+
+                            titles_ += '</li>';
+                        }
+
+                        titles_ += '<li>';
+                        titles_ += '   <a href="#editormd-view">top</a>';
+                        titles_ += '</li>';
+
+                        titles_ += '</ul>';
+                        titles_ += '</div>';
+                    }
+
+                    if (tocContainer) tocContainer.innerHTML = titles_;
+
+                    var h_ = '<div class="card"><div class="card-body">' +
+                        '<lable id="link_top"></lable>' +
+                        htmlsDiv.innerHTML +
+                        '</div></div>';
+                    if (editormdView) editormdView.insertAdjacentHTML('beforeend', h_);
+
+                    onresize();
+                });
+            }
+
+            window.addEventListener('resize', onresize);
+            onresize();
+        });
+    </script>
+
+    <script runat="server">
+        let lg_state = login.state();
+
+        let _html = "";
+
+        let path = request.data("cms.nav").name;
+        let first_file = "";
+        let first_title = "";
+        let select_file = "";
+        let select_title = "";
+
+        let _md_text = "";
+
+        let res_data = resource.ujson("document/data.ujson");
+        if (res_data.error == 0) {
+            _html = getnav(res_data.data, 1).html;
+            //_html += JSON.stringify(res_data.data);
+
+            if (select_file == "") {
+                select_file = first_file;
+                select_title = first_title;
+            }
+            if (select_file == "") {
+                select_file = "readme.md";
+                select_title = "帮助文档";
+            }
+            let nav = request.data("cms.nav");
+            cms.title(
+                (nav.nav[0].PTitle || "") + " - " + select_title,
+                (nav.nav[0].PDescribe || ""),
+                (nav.nav[0].PKeywords || "")
+            );
+        } else {
+            _html = res_data.info;
+        }
+
+        function getnav(rows, level) {
+            var select = false;
+            if (rows.length == 0) {
+                return { html: "", select: select };
+            }
+            var h_ = '<ul class="menu' + level + '">';
+            for (var i = 0; i < rows.length; i++) {
+                var item = rows[i];
+                var system = item.system;
+                if (system === undefined) {
+                    system = false;
+                }
+                if (system && lg_state) {
+                    system = false;
+                }
+                if (system) {
+                    continue;
+                }
+
+                if (first_file == "" && item.file != "") {
+                    first_file = item.file;
+                    first_title = item.name;
+                }
+
+                var s_html = { html: "", select: select };;
+                if (typeof item.subs == "object") {
+                    s_html = getnav(item.subs, level + 1);
+                }
+                h_ += '<li>';
+                if (item.path == path) {
+                    select = true;
+                    select_file = item.file;
+                    select_title = item.name;
+                    h_ += ' <a class="active" href="javascript:void(0);">';
+                } else {
+                    h_ += ' <a href="' + item.path + '.html">';
+                }
+
+                h_ += item.name + '</a>';
+
+                if (s_html.select) {
+                    select = true;
+                }
+
+                if (select) {
+                    if (level == 1) {
+                        select = false;
+                    }
+
+                    h_ += s_html.html;
+                }
+
+                h_ += '</li>';
+            }
+            h_ += '</ul>';
+
+            return { html: h_, select: select };
+        }
+    </script>
+</body>
+
+</html>

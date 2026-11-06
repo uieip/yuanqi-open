@@ -1,0 +1,407 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>数据表格测试</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .divider {
+            margin: 0 10px;
+            color: #909399;
+        }
+
+        .yq-data-grid-container {
+            height: calc(100vh - 350px);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .yq-data-grid .warning-row {
+            background-color: #fdf5e6;
+        }
+
+        .yq-data-grid .success-row {
+            background-color: #e6f5e9;
+        }
+
+        .data-log {
+            height: 200px;
+            overflow: auto;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .data-log pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #409eff;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #606266;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>数据表格测试</h1>
+
+        <div class="control-panel">
+            <div class="control-group">
+                <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑" inactive-text="不编辑"></el-switch>
+            </div>
+            <div class="control-group">
+                <el-switch v-model="isPage" :active-value="true" :inactive-value="false" active-text="分页" inactive-text="不分页"></el-switch>
+            </div>
+            <div class="control-group">
+                <label>语言</label>
+                <el-select v-model="currentLocale" placeholder="选择语言" style="width: 120px;">
+                    <el-option label="中文" value="zh-CN"></el-option>
+                    <el-option label="English" value="en"></el-option>
+                </el-select>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="rownumbers" :active-value="true" :inactive-value="false" active-text="显示行号" inactive-text="不显示行号"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="showMenu" :active-value="true" :inactive-value="false" active-text="显示菜单" inactive-text="不显示菜单"></el-switch>
+            </div>
+            <div class="control-group">
+                <el-switch v-model="stripe" :active-value="true" :inactive-value="false" active-text="显示斑马纹" inactive-text="不显示斑马纹"></el-switch>
+            </div>
+            <div class="control-group">
+                <el-switch v-model="border" :active-value="true" :inactive-value="false" active-text="显示边框" inactive-text="不显示边框"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>冻结列数设置</label>
+                <el-input-number v-model="frozenNum" :min="0" :max="10" :step="1" label="冻结列数"
+                    style="width: 100px;"></el-input-number>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>编辑模式</label>
+                <el-select v-model="editMode" placeholder="请选择编辑模式" style="width: 150px;">
+                    <el-option label="自由编辑1" value="1"></el-option>
+                    <el-option label="自由编辑2" value="2"></el-option>
+                    <el-option label="编辑(模态窗体)" value="3"></el-option>
+                    <el-option label="编辑(独立)" value="4"></el-option>
+                </el-select>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>编辑类型</label>
+                <el-select v-model="editType" placeholder="请选择编辑类型" style="width: 150px;">
+                    <el-option label="属性编辑模式" value="1"></el-option>
+                    <el-option label="form编辑模式" value="2"></el-option>
+                </el-select>
+            </div>
+             
+            <div class="control-group">
+                <el-switch v-model="checkBlank" active-text="检查空值" inactive-text="不检查空值"></el-switch>
+            </div>
+            <div class="control-group">
+                <el-switch v-model="loadDefault" active-text="加载默认值" inactive-text="不加载默认值"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <label>编辑位置</label>
+                <el-select v-model="editPlacement" placeholder="请选择编辑位置" style="width: 150px;">
+                    <el-option v-for="item in placement" :key="item" :label="item" :value="item"></el-option>
+                </el-select>
+            </div>
+            <div class="control-group">
+                <label>选中行</label>
+                <el-switch v-model="selected" active-text="选中行" inactive-text="不选中行"></el-switch>
+            </div>
+        </div>
+
+        <div class="section-title">数据表格</div>
+        <div class="yq-data-grid-container">
+            <yq-data-grid ref="singleTable" :is-demo="isDemo" :ajax-url="ajaxUrl" :dbname="dbname" :tbname="tbname"
+                :key-id="keyId" :binding-key-id="bindingKeyId" :binding-value="bindingValue" :p-key-id="pKeyId"
+                :p-key-value="pKeyValue" :tempno="tempno" :add-where="addWhere" :order="order" :is-page="isPage"
+                :page-size="pageSize" :rownumbers="rownumbers" :frozen-num="frozenNum" :row-class-name="rowClassName"
+                 :load-data="loadData" :height="height" :edit-mode="editModeInt"
+                :edit-type="editTypeInt" :edit-mode-w="editModeW" :edit-mode-h="editModeH" :edit-mode-no="editModeNo"
+                :edit-url="editUrl" :is-edit="isEdit" :btn-mini="btnMini" :copy="copy" :add="add" :upp="upp" :del="del"
+                :isdel="isdel" :state="state" :state-field="stateField" :isdel-edit="isdelEdit" :move="move"
+                :toexcel="toexcel" :excel-name="excelName" :inexcel="inexcel" :show-menu="showMenu"
+                :check-blank="checkBlank"
+                :load-default="loadDefault"
+                :link-field="linkField"
+                :edit-placement="editPlacement"
+                :stripe="stripe"
+                :border="border"
+                @update:rows="dataChange"
+                @row-click="rowClick"
+                :before-set-titles="beforeSetTitles"
+                :selected="selected"
+                ></yq-data-grid>
+        </div>
+
+        <div class="section-title">数据日志</div>
+        <div class="data-log">
+            <pre>{{editData}}</pre>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { initTheme, yqData, YqDataGrid, setLocale, getLocale } = YqwinPlus;
+        initTheme();
+
+        let dbname = "yqbase"
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                data() {
+                    return {
+                        editPlacement: "popper",
+                        placement:["left", "top", "center", "right", "popper", "bottom", "fullscreen"],
+                    }
+                },
+                setup() {
+                    const editMode = ref("3")
+                    const editType = ref("1")
+                    const _editMode = localStorage.getItem('data-datagrid-editMode')
+                    editMode.value = _editMode || "3"
+                    const _editType = localStorage.getItem('data-datagrid-editType')
+                    editType.value = _editType || "1"
+
+                    // 监听侧边栏折叠状态变化，存储到localStorage
+                    watch(editMode, (newValue) => {
+                        localStorage.setItem('data-datagrid-editMode', newValue)
+                    })
+                    watch(editType, (newValue) => {
+                        localStorage.setItem('data-datagrid-editType', newValue)
+                    })
+
+                    // 语言切换
+                    const currentLocale = ref(getLocale())
+                    watch(currentLocale, (newLocale) => {
+                        setLocale(newLocale)
+                    })
+
+                    // 响应式数据
+                    const isDemo = ref(false)
+                    const ajaxUrl = ref("/_db.html")
+                    const tbname = ref("ab_test_m")
+                    const keyId = ref("sid")
+                    const bindingKeyId = ref(null)
+                    const bindingValue = ref(null)
+                    const pKeyId = ref(null)
+                    const pKeyValue = ref(null)
+                    const tempno = ref(1)
+                    const addWhere = ref("")
+                    const order = ref("createtime desc")
+                    const frozenNum = ref(0)
+                    const editModeW = ref(700)
+                    const editModeH = ref(550)
+                    const editModeNo = ref(2)
+                    const checkBlank = ref(false)    //是否检查空值,输入合法检查
+                    const loadDefault = ref(true)
+                    const loadData = ref(true)
+                    const isPage = ref(true)
+                    const pageSize = ref(10)
+                    const isEdit = ref(true)
+                    const btnMini = ref(false)
+                    const copy = ref(true)
+                    const add = ref(true)
+                    const upp = ref(true)
+                    const del = ref(true)
+                    const isdel = ref(false)
+                    const isdelEdit = ref(false)
+                    const state = ref(true)
+                    const stateField = ref("state")
+                    const move = ref(false)
+                    const toexcel = ref(true)
+                    const excelName = ref("excel导出")
+                    const inexcel = ref(false)
+                    const rownumbers = ref(true)
+                    const showMenu = ref(true)
+                    const rowClassName = ref(null)
+                    const selectedId = ref(null)
+                    const editData = ref({ rows: [] })
+                    const height = ref('calc(100vh - 350px)')
+
+                    // 计算属性
+                    const editModeInt = computed(() => parseInt(editMode.value))
+                    const editTypeInt = computed(() => parseInt(editType.value))
+                    const editUrl = computed(() => "data-datagrid-edit.html")
+
+                    const stripe = ref(true)
+                    const border = ref(false)
+                    const selected = ref(true)
+
+                    // 方法
+                    const dataChange = (rows) => {
+                        selectedId.value = null
+                        console.log('数据改变:', rows)
+                        editData.value.rows = rows
+                    }
+
+                    const rowClick = (row) => {
+                         console.log('点击行:', row)
+                        if (row === null) {
+                            return
+                        }
+                        selectedId.value = row.sid
+                    }
+
+                    const linkField = ref(["textbox","datebox"])
+
+                    const beforeSetTitles = async (titles) => {
+                        console.log("beforeSetTitles", JSON.stringify(titles, null, 2));
+                        return titles
+                    }
+
+                    return {
+                        // 响应式数据
+                        currentLocale,
+                        editMode,
+                        editType,
+                        isDemo,
+                        ajaxUrl,
+                        dbname,
+                        tbname,
+                        keyId,
+                        bindingKeyId,
+                        bindingValue,
+                        pKeyId,
+                        pKeyValue,
+                        tempno,
+                        addWhere,
+                        order,
+                        frozenNum,
+                        editModeW,
+                        editModeH,
+                        editModeNo,
+                        checkBlank,
+                        loadDefault,
+                        loadData,
+                        isPage,
+                        pageSize,
+                        isEdit,
+                        btnMini,
+                        copy,
+                        add,
+                        upp,
+                        del,
+                        isdel,
+                        isdelEdit,
+                        state,
+                        stateField,
+                        move,
+                        toexcel,
+                        excelName,
+                        inexcel,
+                        rownumbers,
+                        showMenu,
+                        rowClassName,
+                        selectedId,
+                        editData,
+                        height,
+                        // 计算属性
+                        editModeInt,
+                        editTypeInt,
+                        editUrl,
+                        stripe,
+                        border,
+                        selected,
+                        // 方法
+                        dataChange,
+                        rowClick,
+                        
+                        linkField,
+                        beforeSetTitles
+                    }
+                }
+            })
+
+            app.use(ElementPlus)
+            app.use(YqwinPlus.i18n)
+            app.mount('#app')
+        }
+
+        // 初始化应用
+        window.onload = async function () {
+            try {
+                const res = await yqData.dbList()
+                if (res.error === 0 && res.rows && res.rows.length > 0) {
+                    dbname = res.rows[0].name
+                }
+            } catch (error) {
+                console.error('获取数据库列表失败:', error)
+            } finally {
+                initApp()
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,618 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Menu</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        titles <el-select v-model="changeTitle" placeholder="请选择" style="width: 120px;" @change="changeTitles">
+            <el-option v-for="item in titles_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+        </el-select> |
+        <p>-----------------------------------</p>
+        <el-switch v-model="seekSimple" :active-value="true" :inactive-value="false" active-text="包含简单查询"
+            inactive-text="不包含简单查询"></el-switch> |
+        <el-switch v-model="isSeek" :active-value="true" :inactive-value="false" active-text="包含高级查询"
+            inactive-text="不包含高级查询"></el-switch>
+        <p>-----------------------------------</p>
+        <yq-seek-menu ref="seekMenuRef" :seek-simple="seekSimple" :seek-simple-d-d-l-w="seekSimpleDDLW"
+            :seek-simple-txt-w="seekSimpleTxtW" :is-seek="isSeek" :seek-mode-w="seekModeW" :seek-mode-h="seekModeH"
+            :titles="titles" @seek="onSeek" menu-name="ab_test_move_1"></yq-seek-menu>
+        <p>-------------------------------------</p>
+        <yq-edit-menu ref="editMenuRef" :titles="titles" :is-simple="seekSimple" :is-simple-d-d-l-w="seekSimpleDDLW"
+            :is-simple-txt-w="seekSimpleTxtW" menu-name="ab_test_move_2"></yq-edit-menu>
+        <p>-------------------------------------</p>
+
+        <p>查询字段：</p>
+        <div style="display: flex; align-items: center;">
+            <el-select v-model="seekName" placeholder="请选择" style="width: 120px;">
+                <el-option v-for="item in seekTitles" :key="item.name" :label="item.ui_title"
+                    :value="item.name"></el-option>
+            </el-select>
+            <yq-seek-field :title="selectTitle" style="width: 380px;" @input="inputChange"></yq-seek-field>
+        </div>
+
+        <p>-------------------------------------</p>
+        <yq-seek-attr :titles="seekTitles" v-model:row="seekRow" v-model:order="seekOrder" style="width: 550px;" :height="400" @update:value="inputChange" @update:row="updateRow" @update:order="updateOrder"></yq-seek-attr>
+        <div>{{seekRow}}</div>
+    </div>
+    <script>
+        const { createApp, ref, computed } = Vue;
+        const { initTheme, YqEditMenu, YqSeekMenu, YqSeekField, YqSeekAttr } = YqwinPlus;
+        initTheme();
+        const app = createApp({
+            components: {
+                YqEditMenu,
+                YqSeekMenu,
+                YqSeekField,
+                YqSeekAttr
+            },
+            data() {
+                return {
+                    seekSimple: true,
+                    seekSimpleDDLW: 120,
+                    seekSimpleTxtW: 100,
+                    isSeek: true,
+                    seekModeW: 800,
+                    seekModeH: 600,
+                }
+            },
+            setup() {
+                const titles_1 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {
+
+                        },
+                        "group": "分组1"
+                    },
+                    {
+                        "name": "lable",
+                        "is_func": false,
+                        "ui_title": "Lable",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": true,
+                        "ui_mask": {
+                            "default": "默认值1"
+                        },
+                        "group": "分组1"
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        },
+                        "group": "分组1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "分组2"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        },
+                        "group": "分组2"
+                    },
+                    {
+                        "name": "richbox",
+                        "is_func": false,
+                        "ui_title": "Richbox",
+                        "fd_type": "nvarchar",
+                        "length": 2000,
+                        "decimal": 0,
+                        "ui_type": 5,
+                        "ui_width": 190,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "types": [
+                                "json",
+                                "html",
+                                "js"
+                            ]
+                        },
+                        "group": "分组2"
+                    },
+                    {
+                        "name": "combobox",
+                        "is_func": false,
+                        "ui_title": "Combobox",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 6,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": 2,
+                            "blank": false,
+                            "lists": [
+                                {
+                                    "no": 1,
+                                    "name": "111111"
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "222222"
+                                },
+                                {
+                                    "no": 3,
+                                    "name": "333333"
+                                }
+                            ]
+                        },
+                        "group": "分组3"
+                    },
+                    {
+                        "name": "foreignkey",
+                        "is_func": false,
+                        "ui_title": "ForeignKey",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 7,
+                        "ui_width": 180,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "dbName": "yqbase",
+                            "tbName": "ab_test_move",
+                            "tempNo": -1,
+                            "displayType": 1,
+                            "valueMember": "sid",
+                            "displayMember": "textbox",
+                            "isPage": true,
+                            "pageSize": 10,
+                            "addWhere": "",
+                            "order": "queue",
+                            "panelWidth": 700,
+                            "panelHeight": 560,
+                            "expandMember": null,
+                            "seekNo": -1,
+                            "seekModeW": 800,
+                            "seekModeH": 600
+                        },
+                        "group": "分组3"
+                    },
+                    {
+                        "name": "treeselect1",
+                        "is_func": false,
+                        "ui_title": "TreeSelect1",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": [
+                                2,
+                                201,
+                                20101
+                            ],
+                            "blank": false,
+                            "level": 1,
+                            "subfield": "treeselect2",
+                            "trees": [
+                                {
+                                    "no": 1,
+                                    "name": "root1",
+                                    "extend": "扩展",
+                                    "default": true,
+                                    "subs": [
+                                        {
+                                            "no": 101,
+                                            "name": "sub101",
+                                            "subs": [
+                                                {
+                                                    "no": 10101,
+                                                    "name": "三级10101"
+                                                },
+                                                {
+                                                    "no": 10102,
+                                                    "name": "三级10102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 102,
+                                            "name": "sub102",
+                                            "subs": [
+                                                {
+                                                    "no": 10201,
+                                                    "name": "三级10201"
+                                                },
+                                                {
+                                                    "no": 10202,
+                                                    "name": "三级10202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "root2",
+                                    "subs": [
+                                        {
+                                            "no": 201,
+                                            "name": "Sub201",
+                                            "subs": [
+                                                {
+                                                    "no": 20101,
+                                                    "name": "三级20101"
+                                                },
+                                                {
+                                                    "no": 20102,
+                                                    "name": "三级20102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 202,
+                                            "name": "Sub202",
+                                            "subs": [
+                                                {
+                                                    "no": 20201,
+                                                    "name": "三级20201"
+                                                },
+                                                {
+                                                    "no": 20202,
+                                                    "name": "三级20202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "group": "分组3"
+                    },
+                    {
+                        "name": "treeselect2",
+                        "is_func": false,
+                        "ui_title": "TreeSelect2",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 2,
+                            "subfield": "treeselect3",
+                            "trees": []
+                        },
+                        "group": "分组3"
+                    },
+                    {
+                        "is_func": false,
+                        "name": "numberBox",
+                        "ui_title": "NumberBox",
+                        "ui_type": 9,
+                        "ui_width": 120,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {},
+                        "group": "分组3"
+                    },
+                    {
+                        "is_func": false,
+                        "name": "NumberSpinner",
+                        "ui_title": "NumberSpinner",
+                        "ui_type": 10,
+                        "ui_width": 120,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {},
+                        "group": "分组4"
+                    },
+                    {
+                        "is_func": false,
+                        "name": "TimeSpinner",
+                        "ui_title": "TimeSpinner",
+                        "ui_type": 11,
+                        "ui_width": 120,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {},
+                        "group": "分组4"
+                    },
+                    {
+                        "is_func": false,
+                        "name": "DateTimeBox",
+                        "ui_title": "DateTimeBox",
+                        "ui_type": 12,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {},
+                        "group": "分组4"
+                    },
+                    {
+                        "is_func": false,
+                        "name": "NCheckBox",
+                        "ui_title": "NCheckBox",
+                        "ui_type": 13,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "type": "string",
+                            "lists": [
+                                {
+                                    "no": "1",
+                                    "name": "选择1",
+                                    "checked": true
+                                },
+                                {
+                                    "no": "2",
+                                    "name": "选择1",
+                                    "checked": true
+                                },
+                                {
+                                    "no": "3",
+                                    "name": "选择3",
+                                    "checked": false
+                                },
+                                {
+                                    "no": "4",
+                                    "name": "选择4",
+                                    "checked": false
+                                }
+                            ],
+                            "editModeW": 400,
+                            "editModeH": 200,
+                            "textbox": false,
+                            "default": "1,2"
+                        },
+                        "group": "分组4"
+                    },
+                    {
+                        "is_func": false,
+                        "name": "NForeignKey",
+                        "ui_title": "NForeignKey",
+                        "ui_type": 14,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "dbName": "yqbase",
+                            "tbName": "ab_test_move",
+                            "tempNo": -1,
+                            "displayType": 1,
+                            "valueMember": "sid",
+                            "displayMember": "textbox",
+                            "isPage": true,
+                            "pageSize": 10,
+                            "addWhere": "",
+                            "order": "queue",
+                            "panelWidth": 700,
+                            "panelHeight": 560,
+                            "expandMember": null,
+                            "seekNo": -1,
+                            "seekModeW": 800,
+                            "seekModeH": 600
+                        },
+                        "group": "分组4"
+                    }
+                ]
+                const titles_2 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    }
+                ];
+
+                const titles_all = computed(() => {
+                    return [
+                        { name: "titles_1", value: "titles_1", titles: titles_1 },
+                        { name: "titles_2", value: "titles_2", titles: titles_2 }]
+                });
+
+                function changeTitles() {
+                    titles.value = titles_all.value.find(item => item.value === changeTitle.value).titles;
+                }
+
+                const changeTitle = ref("titles_1");
+                const titles = ref(titles_1);
+
+                const seekTitles = computed(() => {
+                    return titles.value.filter(item => item.ui_type <= 14);
+                });
+                const seekName = ref(seekTitles.value[0].name);
+
+                const selectTitle = computed(() => {
+                    let title = seekTitles.value.find(item => item.name === seekName.value);
+                    if (!title) {
+                        title = seekTitles.value[0];
+                    };
+                    return title;
+                });
+
+                const inputChange = (val) => {
+                    console.log("inputChange", val)
+                }
+
+                const updateRow = (val) => {
+                    console.log("updateRow", val)
+                }
+
+                const updateOrder = (val) => {
+                    console.log("updateOrder", val)
+                }
+
+                const seekRow = ref({})
+                const seekOrder = ref({})
+                
+                return {
+                    titles_all,
+                    titles,
+                    changeTitle,
+                    changeTitles,
+
+                    seekTitles,
+                    seekName,
+                    selectTitle,
+                    inputChange,
+                    seekRow,
+                    seekOrder,
+                    updateRow,
+                    updateOrder,
+                }
+            },
+            async mounted() {
+            },
+            methods: {
+                onSeek(where) {
+                    console.log("onSeek", where)
+                }
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

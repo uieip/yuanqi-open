@@ -1,0 +1,253 @@
+{
+    "websvr": {
+        "webtype": "sso",
+        "addr": "8011",
+        "webpath": "D:\\Spring\\yuanqi-open\\web",
+        "debug": true,
+        "timeout": 2000,
+        "cachetime": 60,
+        "checkhost": false,
+        "scheme": "http",
+        "host": "user.yqsite.com",
+        "cms": "www",
+        "zip": false,
+        "funcpath": "D:\\Spring\\yuanqi-open\\web\\svrfunc",
+        "proxyurl": ""
+    },
+    "appauth": {
+        "mode": "enforce",
+        "info": "客户端准入与签名校验：off=直通 | audit=校验记日志不拒绝（灰度观察） | enforce=强制拒绝",
+        "timestamp_window": 300,
+        "nonce_ttl": 600,
+        "legacy_get_fallback": true
+    },
+    "cache": {
+        "type": "memory",
+        "memory": {
+            "name": "memory"
+        },
+        "redis": {
+            "addr": "127.0.0.1:6379",
+            "password": "123456",
+            "db": 1
+        }
+    },
+    "session": {
+        "type": "memory",
+        "remark": [
+            "redis",
+            "memory"
+        ],
+        "redis": {
+            "addr": "127.0.0.1:6379",
+            "password": "123456",
+            "db": 0
+        },
+        "lifeTime": 30
+    },
+    "log": {
+        "path": "D:\\Spring\\logfile",
+        "level": 0,
+        "write": true
+    },
+    "db": {
+        "lists": [
+            "yqbase"
+        ],
+        "wf": "yqbase",
+        "yqbase": {
+            "dbType": "sqlite",
+            "describe": "sqlite数据库",
+            "connStr": "D:\\Spring\\yuanqi-open\\data\\yqbase.sqlite"
+        } 
+    },
+    "file": {
+        "lists": [
+            "sqlite"
+        ],
+        "sqlite": {
+            "describe": "sqlite数据库",
+            "dbType": "sqlite",
+            "connStr": "D:\\Spring\\yuanqi-open\\files\\filedb.sqlite",
+            "fsType": "local",
+            "fsPath": "D:\\Spring\\yuanqi-open\\files\\"
+        }
+    },
+    "power": {
+        "cacheTime": 1440,
+        "sso": {
+            "status": false,
+            "url": "https://sso.uieip.com",
+            "appid": "c857e34765c71cd56f443b3811a52d3c",
+            "corpsecret": "yq-75ec54b10047431a5a8e5053cbe869be"
+        },
+        "admin": [
+            "22bd7aed-f114-4c59-9590-204e7d563245",
+            "b21313cb-5db7-430f-8ffe-d9281589b6fa"
+        ],
+        "third": {
+            "weixin": [
+                {
+                    "describe": "微信中",
+                    "appid": "wx7b36fdbf11b180fc",
+                    "secret": "c07279a0408392ce465793d046efb9f5"
+                },
+                {
+                    "describe": "网页中",
+                    "appid": "wx2065a6a876ee14cd",
+                    "secret": "bc39bd648c5bf63a83ccbebdf1d7098a"
+                }
+            ]
+        },
+        "verif": {
+            "check": false,
+            "day": 10,
+            "secret_key": "1234567890",
+            "email": {
+                "t1": {
+                    "describe": "登录",
+                    "subject": "验证码",
+                    "body": "您的验证码是：${code}"
+                },
+                "t2": {
+                    "describe": "校验",
+                    "subject": "校验码",
+                    "body": "您的验证码是：${code}"
+                }
+            },
+            "sms": {
+                "t1": {
+                    "describe": "登录",
+                    "provider": "aliyun",
+                    "templateCode": "SMS_151726312",
+                    "templateParam": "{\"code\": \"${code}\"}"
+                },
+                "t2": {
+                    "describe": "校验",
+                    "provider": "aliyun",
+                    "templateCode": "SMS_151722631",
+                    "templateParam": "{\"code\": \"${code}\"}"
+                }
+            }
+        }
+    },
+    "svradmin": {
+        "dns": {
+            "path": "D:\\Spring\\yuanqi-open\\yqdns.json",
+            "status": false
+        },
+        "nginx": {
+            "path": "D:\\soft\\nginx"
+        },
+        "nsq": {
+            "lookupaddr": "127.0.0.1:4161",
+            "nsqdtcp": "127.0.0.1:4150",
+            "email": {
+                "status": true,
+                "host": "smtpdm.aliyun.com",
+                "port": 80,
+                "username": "webmaster@web.net",
+                "password": "se098ditzw",
+                "from": "webmaster@web.net"
+            },
+            "sms": {
+                "status": true,
+                "default": "aliyun",
+                "aliyun": {
+                    "access_key_id": "LTAeCF1UqKqIbgJP",
+                    "access_key_secret": "c9LK1d1EwxxZJBehRlINZyV4SKMmUF",
+                    "sign_name": "远齐"
+                },
+                "tencent": {
+                    "app_id": "1257053048",
+                    "secret_id": "AKI79xYw62lOrbswn7AzRm0D1yrkW6Rs77DD",
+                    "secret_key": "sXzDDqOksmTx0ax65EclmqH6mV8cxCMl",
+                    "sign_name": "远齐",
+                    "sms_sdk_app_id": "1400698176"
+                }
+            },
+            "tongji": {
+                "status": true,
+                "viewlog": true,
+                "lifespan": 3600,
+                "viewspan": 1800,
+                "commentsspan": 1800,
+                "tickerspan": 600,
+                "viewloglimit": 5,
+                "commentpagesize": 3,
+                "readme": "统计配置,span的单位为秒  viewsloglimit:缓存视图日志上限，超过后会触发立即 flush"
+            }
+        },
+        "ldap": {
+            "status": false,
+            "port": 389,
+            "base_dn": "dc=yqsite,dc=com"
+        }
+    },
+    "ai": {
+        "status": false,
+        "store": "D:\\Spring\\logfile\\sessions",
+        "workspace": "D:\\Spring\\logfile\\workspace",
+        "model_default": "deepseek",
+        "model": {
+            "deepseek": {
+                "model_type": "deepseek",
+                "api_key": "sk-c41fe692e4d4d9df8b724e6641310d6c",
+                "model": "deepseek-v4-pro",
+                "base_url": "https://api.deepseek.com",
+                "timeout": 30,
+                "by_azure": false
+            },
+            "ollama": {
+                "model_type": "ollama",
+                "base_url": "http://localhost:11434",
+                "model": "qwen:7b"
+            }
+        },
+        "milvusdb": {
+            "addr": "localhost:19530",
+            "username": "root",
+            "password": "Milvus"
+        },
+        "embedder": {
+            "volcengine": {
+                "dirve_type": "volcengine",
+                "apiKey": "ark-0324ac57-a940-8d5ed7104b0e-46f4-9084-7ee5b",
+                "model": "doubao-embedding-vision-251215",
+                "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+                "dimension": 1024
+            },
+            "ollama": {
+                "dirve_type": "ollama",
+                "model": "nomic-embed-text",
+                "baseUrl": "http://localhost:11434",
+                "dimension": 768
+            }
+        },
+        "kbs": [
+            {
+                "name": "test",
+                "describe": "测试知识库",
+                "collection": "test_collection",
+                "dimension": 1024,
+                "db": "milvusdb",
+                "embedder": "volcengine"
+            },
+            {
+                "name": "test_ollama",
+                "describe": "测试知识库",
+                "collection": "ollama_collection",
+                "dimension": 768,
+                "db": "milvusdb",
+                "embedder": "ollama"
+            }
+        ],
+        "query": [
+            {
+                "name": "test",
+                "describe": "测试查询",
+                "default": "test"
+            }
+        ]
+    }
+}

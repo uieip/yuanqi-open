@@ -1,0 +1,58 @@
+<script runat="server">
+    var ui_data = request.data("cms.nav");
+
+    if (!(ui_data.nav === undefined)) {
+        var ui_nav = null;
+        for (let i = 0; i < ui_data.navs.length; i++) {
+            if (ui_data.navs[i].Path == ui_data.nav[0].Path &&
+                ui_data.navs[i].LinkUrl == ui_data.nav[0].LinkUrl) {
+                ui_nav = ui_data.navs[i];
+                break;
+            }
+        }
+        if (ui_nav != null) {
+            var breadcrumb = bootstrap_html([ui_nav], ui_data.path, 1);
+        }
+        response.write('<div class="leftmenu">' + breadcrumb + '</div>')
+    }
+
+    function bootstrap_html(navs, path, level) {
+        if (navs.length == 0) {
+            return "";
+        }
+
+        var h = '<ul>';
+
+        for (var i = 0; i < navs.length; i++) {
+            var nav = navs[i];
+            var s_h = bootstrap_html(nav.Subs, path, level + 1);
+            var href = "";
+            if (nav.LinkUrl != "") {
+                if (!(nav.LinkUrl.substring(0, 7) == "http://" || nav.LinkUrl.substring(0, 8) == "https://")) {
+                    href = "/" + nav.LinkUrl + "/";
+                } else {
+                    href = nav.LinkUrl;
+                }
+            } else {
+                href = "/" + nav.Path + "/";
+            }
+
+            if (s_h == "") {
+                var active = (path == nav.Path) ? true : false;
+                h += '   <li' + (active ? ' class="active"' : '') + '>';
+                h += '       <a href="' + href + '"' + (nav.Blank ? ' target="_blank"' : '') + '>' + nav.Name + '</a>';
+                h += '   </li>';
+            } else {
+                var active = s_h.indexOf("active") > 0 ? true : false;
+                active = false;
+                h += '   <li' + (active ? ' class="active"' : '') + '>';
+                h += '      <a href="' + href + '"' + (nav.Blank ? ' target="_blank"' : '') + '>' + nav.Name + '</a>';
+                h += s_h;
+                h += '   </li>';
+            }
+        }
+        h += "</ul>"
+
+        return h
+    }
+</script>

@@ -1,0 +1,100 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <title>登录</title>
+</head>
+
+<body>
+    <uieip>login_info</uieip>
+    <script runat="server">
+        /* 
+            第三方集成登录
+            1. 调用第三方登录接口，获取code
+            2. 调用第三方登录接口，获取用户信息
+            3. 调用登录接口，登录用户
+            4. 跳转到登录前的页面
+        */
+        var login_info;
+        init();
+
+        // 客户端跳转顶层窗口（支持iframe内跨域重定向）
+        function redirect_top(url) {
+            response.scriptbegin();
+            response.write('window.top.location.href="' + url + '";');
+            response.scriptend();
+        }
+
+        function init() {
+            var backurl = request.param("backurl");
+            if (backurl === undefined) {
+                backurl = null;
+            }
+            if (login.state()) {
+                if (backurl === null) {
+                    redirect_top(request.baseurl());
+                } else {
+                    redirect_top(backurl);
+                }
+                return;
+            }
+
+            var link_type;
+
+            var code = request.param("code");
+            if (code === null) {
+                if (!(backurl === null)) {
+                    session.set("login:backurl", backurl);
+                }
+                var redirect_uri = request.baseurl() + "/" + request.url();
+
+                link_type = request.param("type");
+                if (link_type === null) {
+                    link_type = "weixin";
+                }
+                login.third_login(link_type, redirect_uri, "state");
+                return;
+            }
+
+            var state = request.param("state");
+            if (state === null) {
+                state = "";
+                link_type = "weixin";
+            } else {
+                var vals = state.split("@");
+                link_type = vals[0];
+                if (vals.length > 1) {
+                    state = vals[1];
+                }
+            }
+            login_info = state;
+            backurl = session.getValue("login:backurl");
+            if (backurl === null || backurl === undefined) {
+                backurl = "/index.html";
+            }else{
+                session.delete("login:backurl");
+            }
+
+            login_info = backurl;
+            if (backurl === null) {
+                backurl = "/index.html";
+            } 
+
+            //redirect_top("/");
+
+            var res = login.third_check(link_type, code);
+            login_info += " " + JSON.stringify(res);
+            //return;
+
+            if (res.error == 0) {
+                redirect_top(backurl);
+            } else if (res.error == 1) {
+                redirect_top("/login/index.html?backurl=" + encodeURIComponent(backurl));
+            }
+        }
+    </script>
+</body>
+
+</html>

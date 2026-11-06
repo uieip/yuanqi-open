@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqCodeEdit Complete Demo</title>
+  <style>
+      body {
+          background-color: var(--yq-bg);
+          color: var(--yq-text);
+      }
+    #app {
+      margin: 20px;
+    }
+  </style>
+</head>
+
+<body style="height: auto;">
+  <div id="app">
+
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+      <div style="flex: 1;">
+        <h1>YqCodeEditText Complete Demo</h1>
+        <div style="margin-left: 100px;width: 300px;">
+          <yq-code-edit-text ref="codeEditRef" v-model:code="code" v-model:mode="mode" :line-numbers="lineNumbers"
+            :is-edit="isEdit" :types="types" @change="change" :setting="setting" :clear="clear" :edit-mode-h="editModeH" :edit-mode-w="editModeW">
+          </yq-code-edit-text>
+        </div>
+        <h1>YqCodeEdit Complete Demo</h1>
+
+        <div style="margin-bottom: 10px;">
+          <label>
+            <input type="checkbox" v-model="lineNumbers">
+            Show Line Numbers
+          </label>
+
+
+           <label style="margin-left: 15px;">
+            <input type="checkbox" v-model="setting">
+            Setting
+          </label>
+
+           <label style="margin-left: 15px;">
+            <input type="checkbox" v-model="clear">
+            Clear
+          </label>
+
+          <label style="margin-left: 15px;">
+            <input type="checkbox" v-model="isEdit">
+            Is Edit
+          </label>
+        </div>
+        <!-- 使用组件 -->
+        <div style="height: 40vh; margin-bottom: 20px;">
+          <yq-code-edit ref="codeEditRef" v-model:code="code" v-model:mode="mode" :line-numbers="lineNumbers"
+            :is-edit="isEdit" :types="types" @change="change" :setting="setting" :clear="clear" :edit-mode-h="editModeH" :edit-mode-w="editModeW" style=" border: 1px solid #ccc;">
+          </yq-code-edit>
+        </div>
+      </div>
+      
+      <div style="flex: 1;">
+        <p>Code:</p>
+        <textarea v-model="code" style="height: 60vh; width: 100%; margin-bottom: 20px; border: 1px solid #ccc;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { createApp, ref } = Vue;
+    const { initTheme, YqCodeEdit, YqCodeEditText } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      components: {
+        YqCodeEdit,
+        YqCodeEditText
+      },
+      data() {
+        return {
+          types: ["Text", "javascript", "json"],
+          editModeH: 400,
+          editModeW: 600,
+        }
+      },
+      setup() {
+        const codeEditRef = ref(null);
+
+        const code = ref('print("Hello, World!")\nprint("CodeMirror 6 Test")');
+        const lineNumbers = ref(true);
+        const darkTheme = ref(false);
+        const isEdit = ref(true);
+        const mode = ref('javascript');
+
+        const setting = ref(true);
+        const clear = ref(true);
+
+        const change = (val) => {
+          console.log('change:', val);
+        };
+
+        return {
+          codeEditRef,
+          code,
+          lineNumbers,
+          darkTheme,
+          isEdit,
+          mode,
+          setting,
+          clear,
+          change
+        };
+      }
+    });
+
+    app.use(ElementPlus);
+
+    app.mount('#app');
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,841 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>数据管理</title>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding: 1px 0 0 0;">
+        <yq-container v-model:aside-width="leftW" style="height: 100%;">
+            <yq-con-aside>
+                <yq-data-tree ref="treeRef" v-bind="rolesProps"></yq-data-tree>
+            </yq-con-aside>
+            <yq-con-main style="padding: 0 0 0 1px;overflow: hidden;">
+                <yq-tabs v-model="activeTab" tab-position="left" @tab-click="tabClick_p" :label-dict="tabLabelDict">
+                    <yq-tab-pane label="人员权限" name="rolepower">
+                        <yq-tabs v-model="tabs[0].active" @tab-click="tabClick_c" :label-dict="tabLabelDict">
+                            <yq-tab-pane label="岗位" name="post" style="padding-top: 2px;">
+                                <yq-data-grid ref="postRef" v-bind="postProps"></yq-data-grid>
+                            </yq-tab-pane>
+                            <yq-tab-pane label="部门" name="org" style="padding-top: 2px;">
+                                <yq-data-grid ref="orgRef" v-bind="orgProps"></yq-data-grid>
+                            </yq-tab-pane>
+                            <yq-tab-pane label="人员" name="user" style="padding-top: 2px;">
+                                <yq-data-grid ref="userRef" v-bind="userProps"></yq-data-grid>
+                            </yq-tab-pane>
+                        </yq-tabs>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="权限标识" name="rolemark">
+                        <yq-container aside-position="right" aside-width="400px" style="height: 100%;">
+                            <yq-con-main style="padding: 0;margin: 0;overflow: hidden;">
+                                <yq-data-grid ref="mark_relRef" v-bind="mark_relProps"></yq-data-grid>
+                            </yq-con-main>
+                            <yq-con-aside style="padding:0 0 0 1px;margin: 0;">
+                                <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                                    <span style="margin:0 4px 0 8px; white-space: nowrap; flex-shrink: 0;"
+                                        v-cloak>系统</span>
+                                    <div style="width: 345px;">
+                                        <yq-combogrid ref="appRef" v-bind="appProps"></yq-combogrid>
+                                    </div>
+                                </div>
+                                <div style="width: 395px;height: calc(60% - 34px);padding: 0;margin: 0;">
+                                    <yq-data-tree ref="menuRef" v-bind="menuProps"></yq-data-tree>
+                                </div>
+                                <span style="padding:8px 4px 0 8px;font-weight: bold;line-height: 30px;"
+                                    v-cloak>页面权限标识</span>
+                                <div style="width: 395px;height: calc(40% - 34px);padding: 0;margin: 0;">
+                                    <yq-data-grid ref="markRef" v-bind="markProps"></yq-data-grid>
+                                </div>
+                            </yq-con-aside>
+                        </yq-container>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="AI权限" name="aipower">
+                        <yq-data-grid ref="biKbsRef" v-bind="biKbsProps"></yq-data-grid>
+                    </yq-tab-pane>
+                </yq-tabs>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, nextTick, computed } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqWindowApi, yqData, YqDataTree, YqDataGrid, YqCombogrid, YqTabs, YqTabPane, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            leftW: 310,
+
+            roles: {
+                tbname: "sys_roles",
+                keyId: "sid",
+                pKeyId: "pid",
+                pKeyValue: null,
+                loadDataType: 2,
+                displayMember: "name",
+                loadTitles: false,
+                loadData: false,
+                menuType: 3,
+                overflowY: true,
+                editMode: 2,
+                editModeW: 600,
+                editModeH: 450,
+                editModeNo: -1,
+                getNodeIcon: (node) => {
+                    if (node.roles_type === 0) {
+                        return "fa fa-folder-o";
+                    }
+                    if (node.roles_type === 1) {
+                        return "fa fa-file-text-o";
+                    }
+
+                    return "fa fa-folder-o";
+                },
+            },
+            post: {
+                tbname: "sys_roles_post_rel",
+                keyId: "sid",
+                bindingKeyId: "roles_id",
+                bindingValue: null,
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 300,
+                tempno: 1,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+                editLoadData: true,
+                isSimple: false,
+                isSeek: false,
+                linkField: ["post_name", "post_id"],
+            },
+            org: {
+                tbname: "sys_roles_org_rel",
+                keyId: "sid",
+                bindingKeyId: "roles_id",
+                bindingValue: null,
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 350,
+                tempno: 1,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+                editLoadData: true,
+                isSimple: false,
+                isSeek: false,
+                linkField: ["org_name", "org_id"],
+            },
+            user: {
+                tbname: "sys_roles_user_rel",
+                keyId: "sid",
+                bindingKeyId: "roles_id",
+                bindingValue: null,
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 350,
+                tempno: 1,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: true,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+                editLoadData: true,
+                isSimple: false,
+                isSeek: false,
+                linkField: ["user_name", "user_id"],
+            },
+            mark_rel: {
+                tbname: "sys_roles_mark_rel",
+                keyId: "sid",
+                bindingKeyId: "roles_id",
+                bindingValue: null,
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                tempno: 1,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: false,
+                add: false,
+                upp: false,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+                editLoadData: true,
+                isSimple: false,
+                isSeek: false,
+            },
+            app: {
+                tbname: "sys_menu_app",
+                keyId: "sid",
+                displayMember: "{name}[{no}]",
+                titles: [],
+                loadTitles: false,
+                loadData: false,
+                showMenu: false,
+                isEdit: false,
+                isSeek: false,
+                isPage: false,
+                editMode: 2,
+                editModeW: 600,
+                editModeH: 450,
+                tempno: 1,
+                editModeNo: 2,
+            },
+            menu: {
+                tbname: "sys_menu",
+                keyId: "sid",
+                loadDataType: 2,
+                displayMember: "{name}[{no}]",
+                bindingKeyId: "app_id",
+                bindingValue: null,
+                pKeyId: "pid",
+                pKeyValue: null,
+                loadDataType: 2,
+                displayMember: "name",
+                loadTitles: false,
+                loadData: false,
+                showMenu: false,
+                isEdit: false,
+                getNodeIcon: (data) => {
+                    if (data.menu_type === 0) {
+                        if (typeof data.icon === "string") {
+                            return JSON.parse(data.icon);
+                        } else {
+                            return "fa fa-folder";
+                        }
+                    }
+                    else if (data.menu_type === 1 || data.menu_type === 2) {
+                        if (typeof data.icon === "string") {
+                            return JSON.parse(data.icon);
+                        } else {
+                            return "fa fa-file-o";
+                        }
+                    } else if (data.menu_type === 9) {
+                        return "fa fa-ellipsis-h";
+                    } else {
+                        return "fa fa-file-o";
+                    }
+                },
+                getNodeLabel: (data) => {
+                    if (data.menu_type === 0 || data.menu_type === 1) {
+                        return (data.name || data.describe) + "[" + (data.no ? data.no : "") + "]";
+                    } else if (data.menu_type === 2) {
+                        return '*' + (data.name || data.describe) + "[" + (data.no ? data.no : "") + "]";
+                    } else if (data.menu_type === 9) {
+                        return '';
+                    } else {
+                        return data.name || data.describe;
+                    }
+                },
+            },
+            mark: {
+                tbname: "sys_menu_mark",
+                keyId: "sid",
+                bindingKeyId: "menu_id",
+                bindingValue: null,
+                pKeyId: null,
+                pKeyValue: null,
+                tempno: 1,
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                loadTitles: false,
+                loadData: false,
+                showMenu: true,
+                isEdit: false,
+                isPage: false,
+                isEdit: false,
+                copy: false,
+                add: false,
+                upp: false,
+                del: false,
+
+                isSimple: false,
+                isSeek: false,
+            },
+            bi_kbs_rel: {
+                tbname: "sys_roles_bi_kbs_rel",
+                keyId: "sid",
+                bindingKeyId: "roles_id",
+                bindingValue: null,
+                addWhere: "",
+                order: "queue",
+                editMode: 3,
+                editModeW: 600,
+                editModeH: 450,
+                tempno: 1,
+                editModeNo: 2,
+                loadTitles: false,
+                loadData: false,
+                isPage: false,
+                isEdit: true,
+                copy: false,
+                add: true,
+                upp: true,
+                del: true,
+                isdel: false,
+                isdelEdit: false,
+                move: true,
+                editLoadData: true,
+                isSimple: false,
+                isSeek: false,
+                linkField: ["name", "kbs_id"],
+            },
+        };
+
+        window.onload = function () {
+            mainParams.leftW = window.innerWidth * 0.20;
+            if (mainParams.leftW < 310) {
+                mainParams.leftW = 310;
+            }
+
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataTree,
+                    YqDataGrid,
+                    YqCombogrid,
+                    YqTabs,
+                    YqTabPane,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain,
+                },
+                setup() {
+                    const leftW = ref(mainParams.leftW + "px");
+
+                    const treeRef = ref(null);
+                    const postRef = ref(null);
+                    const orgRef = ref(null);
+                    const userRef = ref(null);
+                    const mark_relRef = ref(null);
+                    const appRef = ref(null);
+                    const menuRef = ref(null);
+                    const markRef = ref(null);
+                    const biKbsRef = ref(null);
+                    const dbname = ref(mainParams.dbname);
+
+                    let _rolesLoadData = false;
+                    const rolesLoadData = async () => {
+                        if (_rolesLoadData) {
+                            await loadData();
+                            return;
+                        }
+                        _rolesLoadData = true;
+                        await treeRef.value.loadData();
+                    }
+
+                    // 树节点点击事件
+                    const rolesSid = ref(null);
+
+                    const rolesProps = computed(() => ({
+                        ...mainParams.roles,
+                        dbname: dbname.value,
+                        afterSetTitles: async () => {
+                            await loadTitles();
+                        },
+                        onRowClick: ({ row, sid }) => {
+                            //console.log(row, sid);
+                            if (rolesSid.value === sid) {
+                                return;
+                            }
+
+                            if (!row) {
+                                rolesSid.value = null;
+                                loadData();
+                                return;
+                            }
+
+                            if (row.roles_type && row.roles_type == 1) {
+                                rolesSid.value = sid;
+                            } else {
+                                rolesSid.value = null;
+                            }
+                            loadData();
+                        },
+                    }));
+
+                    const postProps = computed(() => ({
+                        ...mainParams.post,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        bindingValue: rolesSid.value,
+                        afterSetTitles: async () => {
+                            await rolesLoadData();
+                        },
+                        beforeEdit: async (action, row, params) => {
+                            for (let item of params.editTitles) {
+                                if (item.name == 'post_id') {
+                                    item.ui_mask.addWhere = "(isdel is null or isdel=0) and sid not in (select post_id from sys_roles_post_rel where roles_id = '" + row["roles_id"] + "')";
+                                }
+                            }
+                            return { cancel: false, row: row }
+                        },
+                    }));
+                    const orgProps = computed(() => ({
+                        ...mainParams.org,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        bindingValue: rolesSid.value,
+                        afterSetTitles: async () => {
+                            await rolesLoadData();
+                        },
+                        beforeEdit: async (action, row, params) => {
+                            for (let item of params.editTitles) {
+                                if (item.name == 'org_id') {
+                                    item.ui_mask.addWhere = "(isdel is null or isdel=0) and sid not in (select org_id from sys_roles_org_rel where roles_id = '" + row["roles_id"] + "')";
+                                }
+                            }
+                            return { cancel: false, row: row }
+                        },
+                    }));
+                    const userProps = computed(() => ({
+                        ...mainParams.user,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        bindingValue: rolesSid.value,
+                        afterSetTitles: async () => {
+                            await rolesLoadData();
+                        },
+                        beforeEdit: async (action, row, params) => {
+                            for (let item of params.editTitles) {
+                                if (item.name == 'user_id') {
+                                    item.ui_mask.addWhere = "(isdel is null or isdel=0) and sid not in (select user_id from sys_roles_user_rel where roles_id = '" + row["roles_id"] + "')";
+                                }
+                            }
+                            return { cancel: false, row: row }
+                        },
+                    }));
+
+                    const mark_relRows = ref([]);
+                    const mark_relProps = computed(() => ({
+                        ...mainParams.mark_rel,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        bindingValue: rolesSid.value,
+                        afterSetTitles: async () => {
+                            await menuRef.value.initTitles();
+                        },
+                        'onUpdate:rows': (value) => {
+                            //console.log('mark_relProps onUpdate:rows', value);
+                            mark_relRows.value = value;
+                            if (markRows.value.length > 0) {
+                                markRef.value.setData(markRows.value);
+                            }
+                        },
+                    }));
+
+                    const appSid = ref(null);
+                    const menuSid = ref(null);
+                    const appProps = computed(() => ({
+                        ...mainParams.app,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        onRowSelect: async ({ row }) => {
+                            if (row) {
+                                appSid.value = row.sid;
+                                await menuRef.value.loadData();
+                            } else {
+                                appSid.value = null;
+                                await menuRef.value.clear();
+                            }
+                        },
+                    }));
+                    const menuProps = computed(() => ({
+                        ...mainParams.menu,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        bindingValue: appSid.value,
+                        afterSetTitles: async () => {
+                            await markRef.value.initTitles();
+                        },
+                        onRowClick: async ({ row }) => {
+                            if (row) {
+                                if (row.menu_type && row.menu_type == 1) {
+                                    menuSid.value = row.sid;
+                                } else {
+                                    menuSid.value = null;
+                                }
+                            } else {
+                                menuSid.value = null;
+                            }
+                            if (menuSid.value) {
+                                await markRef.value.loadData();
+                            } else {
+                                await markRef.value.clear();
+                            }
+                        },
+                    }));
+
+                    const markRows = ref([]);
+                    const markRow = ref(null);
+                    const markProps = computed(() => ({
+                        ...mainParams.mark,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        editLinks: [{
+                            name: 'one',
+                            label: '添加',
+                            toptip: '添加',
+                            icon: 'fa fa-angle-left',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                if (!rolesSid.value || !markRow.value) return true;
+                                return markRow.value.select;
+                            }),
+                            click: async () => {
+                                const rows = [{
+                                    action: 'add',
+                                    row: {
+                                        roles_id: rolesSid.value,
+                                        mark_id: markRow.value.sid
+                                    },
+                                }];
+                                mark_relRef.value.saveData(rows);
+                            }
+                        }, {
+                            name: 'all',
+                            label: '全部添加',
+                            toptip: '全部添加',
+                            icon: 'fa fa-angle-double-left',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                if (!rolesSid.value || markRows.value.length == 0) return true;
+                                let unselectedRows = markRows.value.filter((item) => item.select === false);
+                                //console.log('unselectedRows', markRows.value, unselectedRows);
+                                return unselectedRows.length == 0 ? true : false;
+                            }),
+                            click: async (e) => {
+                                let unselectedRows = markRows.value.filter((item) => item.select === false);
+                                if (unselectedRows.length == 0) return;
+                                const rows = unselectedRows.map((item) => ({
+                                    action: 'add',
+                                    row: {
+                                        roles_id: rolesSid.value,
+                                        mark_id: item.sid
+                                    },
+                                }));
+                                mark_relRef.value.saveData(rows);
+                            }
+                        }],
+
+                        bindingValue: menuSid.value,
+                        beforeSetTitles: async (titles) => {
+                            titles.unshift({
+                                name: 'select',
+                                ui_title: '选择',
+                                ui_type: 3,
+                                ui_width: 70,
+                                ui_visible: true,
+                                ui_mask: {}
+                            });
+                            return titles;
+                        },
+                        afterSetTitles: async () => {
+                            await rolesLoadData();
+                        },
+                        beforeSetData: async (rows) => {
+                            markRows.value = JSON.parse(JSON.stringify(rows));
+                            //console.log('beforeSetData', mark_relRows.value,rows);
+                            for (let i = 0; i < rows.length; i++) {
+                                const s_rows = mark_relRows.value.filter((item) => item.mark_id == rows[i].sid)
+                                rows[i].select = s_rows.length == 0 ? false : true;
+                            }
+                            markRows.value = rows;
+                            return rows;
+                        },
+                        onRowClick: async ({ row }) => {
+                            markRow.value = row;
+                        },
+                    }));
+                    const biKbsProps = computed(() => ({
+                        ...mainParams.bi_kbs_rel,
+                        menuType: 3,
+                        dbname: dbname.value,
+                        bindingValue: rolesSid.value,
+                        afterSetTitles: async () => {
+                            await rolesLoadData();
+                        },
+                        beforeEdit: async (action, row, params) => {
+                            for (let item of params.editTitles) {
+                                if (item.name == 'kbs_id') {
+                                    item.ui_mask.addWhere = "(isdel is null or isdel=0) and sid not in (select kbs_id from sys_roles_bi_kbs_rel where roles_id = '" + row["roles_id"] + "')";
+                                }
+                            }
+                            return { cancel: false, row: row }
+                        },
+                    }));
+
+
+                    const activeTab = ref("rolepower");
+
+                    const tabs = ref([{
+                        name: "rolepower",
+                        label: "人员权限",
+                        active: 'post',
+                        tabs: [
+                            {
+                                name: "post",
+                                label: "岗位权限",
+                                loadTitles: false,
+                                roles_id: null,
+                            }, {
+                                name: "org",
+                                label: "部门权限",
+                                loadTitles: false,
+                                roles_id: null,
+                            }, {
+                                name: "user",
+                                label: "人员权限",
+                                loadTitles: false,
+                                roles_id: null,
+                            },
+                        ],
+                    }, {
+                        name: "rolemark",
+                        label: "权限标识",
+                        loadTitles: false,
+                        roles_id: null,
+                    }, {
+                        name: "aipower",
+                        label: "AI权限",
+                        loadTitles: false,
+                        roles_id: null,
+                    }]);
+
+                    const tabLabelDict = ref({
+                        "zh-CN": {
+                            rolepower: "人员权限",
+                            rolemark: "权限标识",
+                            aipower: "AI权限",
+                            post: "岗位",
+                            org: "部门",
+                            user: "人员"
+                        },
+                        "en": {
+                            rolepower: "Personnel Permissions",
+                            rolemark: "Permission Marks",
+                            aipower: "AI Permissions",
+                            post: "Position",
+                            org: "Department",
+                            user: "Personnel"
+                        }
+                    });
+
+                    const loadTitles = async () => {
+                        if (activeTab.value == "rolepower") {
+                            for (let i = 0; i < tabs.value[0].tabs.length; i++) {
+                                if (tabs.value[0].tabs[i].name == tabs.value[0].active) {
+                                    if (tabs.value[0].tabs[i].loadTitles) {
+                                        await loadData();
+                                        break;
+                                    }
+
+                                    tabs.value[0].tabs[i].loadTitles = true;
+                                    if (tabs.value[0].tabs[i].name == "post") {
+                                        await postRef.value.initTitles();
+                                    } else if (tabs.value[0].tabs[i].name == "org") {
+                                        await orgRef.value.initTitles();
+                                    } else if (tabs.value[0].tabs[i].name == "user") {
+                                        await userRef.value.initTitles();
+                                    }
+                                    break;
+                                }
+                            }
+
+                        } else if (activeTab.value == "rolemark") {
+                            if (tabs.value[1].loadTitles) {
+                                await loadData();
+                                return;
+                            }
+                            tabs.value[1].loadTitles = true;
+                            await mark_relRef.value.initTitles();
+                        } else if (activeTab.value == "aipower") {
+                            if (tabs.value[2].loadTitles) {
+                                await loadData();
+                                return;
+                            }
+                            tabs.value[2].loadTitles = true;
+                            await biKbsRef.value.initTitles();
+                        }
+                    }
+
+                    //加载数据
+                    const loadData = async () => {
+                        if (activeTab.value == "rolepower") {
+                            for (let i = 0; i < tabs.value[0].tabs.length; i++) {
+                                if (tabs.value[0].tabs[i].name == tabs.value[0].active) {
+                                    if (tabs.value[0].tabs[i].roles_id === rolesSid.value) {
+                                        break;
+                                    }
+
+                                    tabs.value[0].tabs[i].roles_id = rolesSid.value;
+                                    if (tabs.value[0].tabs[i].name == "post") {
+                                        if (rolesSid.value) {
+                                            await postRef.value.loadData();
+                                        } else {
+                                            await postRef.value.clear();
+                                        }
+                                    } else if (tabs.value[0].tabs[i].name == "org") {
+                                        if (rolesSid.value) {
+                                            await orgRef.value.loadData();
+                                        } else {
+                                            await orgRef.value.clear();
+                                        }
+                                    } else if (tabs.value[0].tabs[i].name == "user") {
+                                        if (rolesSid.value) {
+                                            await userRef.value.loadData();
+                                        } else {
+                                            await userRef.value.clear();
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+
+                        } else if (activeTab.value == "rolemark") {
+                            if (tabs.value[1].roles_id === rolesSid.value) {
+                                return;
+                            }
+                            tabs.value[1].roles_id = rolesSid.value;
+                            if (rolesSid.value) {
+                                await mark_relRef.value.loadData();
+                            } else {
+                                await mark_relRef.value.clear();
+                            }
+                        } else if (activeTab.value == "aipower") {
+                            if (tabs.value[2].roles_id === rolesSid.value) {
+                                return;
+                            }
+                            tabs.value[2].roles_id = rolesSid.value;
+                            if (rolesSid.value) {
+                                await biKbsRef.value.loadData();
+                            } else {
+                                await biKbsRef.value.clear();
+                            }
+                        }
+                    }
+
+                    const tabClick_p = async (tab) => {
+                        activeTab.value = tab.props.name;
+                        await loadTitles();
+                    }
+                    const tabClick_c = async (tab) => {
+                        tabs.value[0].active = tab.props.name;
+                        await loadTitles();
+                    }
+
+                    onMounted(async () => {
+                        const res = await yqData.fileList({});
+                        if (res.error == 0 && res.rows.length > 0) {
+                            dbname.value = res.rows[0].name;
+                            await treeRef.value.initTitles();
+                        }
+                    });
+
+                    return {
+                        leftW,
+                        treeRef,
+                        postRef,
+                        orgRef,
+                        userRef,
+                        mark_relRef,
+                        appRef,
+                        menuRef,
+                        markRef,
+                        biKbsRef,
+                        rolesProps,
+                        postProps,
+                        orgProps,
+                        userProps,
+                        mark_relProps,
+                        appProps,
+                        menuProps,
+                        markProps,
+                        biKbsProps,
+                        tabs,
+                        activeTab,
+                        tabLabelDict,
+                        tabClick_p,
+                        tabClick_c,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+
+    <style>
+        .el-tabs__header {
+            margin: 0 0 5px;
+            padding: 0;
+        }
+
+        .el-tabs--left .el-tabs__header.is-left {
+            margin-bottom: 0;
+            margin-right: 5px;
+        }
+    </style>
+</body>
+
+</html>

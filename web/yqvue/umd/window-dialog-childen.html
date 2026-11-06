@@ -1,0 +1,270 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>子窗体测试</title>
+<style>
+    body {
+        background-color: var(--yq-bg);
+        color: var(--yq-text);
+    }
+</style>
+
+</head>
+
+<body>
+    <div id="app">
+        <h1>子窗体测试</h1>
+        <el-button ref="el_button_1" @click="openDrawer()">打开窗体[iframe]</el-button>
+        <el-button ref="el_button_2" @click="openDrawer2()">打开窗体[vue组件]</el-button>
+    </div>
+    <script>
+        const { createApp, ref, nextTick } = Vue;
+        const { initTheme, YqWindowApi } = YqwinPlus;
+        initTheme();
+
+        const titles_2 = [
+            {
+                "name": "sid",
+                "is_func": false,
+                "ui_title": "sId",
+                "fd_type": "nvarchar",
+                "length": 36,
+                "decimal": 0,
+                "ui_type": 1,
+                "ui_width": 120,
+                "ui_visible": false,
+                "ui_readonly": true,
+                "ui_mask": {}
+            },
+            {
+                "name": "textbox",
+                "ui_title": "Textbox",
+                "fd_type": "nvarchar",
+                "length": 50,
+                "decimal": 0,
+                "ui_type": 2,
+                "ui_width": 150,
+                "ui_visible": true,
+                "ui_readonly": false,
+                "ui_mask": {
+                    "default": "默认值",
+                    "min": 0,
+                    "max": 50,
+                    "blank": false,
+                    "format": ""
+                },
+                "group": "group1"
+            },
+            {
+                "name": "checkbox",
+                "is_func": false,
+                "ui_title": "Checkbox",
+                "fd_type": "boolean",
+                "length": 1,
+                "decimal": 0,
+                "ui_type": 3,
+                "ui_width": 90,
+                "ui_visible": true,
+                "ui_readonly": false,
+                "ui_mask": {
+                    "default": true
+                },
+                "group": "group1"
+            },
+            {
+                "name": "datebox",
+                "is_func": false,
+                "ui_title": "Datetbox",
+                "fd_type": "date",
+                "length": 0,
+                "decimal": 0,
+                "ui_type": 4,
+                "ui_width": 150,
+                "ui_visible": true,
+                "ui_readonly": false,
+                "ui_mask": {
+                    "default": "2022-01-01",
+                    "min": "2000-01-01",
+                    "max": "2099-12-31",
+                    "blank": true,
+                    "format": "yyyy-MM-dd"
+                }
+            }
+        ];
+        const row_2 = {
+            "sid": "sid-2",
+            "lable": "Lable-2",
+            "textbox": "Textbox-2",
+            "checkbox": true,
+            "datebox": "2026/01/08"
+        };
+
+        // 检查是否需要在父页面显示弹窗
+        const app = createApp({
+            methods: {
+                openDrawer() {
+                    let parent = true;
+                    if (!window.parent || window.parent === window) {
+                        parent = false;
+                    }
+
+                    let id = '';
+                    const buttonElement = this.$refs.el_button_1?.$el || this.$refs.el_button_1;
+                    id = YqWindowApi.show({
+                        containerRef: buttonElement,
+                        placement: 'popper', // 抽屉位置
+                        showTitle: true,
+                        icon: "fa fa-window-maximize",
+                        titleClose: true,
+                        top: 0,
+                        left: 0,
+                        width: '50vw',
+                        height: '50vh',
+                        fullscreen: false,
+                        // 移除iframe配置，启用默认插槽
+                        type: 'iframe',
+                        content: 'http://www.uieip.com/',
+                        // 隐藏底部按钮
+                        showFooter: true,
+                        children: {
+                            h: "div",
+                            props: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            },
+                            children: [{
+                                h: "el-button",
+                                props: {
+                                    type: 'danger',
+                                    onClick: () => {
+                                        window.parent.YqwinPlus.YqWindow.close(id);
+                                    }
+                                },
+                                children: '取消'
+                            },
+                            {
+                                h: "el-button",
+                                props: {
+                                    type: 'primary',
+                                    onClick: this.handleOk
+                                },
+                                children: '确定'
+                            }]
+                        },
+
+                        parent: parent,
+                    });
+                },
+                openDrawer2() {
+                    let parent = true;
+                    if (!window.parent || window.parent === window) {
+                        parent = false;
+                    }
+
+                    let id = '';
+                    const buttonElement = this.$refs.el_button_2?.$el || this.$refs.el_button_2;
+                    const fkRows = ref([]);
+
+                    const params = ref({
+                        btn_disabled: true
+                    });
+                    const refOk = ref(null);
+
+                    id = YqWindowApi.show({
+                        containerRef: buttonElement,
+                        placement: 'popper', // 抽屉位置
+                        showTitle: true,
+                        icon: "fa fa-window-maximize",
+                        titleClose: true,
+                        top: 0,
+                        left: 0,
+                        width: '50vw',
+                        height: '50vh',
+                        fullscreen: false,
+                        type: 'param',
+                        content: {
+                            h: "YqAttr",
+                            props: {
+                                titles: titles_2,
+                                row: row_2,
+                                isEdit: true,
+                                'onUpdate:fkrows': (val) => {
+                                    fkRows.value = val
+                                },
+                                'onUpdate:row': (val) => {
+                                    params.value.btn_disabled = false
+                                    console.log("params set", params.value);
+                                    YqWindowApi.setParams(id, params.value, parent);
+
+                                    nextTick(() => {
+                                        console.log("refOk", refOk.value);
+                                    });
+                                }
+                            }
+                        },
+                        // 隐藏底部按钮
+                        showFooter: true,
+                        children: {
+                            h: "div",
+                            props: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            },
+                            children: [{
+                                h: "el-button",
+                                props: {
+                                    type: 'danger',
+                                    onClick: () => {
+                                        YqWindowApi.close(id, parent);
+                                    }
+                                },
+                                children: '取消'
+                            },
+                            {
+                                h: "el-button",
+                                ref: refOk,
+                                props: {
+                                    type: 'primary',  
+                                     disabled: (windowState) => {
+                                        console.log("params get", params.value, windowState);
+                                        return windowState?.btn_disabled ?? params.value.btn_disabled;
+                                    },
+                                    onClick: () => {
+                                        if (!params.value.btn_disabled) {
+                                            YqWindowApi.close(id, parent);
+                                        }
+                                    }
+                                },
+                                children: '确定'
+                            }]
+                        },
+
+                        parent: parent,
+                    });
+
+                    YqWindowApi.setParams(id, params.value, parent);
+                    
+                    // 添加参数变化监听器
+                    YqWindowApi.addParamsListener(id, (newParams) => {
+                        console.log('参数变化:', newParams);
+                        params.value = { ...newParams };
+                    }, parent);
+                }
+            }
+        });
+        app.use(ElementPlus)
+        app.mount('#app')
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,124 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,cms,login"></uieip>
+<div id="header">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top shadow-sm">
+        <div class="container">
+            <a href="http://www.yqsite.com/" class="navbar-brand" style="padding:0 0 0 15px;" title="远齐科技(北京)有限公司"
+                target="_blank">
+                <img src="/images/uieiplogo3.png" style="max-height:50px;" /></a>
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse collapse">
+                <uieip id="nav" type="tmpl" value="cms.nav" js="bootstrap">
+                </uieip>
+            </div>
+        </div>
+    </nav>
+</div>
+<style>
+    /* 顶部导航下拉菜单文字居中 */
+    #header .navbar .dropdown-menu {
+        text-align: center;
+    }
+
+    #header .navbar .dropdown-menu .dropdown-item {
+        justify-content: center;
+    }
+</style>
+<script runat="server">
+    function bootstrap(res) {
+        var h = bootstrap_html(res.navs, res.path, res.name, true);
+
+        var user_row = login.userinfo();
+        h += '<ul class="nav navbar-nav ms-auto nav-login">';
+        if (user_row === undefined) {
+            h += '    <li class="nav-item">';
+            h += '        <a class="nav-link" href="javascript:void(0)" onclick="userlogin();return false;" title="用户登录" target="_Blank"><i class="bi bi-person-circle"></i> 登录</a>';
+            h += '    </li>';
+        } else {
+            h += '    <li class="nav-item dropdown">';
+            h += '        <a class="nav-link dropdown-toggle" href="javascript:void(0)" role="button" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi bi-person"></i> ' + user_row["name"] + '</a>';
+            h += '        <ul class="dropdown-menu dropdown-menu-end">';
+            h += '            <li><a class="dropdown-item" href="javascript:void(0)" onclick="userlogout();return false;" title="退出登录"><i class="bi bi-box-arrow-right"></i> 退出</a></li>';
+            h += '        </ul>';
+            h += '    </li>';
+        }
+        h += '</ul>';
+        return h;
+    }
+
+    function bootstrap_html(navs, path, name, root) {
+        if (navs.length == 0) {
+            return "";
+        }
+
+        var h = '';
+        if (root) {
+            h += '<ul class="nav navbar-nav">';
+            h += '   <li class="nav-item' + (path == "" ? " active" : "") + '">';
+            h += '      <a class="nav-link' + (path == "" ? " active" : "") + '" href="' + (path == "" ? "javascript:void(0);" : "/") + '">首页</a>';
+            h += '   </li>';
+        } else {
+            h += '<ul class="dropdown-menu">';
+        }
+
+        for (var i = 0; i < navs.length; i++) {
+            var nav = navs[i];
+
+            if (!nav.IsDel) {
+                var s_h = bootstrap_html(((nav.Subs === undefined || nav.Subs === null) ? [] : nav.Subs), path, name, false);
+                var href = "";
+                if (nav.LinkUrl != "") {
+                    if (!(nav.LinkUrl.substring(0, 7) == "http://" || nav.LinkUrl.substring(0, 8) == "https://")) {
+                        if (nav.LinkUrl == path) {
+                            href = "javascript:void(0);";
+                        } else {
+                            href = "/" + nav.LinkUrl + "/";
+                        }
+                    } else {
+                        href = nav.LinkUrl;
+                    }
+                } else {
+                    if (nav.Path == path && name == "index") {
+                        href = "javascript:void(0);";
+                    } else {
+                        href = "/" + nav.Path + "/";
+                    }
+                }
+
+                if (s_h == "") {
+                    var active = (path == nav.Path) ? true : false;
+                    h += '   <li class="nav-item' + (active ? " active" : "") + '">';
+                    h += '       <a class="nav-link' + (active ? " active" : "") + '" href="' + href + '"' + (nav.Blank ? ' target="_blank"' : '') + '"';
+                    if (!nav.Name) {
+                        h += ' title="' + nav.Describe + '"';
+                    }
+                    h += '>';
+                    if (nav.Icon != "") {
+                        h += '<span class="' + nav.Icon + '"></span>';
+                    }
+                    h += nav.Name + '</a>';
+                    h += '   </li>';
+                } else {
+                    var active = s_h.indexOf(" active") > 0 ? true : false;
+                    h += '   <li class="nav-item dropdown' + (active ? " active" : "") + '">';
+                    h += '      <a class="nav-link dropdown-toggle' + (active ? " active" : "") + '" data-bs-toggle="dropdown" href="' + href + '"' + (nav.Blank ? ' target="_blank"' : '') + ' role="button" aria-expanded="false"';
+                    if (!nav.Name) {
+                        h += ' title="' + nav.Describe + '"';
+                    }
+                    h += '>';
+                    if (nav.Icon != "") {
+                        h += '<span class="' + nav.Icon + '"></span>';
+                    }
+                    h += nav.Name + '</a>';
+                    h += s_h;
+                    h += '   </li>';
+                }
+            }
+        }
+        h += "</ul>"
+
+        return h
+    }
+</script>

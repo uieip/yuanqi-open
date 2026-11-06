@@ -1,0 +1,263 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YQWIN-Plus 页面框架组件测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+      padding: 20px;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    .test-container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .test-section {
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .test-section h2 {
+      font-size: 18px;
+      margin-bottom: 16px;
+      border-bottom: 2px solid var(--yq-border);
+      padding-bottom: 8px;
+    }
+
+    .test-section h3 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      color: var(--el-text-color-secondary);
+    }
+
+    .demo-box {
+      height: 260px;
+      border: 1px solid var(--el-border-color);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .demo-box-tall {
+      height: 380px;
+    }
+
+    /* 占位块配色（参照 Element Plus Container 文档示例，使用 el 变量自动适配明暗主题） */
+    .ph-header,
+    .ph-footer {
+      background-color: var(--el-color-primary-light-7);
+      color: var(--el-color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .ph-aside {
+      background-color: var(--el-color-primary-light-8);
+      color: var(--el-color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .ph-main {
+      background-color: var(--el-color-primary-light-9);
+      color: var(--el-color-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+
+    .width-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      flex-wrap: wrap;
+    }
+
+    .width-value {
+      color: var(--el-color-primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body style="overflow: auto;">
+  <div id="app" style="height: 100%; width: 100%;">
+    <div class="test-container">
+      <h1>YqContainer 布局容器测试</h1>
+
+      <!-- 左-右：YqConAside + YqConMain -->
+      <div class="test-section">
+        <h2>1. 左-右（YqConAside + YqConMain）</h2>
+        <h3>默认启用拖拽分隔条，改变 aside 宽度（min-aside-width=200，min-main-width=200）</h3>
+        <yq-container class="demo-box">
+          <yq-con-aside>
+            <div class="ph-aside">Aside</div>
+          </yq-con-aside>
+          <yq-con-main>
+            <div class="ph-main">Main</div>
+          </yq-con-main>
+        </yq-container>
+      </div>
+
+      <!-- 上-中-下：YqConHeader + YqConMain + YqConFooter -->
+      <div class="test-section">
+        <h2>2. 上-中-下（YqConHeader + YqConMain + YqConFooter）</h2>
+        <h3>横向分隔条分别改变 header / footer 高度（min-header-height=40，min-footer-height=40，min-main-height=100）</h3>
+        <yq-container class="demo-box">
+          <yq-con-header>
+            <div class="ph-header">Header（可拖拽）</div>
+          </yq-con-header>
+          <yq-con-main>
+            <div class="ph-main">Main</div>
+          </yq-con-main>
+          <yq-con-footer>
+            <div class="ph-footer">Footer（可拖拽）</div>
+          </yq-con-footer>
+        </yq-container>
+      </div>
+
+      <!-- 经典后台布局：header + aside + main + footer -->
+      <div class="test-section">
+        <h2>3. 经典后台布局（Header + Aside + Main + Footer）</h2>
+        <h3>三条分隔条均可拖拽：竖条改 aside 宽度，横条改 header / footer 高度</h3>
+        <yq-container class="demo-box demo-box-tall">
+          <yq-con-header>
+            <div class="ph-header">Header</div>
+          </yq-con-header>
+          <yq-con-aside>
+            <div class="ph-aside">Aside</div>
+          </yq-con-aside>
+          <yq-con-main>
+            <div class="ph-main">Main</div>
+          </yq-con-main>
+          <yq-con-footer>
+            <div class="ph-footer">Footer</div>
+          </yq-con-footer>
+        </yq-container>
+      </div>
+
+      <!-- 禁用拖拽 -->
+      <div class="test-section">
+        <h2>4. 禁用拖拽（:resizable="false"）</h2>
+        <h3>aside-width 固定 240px，header-height / footer-height 固定 50px，不渲染分隔条</h3>
+        <yq-container class="demo-box" :resizable="false" aside-width="240px" header-height="50px" footer-height="50px">
+          <yq-con-header>
+            <div class="ph-header">Header（固定）</div>
+          </yq-con-header>
+          <yq-con-aside>
+            <div class="ph-aside">Aside（固定）</div>
+          </yq-con-aside>
+          <yq-con-main>
+            <div class="ph-main">Main</div>
+          </yq-con-main>
+          <yq-con-footer>
+            <div class="ph-footer">Footer（固定）</div>
+          </yq-con-footer>
+        </yq-container>
+      </div>
+
+      <!-- v-model 双向绑定 -->
+      <div class="test-section">
+        <h2>5. v-model 双向绑定（aside-width / header-height）</h2>
+        <h3>拖拽或点击按钮均可改变尺寸，松开后同步回外部变量</h3>
+        <div class="width-toolbar">
+          <span>aside 宽度：<span class="width-value">{{ boundWidth }}</span></span>
+          <el-button size="small" @click="boundWidth = '200px'">宽 200px</el-button>
+          <el-button size="small" @click="boundWidth = '320px'">宽 320px</el-button>
+          <el-button size="small" @click="boundWidth = '50%'">宽 50%</el-button>
+        </div>
+        <div class="width-toolbar">
+          <span>header 高度：<span class="width-value">{{ boundHeight }}</span></span>
+          <el-button size="small" @click="boundHeight = '40px'">高 40px</el-button>
+          <el-button size="small" @click="boundHeight = '80px'">高 80px</el-button>
+          <el-button size="small" @click="boundHeight = '120px'">高 120px</el-button>
+        </div>
+        <yq-container class="demo-box" v-model:aside-width="boundWidth" v-model:header-height="boundHeight">
+          <yq-con-header>
+            <div class="ph-header">Header（双向绑定）</div>
+          </yq-con-header>
+          <yq-con-aside>
+            <div class="ph-aside">Aside（双向绑定）</div>
+          </yq-con-aside>
+          <yq-con-main>
+            <div class="ph-main">Main</div>
+          </yq-con-main>
+        </yq-container>
+      </div>
+
+      <!-- 独立使用（脱离 YqContainer） -->
+      <div class="test-section">
+        <h2>6. YqCon* 独立使用（脱离 YqContainer）</h2>
+        <h3>未注入托管尺寸时回退到自身属性：header 50px / aside 220px / footer 40px（原生 el-container 需显式 direction）</h3>
+        <el-container class="demo-box" direction="vertical">
+          <yq-con-header height="50px">
+            <div class="ph-header">YqConHeader 50px</div>
+          </yq-con-header>
+          <el-container direction="horizontal" style="flex: 1; min-height: 0;">
+            <yq-con-aside width="220px">
+              <div class="ph-aside">YqConAside 220px</div>
+            </yq-con-aside>
+            <yq-con-main>
+              <div class="ph-main">YqConMain</div>
+            </yq-con-main>
+          </el-container>
+          <yq-con-footer height="40px">
+            <div class="ph-footer">YqConFooter 40px</div>
+          </yq-con-footer>
+        </el-container>
+      </div>
+    </div>
+  </div>
+  <script>
+    const { createApp, ref } = Vue;
+    const { initTheme, YqContainer, YqConAside, YqConMain, YqConHeader, YqConFooter, i18n } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      components: {
+        YqContainer,
+        YqConAside,
+        YqConMain,
+        YqConHeader,
+        YqConFooter
+      },
+      setup() {
+        const boundWidth = ref('280px');
+        const boundHeight = ref('60px');
+
+        return { boundWidth, boundHeight }
+      },
+    })
+
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+  </script>
+</body>
+
+</html>

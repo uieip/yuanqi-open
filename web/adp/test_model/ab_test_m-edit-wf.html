@@ -1,0 +1,256 @@
+<uieip type="page" value="login" timeout="5000"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        /* 全局重置：消除默认边距，统一盒模型 */
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            /* 使用页面底色（深于面板），衬托表单卡片边际 */
+            background-color: var(--yq-bg-body);
+            color: var(--yq-text);
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            padding: 8px;
+        }
+
+        .yq-edit-container {
+            margin: 8px 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <div id="app">
+        <div class="yq-edit-container">
+            <yq-edit ref="formEditRef" v-bind="formProps"></yq-edit>
+        </div>
+        <yq-menu v-bind="menuProps"></yq-menu>
+        <yq-flow-list ref="flowRef" v-bind="flowProps"></yq-flow-list>
+    </div>
+
+    <script>
+        const { ref, onMounted, createApp, computed, nextTick } = Vue;
+        const { initTheme, YqEdit, YqWindowApi, YqMenu, YqFlowList, yqData } = YqwinPlus;
+        const { ElMessage } = ElementPlus;
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+        let mainParams = {
+            m_tb: _m,
+            d_tb: _d,
+        };
+        console.log("mainParams", mainParams);
+
+        window.onload = async function () {
+            await initApp();
+        }
+
+        async function initApp() {
+            // 获取编辑弹窗参数
+            let params = await YqWindowApi.getEditParams(mainParams.m_tb);
+
+            const currentUrl = window.location.href;
+            console.log("params:", currentUrl, params);
+            // 直接打开（非弹窗上下文）时缺少父页注入的 save 等参数，无法编辑
+            if (typeof params.save !== 'function') {
+                document.getElementById('app').innerHTML = '<div style="padding:20px;color:var(--yq-text);">页面参数缺失，请从列表页打开</div>';
+                return;
+            }
+
+            const app = createApp({
+                components: {
+                    'yq-edit': YqEdit,
+                    'yq-menu': YqMenu,
+                    'yq-flow-list': YqFlowList
+                },
+                setup() {
+                    const formEditRef = ref(null);
+                    const flowRef = ref(null);
+
+                    const isEdit = ref(params.isEdit ?? true);
+                    const row = ref(params.row || {});
+                    const keyId = ref(params.keyId || 'sid');
+                    const rowKey = ref(params.rowId || null);
+                    const fkrows = ref(params.fkrows || []);
+
+                    //isEdit.value = true;
+
+                    // yq-edit 绑定参数（v-bind 模式）
+                    const formProps = computed(() => ({
+                        isView: false,
+                        titles: params.titles || [],
+                        model: params.model || '',
+                        row: row.value,
+
+                        isEdit: isEdit.value,
+                        fkrows: fkrows.value,
+
+                        rowKey: rowKey.value,
+                        dbName: params.dbName || '',
+                        tbName: params.tbName || '',
+
+                        loadDefault: false, //加载默认值
+                        blankTag: params.blankTag || '*',     //值不能为空，标题附加标记
+                        'onUpdate:row': (newRow) => {
+                            row.value = newRow;
+                        },
+                        'onUpdate:fkrows': (newFkrows) => {
+                            fkrows.value = newFkrows;
+                        },
+                    }));
+
+                    async function saveData() {
+                        if (params.checkBlank && formEditRef.value.error()) {
+                            ElMessage({
+                                message: '请填写完整信息',
+                                type: 'error'
+                            })
+                            return;
+                        }
+
+                        console.log("save:", params);
+
+                        const rowData = formEditRef.value.getRow();
+                        const res = await params.save([{
+                            action: params.action,
+                            row: rowData
+                        }]);
+
+                        // 弹窗已关闭：提示由父页显示，直接退出
+                        if (res.close) {
+                            return;
+                        }
+
+                        if (res.msg_error) {
+                            ElMessage.error(res.msg_error);
+                            return;
+                        }
+
+                        // 弹窗保持打开时由编辑页提示，父页提示会被弹窗遮罩挡住
+                        rowKey.value = res.rows[0][keyId.value];
+                        params.action = "upp"
+                        rowData[keyId.value] = rowKey.value;
+                        row.value = rowData;
+
+                        if (res.msg_success) {
+                            ElMessage({
+                                message: res.msg_success,
+                                type: 'success'
+                            });
+                        }
+                    }
+
+                    const menuProps = ref({
+                        type: 'inline',
+                        mini: false,
+                        menuItems: [
+                            {
+                                name: "save",
+                                label: "保存",
+                                toptip: "保存",
+                                icon: "fa fa-save",
+                                type: "primary",
+                                disabled: () => {
+                                    return !isEdit.value
+                                },
+                                click: async (event) => {
+                                    await saveData()
+                                }
+                            }
+                        ],
+                        visible: isEdit.value,
+                    });
+
+                    const flowProps = ref({
+                        isFlow: true,                                              // 是流程图显示
+                        dbName: params.dbName || '',
+                        tbName: params.tbName || '',
+                        row: row.value,                                    // 当前记录
+                        topicField: 'textbox',                                          // 主题字段
+                        verId: params.wfVerid || '',                                        // 流程版本id（用于获取可用流程）
+
+                        loadData: false,
+
+                        afterBindingTitle: () => {
+
+                        },
+                        afterSetRow: () => {
+
+                        },
+                        beforeWfInit: (_wfinfo, init_data, callback) => {
+                            callback(true, init_data)
+                        },
+                        afterWfInit: () => {
+
+                        },
+                        beforeWfSubmit: (res, callback) => {
+                            callback(true, res)
+                        },
+                        afterWfSubmit: (res) => {
+                            //console.log("afterWfSubmit1", res);
+                            if (res.error != 0) {
+                                return;
+                            }
+
+                            //console.log("uppRowById:", typeof params.uppRowById, "rowKey:", rowKey.value);
+                            try {
+                                Promise.resolve(params.uppRowById(rowKey.value)).then((res) => {
+                                    //console.log("afterWfSubmit2", res);
+                                    if (res.error != 0) {
+                                        return;
+                                    }
+                                    row.value = res.row;
+                                }).catch((e) => {
+                                    console.error("uppRowById reject", e);
+                                });
+                            } catch (e) {
+                                console.error("uppRowById throw", e);
+                            }
+                        },
+                        _ctrlid: params._ctrlid || '',
+                        _appno: params._appno || 0,
+                        _menuno: params._menuno || 0
+                    });
+
+                    onMounted(async () => {
+                        // 加载数据
+                        await flowRef.value.loadData();
+                    });
+
+                    return {
+                        formEditRef,
+                        flowRef,
+                        formProps,
+                        menuProps,
+                        flowProps,
+                    }
+                },
+            })
+            app.use(ElementPlus)
+            app.mount('#app')
+        }
+    </script>
+</body>
+
+</html>

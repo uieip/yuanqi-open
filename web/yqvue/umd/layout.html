@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YQWIN-Plus 页面框架组件测试</title>
+  <!-- 引入基础样式 -->
+  <style>
+      body {
+          background-color: var(--yq-bg);
+          color: var(--yq-text);
+      }
+    #app {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #dad7d7;
+    }
+  </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0;">
+  <div id="app">
+    <div style="height: 55px;">
+       <el-switch v-model="isMultiTab" :active-value="true" :inactive-value="false" active-text="显示多签页" inactive-text="不显示多签页"></el-switch>
+    </div>
+    <div style="height: calc(100% - 55px);">
+      <yq-layout :sidebar-width="sidebarWidth" :sidebar-collapsed-width="sidebarCollapsedWidth"
+        :header-height="headerHeight" :logo="logo" :user-info="userInfo" :menu-items="menuItems" :nav-items="navItems"
+        :breadcrumb="breadcrumb" :user-dropdown-items="userDropdownItems" :toolbar-items="toolbarItems"
+        :default-tabs="defaultTabs" :is-multi-tab="isMultiTab"></yq-layout>
+    </div>
+  </div>
+  <script>
+    const { ref, onMounted, createApp } = Vue;
+    const { initTheme, YqLayout, YqDb, YqMenuUtils, i18n } = YqwinPlus;
+    const { ElMessage } = ElementPlus;
+    initTheme();
+
+    const app = createApp({
+      components: {
+        YqLayout,
+      },
+      data() {
+        return {
+          sidebarWidth: 260,
+          sidebarCollapsedWidth: 64,
+          headerHeight: 55
+        }
+      },
+      setup() {
+        const isMenuLoading = ref(false)
+
+        // logo配置
+        const logo = ref({
+          text: '远齐-Yuanqi',
+          icon: '/icon/远齐.jpg',
+          path: '/'
+        })
+
+        // 用户信息
+        const userInfo = ref({
+          name: "管理员",
+          icon: 'fa fa-user',
+          role: 'admin'
+        })
+
+        // 侧边栏菜单
+        const menuItems = ref([])
+
+        // 顶部导航菜单
+        const navItems = ref([
+          {
+            id: 'home',
+            label: '首页',
+            icon: 'fa fa-home',
+            path: '/home',
+            active: true
+          },
+          {
+            id: 'workplace',
+            label: '工作台',
+            icon: 'fa fa-briefcase',
+            isUrl: true,
+            path: '/test/simple.html'
+          }
+        ])
+
+        // 面包屑数据
+        const breadcrumb = ref([
+          {
+            id: 'home',
+            label: '首页',
+            icon: 'fa fa-home',
+            path: '/home',
+            active: true
+          },
+          {
+            id: 'workplace',
+            label: '工作台',
+            icon: 'fa fa-briefcase',
+            isUrl: true,
+            path: '/test/simple.html'
+          }
+        ])
+
+        // 用户下拉菜单
+        const userDropdownItems = ref([
+          {
+            id: 'profile',
+            label: '个人中心',
+            icon: 'fa fa-user',
+            path: '/profile'
+          },
+          {
+            id: 'settings',
+            label: '设置',
+            icon: 'fa fa-gear',
+            path: '/settings'
+          },
+          {
+            id: 'logout',
+            label: '退出登录',
+            icon: 'fa fa-sign-out',
+            path: () => {
+              ElMessage.success('退出登录')
+            }
+          }
+        ])
+
+        // 右侧工具栏
+        const toolbarItems = ref([
+          {
+            id: 'refresh',
+            label: '刷新',
+            icon: 'fa fa-refresh',
+            path: () => {
+              window.location.reload();
+            }
+          },
+          {
+            id: 'fullscreen',
+            label: '全屏',
+            icon: 'fa fa-expand',
+            path: (event, item) => {
+              if (document.fullscreenElement) {
+                item.icon = 'fa fa-expand';
+                item.label = '全屏';
+                document.exitFullscreen();
+              } else {
+                item.icon = 'fa fa-compress';
+                item.label = '退出全屏';
+                document.documentElement.requestFullscreen();
+              }
+            }
+          }
+        ])
+
+        // 默认页签列表
+        const defaultTabs = ref([
+          {
+            id: 'dashboard',
+            label: '首页',
+            icon: 'fa fa-file',
+            path: '/',
+            isUrl: true,
+            active: true,
+            closable: false,
+            contextMenu: []
+          }
+        ])
+
+        //组件实例被挂载到 DOM 之后执行指定的回调函数
+        onMounted(async () => {
+          isMenuLoading.value = true
+          try {
+            const menusResult = await YqDb.menus({
+              appno: 0
+            });
+            if (menusResult.error === 0) {
+              menuItems.value = YqMenuUtils.convertToMenuItems(0, menusResult.rows)
+            } else {
+              ElMessage.error(`菜单加载失败: ${menusResult.msg}`)
+              // 加载失败时使用默认菜单
+              menuItems.value = [
+                { id: 'dashboard', label: '首页', icon: '/icon/工作流.png', path: '/dashboard', active: true }
+              ]
+            }
+          } catch (error) {
+            console.error('菜单加载异常:', error)
+            ElMessage.error('菜单加载异常，请刷新页面重试')
+          } finally {
+            isMenuLoading.value = false
+          }
+        })
+
+        // 是否显示多签页
+        const isMultiTab = ref(false)
+
+        return {
+          isMenuLoading,
+          logo,
+          userInfo,
+          menuItems,
+          navItems,
+          breadcrumb,
+          userDropdownItems,
+          toolbarItems,
+          defaultTabs,
+          isMenuLoading,
+          isMultiTab
+        }
+      }
+    })
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+
+    // 将app暴露到全局作用域，以便其他脚本可以访问
+    window.app = app
+  </script>
+</body>
+
+</html>

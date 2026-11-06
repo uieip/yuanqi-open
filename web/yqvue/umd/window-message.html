@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqMessage 测试</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #303133;
+            padding: 20px;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #409eff;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+
+        .test-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #606266;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .el-button {
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .info {
+            background-color: #ecf5ff;
+            border: 1px solid #d9ecff;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #409eff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>YqMessageBox 测试</h1>
+
+        <!-- 测试默认位置对话框 -->
+        <div class="test-section">
+            <h2>测试默认位置对话框</h2>
+            <div class="button-group">
+                <el-button type="primary" @click="showConfirm">显示确认对话框</el-button>
+            </div>
+            <div class="info">
+                对话框将显示在默认位置（页面中央）
+            </div>
+        </div>
+
+        <!-- 测试指定按钮位置对话框 -->
+        <div class="test-section">
+            <h2>测试指定按钮位置对话框</h2>
+            <div class="button-group">
+                <el-button ref="btn1" type="primary" @click="showTargetedConfirm">在按钮下方显示对话框</el-button>
+            </div>
+            <div class="info">
+                对话框将显示在上方按钮的下方
+            </div>
+        </div>
+
+        <!-- 测试指定 div 位置对话框 -->
+        <div class="test-section">
+            <h2>测试指定 div 位置对话框</h2>
+            <div ref="divTarget"
+                style="padding: 20px; background-color: #f0f9eb; border: 1px solid #b7eb8f; border-radius: 4px; margin-bottom: 10px;">
+                这是一个测试 div 元素
+            </div>
+            <el-button type="success" @click="showDivConfirm">在 div 下方显示对话框</el-button>
+            <div class="info">
+                对话框将显示在上方 div 元素的下方
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqMessageBox } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            setup() {
+                // 按钮引用
+                const btn1 = ref(null)
+                const btn2 = ref(null)
+                const btn3 = ref(null)
+                const btn4 = ref(null)
+                const divTarget = ref(null)
+
+                // 显示确认对话框
+                const showConfirm = async () => {
+                    try {
+                        await YqMessageBox.confirm({
+                            message: '您确定要执行此操作吗？',
+                            title: '确认操作',
+                            type: 'warning'
+                        })
+                        console.log('用户点击了确定');
+                    } catch (ex) {
+                        console.log(ex);
+                        console.log('用户点击了取消');
+                    }
+                }
+
+                // 显示在指定按钮下方的确认对话框
+                const showTargetedConfirm = () => {
+                    YqMessageBox.confirm({
+                        message: '您确定要执行此操作吗？',
+                        title: '确认操作',
+                        type: 'warning',
+                        el: btn1.value.$el // 使用 $el 获取 DOM 元素
+                    }).then(() => {
+                        console.log('用户点击了确定');
+                    }).catch(() => {
+                        console.log('用户点击了取消');
+                    });
+                }
+
+                // 显示在指定 div 下方的确认对话框
+                const showDivConfirm = () => {
+                    YqMessageBox.confirm({
+                        message: '您确定要执行此操作吗？',
+                        title: '确认操作',
+                        type: 'warning',
+                        el: divTarget.value // divTarget 是直接的 DOM 元素，不需要 $el
+                    }).then(() => {
+                        console.log('用户点击了确定');
+                    }).catch((ex) => {
+                        console.log('用户点击了取消');
+                    });
+                }
+
+                return {
+                    btn1,
+                    btn2,
+                    btn3,
+                    btn4,
+                    divTarget,
+                    showConfirm,
+                    showTargetedConfirm,
+                    showDivConfirm
+                }
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

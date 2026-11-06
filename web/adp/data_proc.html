@@ -1,0 +1,471 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>存储过程</title>
+    <style>
+        /* 添加 v-cloak 样式 */
+        [v-cloak] {
+            display: none;
+        }
+
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+        }
+
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Element Plus 布局样式 */
+        .el-container {
+            height: 100%;
+        }
+
+        .el-header {
+            background-color: var(--el-bg-color);
+            border-bottom: 1px solid var(--el-border-color);
+            padding: 0;
+            margin: 0;
+        }
+
+        .el-main {
+            background-color: var(--el-bg-color);
+            border-radius: 4px;
+            box-shadow: var(--el-box-shadow-light);
+        }
+
+        .line {
+            display: flex;
+            align-items: center;
+            padding: 5px 8px 2px 8px;
+            gap: 5px;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;">
+    <div id="app">
+        <yq-container :header-height="'84px'">
+            <yq-con-header>
+                <div class="line">
+                    <yq-label label="模版类型" :label-dict="typeLabelDict"></yq-label>
+                    <el-select v-model="proc_type" style="width: 150px;" @change="getProcModel">
+                        <el-option v-for="item in typeList" :key="item.id" :label="item.text" :value="item.id"
+                            v-cloak></el-option>
+                    </el-select>
+                    <div style="margin-left: 8px;">
+                        <yq-menu type="inline" :menu-items="menuItems" :mini="false"></yq-menu>
+                    </div>
+                </div>
+                <div class="line">
+                    <yq-label label="名称" :label-dict="nameLabelDict"></yq-label>
+                    <el-input v-model="tb_row.name" readonly style="width: 120px;"></el-input>
+                    <yq-label label="描述" :label-dict="descLabelDict"></yq-label>
+                    <el-input v-model="tb_row.describe" readonly style="width: 120px;"></el-input>
+                    <yq-label label="实际表名" :label-dict="tbNameLabelDict"></yq-label>
+                    <el-input v-model="tb_row.tb_name" readonly style="width: 120px;"></el-input>
+                    <yq-label label="存储过程" :label-dict="procLabelDict" style="padding-left: 8px;"></yq-label>
+                    <div style="width: 230px;">
+                        <yq-combogrid ref="procRef" v-bind="procProps"
+                            v-cloak></yq-combogrid>
+                    </div>
+                </div>
+            </yq-con-header>
+            <yq-con-main style="padding: 0;margin: 0;overflow: hidden;">
+                <yq-code-edit v-bind="codeProps"></yq-code-edit>
+            </yq-con-main>
+        </yq-container>
+        <input ref="fileRef" type="file" accept=".sql" style="display: none;" @change="handleFileChange">
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed } = Vue;
+        const { ElInput, ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqMessage, YqLabel, YqMenu, YqCombogrid, YqCodeEdit, YqContainer, YqConHeader, YqConMain, yqData } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            dbname: "yqbase",
+            tbname: "",
+            tb_id: "",
+        };
+
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            mainParams.dbname = urlParams.get('dbname') || mainParams.dbname;
+            mainParams.tbname = urlParams.get('tbname') || mainParams.tbname;
+            mainParams.tb_id = urlParams.get('tb_id') || mainParams.tb_id;
+            //console.log(mainParams);
+
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    ElInput,
+                    ElSelect,
+                    ElOption,
+                    YqLabel,
+                    YqMenu,
+                    YqCombogrid,
+                    YqCodeEdit,
+                    YqContainer,
+                    YqConHeader,
+                    YqConMain,
+                },
+                setup() {
+                    const procRef = ref(null);
+                    const fileRef = ref(null);
+
+                    const tb_row = ref({});
+                    const proc_row = ref(null);
+                    const proc_type = ref("-1");
+
+                    const typeLabelDict = ref({
+                        "zh-CN": "模版类型",
+                        "en": "Template Type",
+                    });
+                    const nameLabelDict = ref({
+                        "zh-CN": "名称",
+                        "en": "Name",
+                    });
+                    const descLabelDict = ref({
+                        "zh-CN": "描述",
+                        "en": "Description",
+                    });
+                    const tbNameLabelDict = ref({
+                        "zh-CN": "实际表名",
+                        "en": "Table Name",
+                    });
+                    const procLabelDict = ref({
+                        "zh-CN": "存储过程",
+                        "en": "Procedure",
+                    });
+
+                    //模版类型列表
+                    const typeList = ref([
+                        { id: "-1", text: "选择" },
+                        { id: "add", text: "add" },
+                        { id: "upp", text: "upp" },
+                        { id: "del", text: "del" }
+                    ]);
+
+                    const initTypeList = (row) => {
+                        if (row.is_queue) {
+                            typeList.value.push({ id: "move", text: "move" });
+                        }
+                        if (row.is_tree) {
+                            typeList.value.push({ id: "path", text: "path" });
+                            typeList.value.push({ id: "paste", text: "paste" });
+                        }
+                        typeList.value.push({ id: "action", text: "action" });
+                    }
+
+                    //代码编辑器
+                    const code = ref("");
+                    const codeProps = computed(() => ({
+                        code: code.value,
+                        lineNumbers: true,
+                        isEdit: true,
+                        mode: 'text',
+                        types: ['text'],
+                        indentSize: 4,
+                        autoCompletion: true,
+                        autoFold: true,
+                        highlightActiveLine: true,
+                        tabSize: 4,
+                        wordWrap: true,
+                        setting: true,
+                        clear: true,
+                        'onUpdate:code': (value) => {
+                            code.value = value;
+                        }
+                    }));
+
+                    //存储过程下拉
+                    const procProps = computed(() => ({
+                        dbname: mainParams.dbname,
+                        tbname: "sys_tb_proc",
+                        keyId: "sid",
+                        bindingKeyId: "tb_id",
+                        bindingValue: mainParams.tb_id,
+                        displayMember: "name",
+                        editMode: 1,
+                        editType: 1,
+                        editModeW: 400,
+                        editModeH: 250,
+                        editModeNo: -1,
+                        loadDefault: false,
+                        blankTag: "*",
+                        loadData: false,
+                        isEdit: true,
+                        isSeek: false,
+                        isSimple: false,
+                        isPage: false,
+                        topnum: 10,
+                        move: true,
+                        menuType: 3,
+                        rownumbers: true,
+                        autoSelect: false,
+                        popoverModeW: 600,
+                        popoverModeH: 400,
+                        editLinks: [
+                            { divided: true },
+                            {
+                                name: "download",
+                                label: "下载",
+                                toptip: "下载",
+                                icon: "fa fa-download",
+                                type: "primary",
+                                disabled: () => {
+                                    return proc_row.value === null;
+                                },
+                                click: () => {
+                                    if (proc_row.value) {
+                                        getProcInfo(proc_row.value.name);
+                                    }
+                                }
+                            }
+                        ],
+                        onRowSelect: (_res) => {
+                            console.log("存储过程选择:", _res);
+                            proc_row.value = _res.row;
+                            if (_res.row && _res.row.name) {
+                                getProcInfo(_res.row.name);
+                            }else{
+                                code.value = "";
+                            }
+                        }
+                    }));
+
+                    const menuItems = ref([
+                        {
+                            name: "get",
+                            label: "获取模版",
+                            toptip: "获取模版",
+                            icon: "fa fa-refresh",
+                            type: "primary",
+                            disabled: () => {
+                                return tb_row.value.name === undefined;
+                            },
+                            click: () => {
+                                getProcModel(proc_type.value);
+                            }
+                        }, {
+                            name: "save",
+                            label: "保存",
+                            toptip: "保存",
+                            icon: "fa fa-save",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: () => {
+                                save();
+                            }
+                        }, {
+                            name: "open",
+                            label: "打开",
+                            toptip: "打开",
+                            icon: "fa fa-folder-open-o",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: () => {
+                                openFile();
+                            }
+                        }, {
+                            name: "upload",
+                            label: "上传",
+                            toptip: "上传",
+                            icon: "fa fa-upload",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: () => {
+                                SaveProcInfo();
+                            }
+                        }
+                    ]);
+
+                    //获取表信息
+                    const initTbRow = async () => {
+                        if (mainParams.dbname == "" || mainParams.tb_id == "") {
+                            return;
+                        }
+
+                        const res = await yqData.dbTbRow({
+                            dbname: mainParams.dbname,
+                            tbname: "sys_tb",
+                            keyid: "sid",
+                            keyval: mainParams.tb_id
+                        });
+
+                        if (res.error != 0) {
+                            return;
+                        }
+
+                        tb_row.value = res.row;
+                        mainParams.tbname = res.row.name;
+                        initTypeList(res.row);
+
+                        await procRef.value?.loadData();
+                    }
+
+                    //获取存储过程模版
+                    const getProcModel = async (_type) => {
+                        code.value = "";
+                        if (_type == "-1") {
+                            return;
+                        }
+
+                        const res = await yqData.procModel({
+                            dbname: mainParams.dbname,
+                            tbname: tb_row.value.name,
+                            actionval: _type
+                        });
+
+                        if (res.error == 0) {
+                            code.value = res.info;
+                        }
+                    }
+
+                    //获取存储过程
+                    const getProcInfo = async (name) => {
+                        code.value = "";
+                        const res = await yqData.procInfo({
+                            dbname: mainParams.dbname,
+                            procname: name
+                        });
+
+                        if (res.error == 0) {
+                            code.value = res.info;
+                        }
+                    }
+
+                    //保存存储过程
+                    const SaveProcInfo = async () => {
+                        const res = await yqData.procSave({
+                            dbname: mainParams.dbname,
+                            proc: code.value
+                        });
+
+                        if (res.error == 0) {
+                            YqMessage.success({
+                                message: "执行成功。",
+                                labelDict: {
+                                    "zh-CN": { message: "执行成功。" },
+                                    "en": { message: "Executed successfully." },
+                                },
+                            });
+                        } else {
+                            YqMessage.error({
+                                message: res.info + "[" + res.error + "]",
+                                labelDict: {
+                                    "zh-CN": { message: res.info + "[" + res.error + "]" },
+                                    "en": { message: res.info + "[" + res.error + "]" },
+                                },
+                            });
+                        }
+                    }
+
+                    //保存json(下载sql文件)
+                    const save = () => {
+                        const text = code.value;
+
+                        const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+
+                        let filename = tb_row.value.name || "proc";
+                        if (proc_type.value != "-1") {
+                            filename += "_" + proc_type.value;
+                        }
+                        filename += ".sql";
+
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }
+
+                    //打开本地sql文件
+                    const openFile = () => {
+                        fileRef.value.click();
+                    }
+
+                    const handleFileChange = (e) => {
+                        const file = e.target.files[0]; // 获取选中的文件
+                        if (!file) {
+                            return;
+                        }
+
+                        if (!/\.sql$/i.test(file.name)) {
+                            e.target.value = "";
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                            try {
+                                code.value = ev.target.result;
+                            }
+                            catch (err) {
+                                console.error("filejson", err);
+                                YqMessage.error({
+                                    message: "内容格式错误。",
+                                    labelDict: {
+                                        "zh-CN": { message: "内容格式错误。" },
+                                        "en": { message: "Invalid content format." },
+                                    },
+                                });
+                            }
+
+                            e.target.value = "";
+                        };
+                        reader.readAsText(file);
+                    }
+
+                    onMounted(async () => {
+                        await initTbRow();
+                    });
+
+                    return {
+                        procRef,
+                        fileRef,
+                        tb_row,
+                        proc_type,
+                        typeList,
+                        typeLabelDict,
+                        nameLabelDict,
+                        descLabelDict,
+                        tbNameLabelDict,
+                        procLabelDict,
+                        codeProps,
+                        procProps,
+                        menuItems,
+                        getProcModel,
+                        handleFileChange,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+    </script>
+</body>
+
+</html>

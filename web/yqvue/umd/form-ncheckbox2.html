@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>NCheckbox</title>
+    <style>
+        body {
+            padding: 20px;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>13.NCheckbox</h1>
+          <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑"
+                inactive-text="查看"></el-switch> |
+          <el-switch v-model="clearable" :active-value="true" :inactive-value="false" active-text="可清空"
+                inactive-text="不可清空"></el-switch> |
+        <br>
+        <h2>isText=true</h2>
+        <div style="margin-left: 40px;width: 300px;">
+            <yq-ncheckbox :textbox="true" v-model:value="value" :type="type" :is-edit="isEdit" :edit-mode-w="editModeW"
+                :edit-mode-h="editModeH" :lists="lists" :clearable="clearable"></yq-ncheckbox>
+        </div>
+        <h2>isText=false</h2>
+        <div style="margin-left: 40px;width: 300px;">
+            <yq-ncheckbox :textbox="false" v-model:value="value" :type="type" :is-edit="isEdit" :edit-mode-w="editModeW"
+                :edit-mode-h="editModeH" :lists="lists" :clearable="clearable"></yq-ncheckbox>
+        </div>
+        <h1>value</h1>
+        <div style="margin-left: 40px;width: 300px;">
+            <pre>{{ value }}</pre>
+        </div>
+    </div>
+     <script>
+        const { createApp } = Vue;
+        const { initTheme, YqNcheckbox } = YqwinPlus;
+        initTheme();
+        createApp({
+            components: {
+                YqNcheckbox
+            },
+            data() {
+                return {
+                    type: 'string',
+                    value: ['1','3'],
+                    isEdit: true,
+                    editModeW: 400,
+                    editModeH: 150,
+                    lists: [
+                        {
+                            "no": '1',
+                            "name": "1111",
+                            "checked": false
+                        },
+                        {
+                            "no": '2',
+                            "name": "2222",
+                            "checked": false
+                        },
+                        {
+                            "no": '3',
+                            "name": "3333333333333",
+                            "checked": false
+                        },
+                        {
+                            "no": '4',
+                            "name": "4444444",
+                            "checked": false
+                        },
+                        {
+                            "no": '5',
+                            "name": "555555555",
+                            "checked": false
+                        },
+                        {
+                            "no": '6',
+                            "name": "666666666666",
+                            "checked": false
+                        }
+                    ],
+                    clearable: true
+                }
+            } 
+        })
+            .use(ElementPlus)
+            .mount('#app')
+    </script>
+</body>
+
+</html>

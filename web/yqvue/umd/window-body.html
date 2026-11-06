@@ -1,0 +1,319 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqDrawer测试页面</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            padding: 0;
+            margin: 0;
+        }
+
+        .iframe-content {
+            width: 100%;
+            height: 50vh;
+            border: 1px solid #807878;
+        }
+
+        .html-content {
+            width: 100%;
+            height: 60px;
+            border: 1px solid #807878;
+        }
+
+        .vue-content {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #807878;
+        }
+
+        .param-content {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #807878;
+        }
+
+        .other-content {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #807878;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <table>
+            <tr>
+                <td>窗口类型：</td>
+                <td width="200px">
+                    <el-select v-model="type" placeholder="请选择窗口类型">
+                        <el-option label="Iframe" value="iframe"></el-option>
+                        <el-option label="HTML" value="html"></el-option>
+                        <el-option label="Vue" value="vue" selected></el-option>
+                        <el-option label="ParamVue" value="param" selected></el-option>
+                        <el-option label="Other" value="other"></el-option>
+                    </el-select>
+                </td>
+                <td>
+                    <el-button v-if="type === 'vue'" type="primary" @click="externalVueMethod">调用Vue组件方法</el-button>
+                    <el-button v-if="type === 'iframe'" type="primary"
+                        @click="externalIframeMethod">调用Iframe组件方法</el-button>
+                    <el-button v-if="type === 'html'" type="primary" @click="externalHtmlMethod">调用HTML组件方法</el-button>
+                </td>
+            </tr>
+        </table>
+        <div :class="contentClass">
+            <yq-body :type="type" :content="content" ref="yqBody">
+                123123123123123123
+            </yq-body>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, h } = Vue;
+        // 导入YqDrawer组件
+        const { YqBody, YqAttr, initTheme } = YqwinPlus;
+        initTheme();
+
+        const testvue = {
+            name: 'TestVue',
+            props: {
+                title: {
+                    type: String,
+                    default: 'Vue 组件'
+                },
+                info: {
+                    type: String,
+                    default: ''
+                }
+            },
+            setup(props) {
+                const externalMethod = () => {
+                    console.log('This method can be called externally');
+                    return { success: true, data: 'External method result' };
+                };
+                return {
+                    title: props.title,
+                    externalMethod
+                };
+            },
+            template: `<div><div>{{title}}</div><p>{{info}}</p></div>`,
+        }
+
+        const titles_2 = [
+            {
+                "name": "sid",
+                "is_func": false,
+                "ui_title": "sId",
+                "fd_type": "nvarchar",
+                "length": 36,
+                "decimal": 0,
+                "ui_type": 1,
+                "ui_width": 120,
+                "ui_visible": false,
+                "ui_readonly": true,
+                "ui_mask": {}
+            },
+            {
+                "name": "textbox",
+                "ui_title": "Textbox",
+                "fd_type": "nvarchar",
+                "length": 50,
+                "decimal": 0,
+                "ui_type": 2,
+                "ui_width": 150,
+                "ui_visible": true,
+                "ui_readonly": false,
+                "ui_mask": {
+                    "default": "默认值",
+                    "min": 0,
+                    "max": 50,
+                    "blank": false,
+                    "format": ""
+                },
+                "group": "group1"
+            },
+            {
+                "name": "checkbox",
+                "is_func": false,
+                "ui_title": "Checkbox",
+                "fd_type": "boolean",
+                "length": 1,
+                "decimal": 0,
+                "ui_type": 3,
+                "ui_width": 90,
+                "ui_visible": true,
+                "ui_readonly": false,
+                "ui_mask": {
+                    "default": true
+                },
+                "group": "group1"
+            },
+            {
+                "name": "datebox",
+                "is_func": false,
+                "ui_title": "Datetbox",
+                "fd_type": "date",
+                "length": 0,
+                "decimal": 0,
+                "ui_type": 4,
+                "ui_width": 150,
+                "ui_visible": true,
+                "ui_readonly": false,
+                "ui_mask": {
+                    "default": "2022-01-01",
+                    "min": "2000-01-01",
+                    "max": "2099-12-31",
+                    "blank": true,
+                    "format": "yyyy-MM-dd"
+                }
+            }
+        ];
+        const row_2 = {
+            "sid": "sid-2",
+            "lable": "Lable-2",
+            "textbox": "Textbox-2",
+            "checkbox": true,
+            "datebox": "2026/01/08"
+        };
+
+
+        const app = createApp({
+            components: {
+                YqBody,
+                testvue
+            },
+            setup() {
+                const type = ref('vue')
+                const content = computed(() => {
+                    if (type.value === 'iframe') {
+                        return 'http://www.uieip.com'
+                    } else if (type.value === 'html') {
+                        return '<h1>Hello HTML</h1>'
+                    } else if (type.value === 'vue') {
+                        return h(testvue,
+                            {
+                                title: '自定义标题',
+                                info: '这是自定义内容'
+                            })
+                    } else if (type.value === 'param') {
+                        // return {
+                        //     h: YqAttr,
+                        //     props: {
+                        //         titles: titles_2,
+                        //         row: row_2
+                        //     }
+                        // };
+
+                        const content = {
+                            h: 'div',
+                            props: {
+                                class: 'line'
+                            },
+                            children: [{
+                                h: 'span',
+                                props: {
+                                    style: 'padding: 0 5px 0 5px;',
+                                },
+                                children: '配置文件名'
+                            },
+                            {
+                                h: 'div',
+                                props: {
+                                    style: 'padding: 0 5px 0 5px; height: 200px;',
+                                },
+                                children: {
+                                    h: 'YqCodeEdit',
+                                    props: {
+                                        code: "",
+                                        lineNumbers: true,
+                                        isEdit: true,
+                                        mode: 'text',
+                                        types: ['text'],
+                                        indentSize: 2,
+                                        autoCompletion: true,
+                                        autoFold: true,
+                                        highlightActiveLine: true,
+                                        tabSize: 2,
+                                        wordWrap: true,
+                                        setting: false,
+                                        clear: false,
+                                        'onChange': (val) => {
+
+                                        }
+                                    }
+                                }
+                            },
+                            ]
+                        }
+
+                        return content
+                    } else if (type.value === 'other') {
+                        return '其他内容'
+                    }
+                })
+
+                const contentClass = computed(() => {
+                    return type.value + '-content'
+                })
+
+                return { type, content, contentClass }
+            },
+            methods: {
+                async externalVueMethod() {
+                    if (this.type === 'vue') {
+                        // 等待组件渲染完成
+                        await this.$nextTick(() => {
+                            // 验证ref链是否存在
+                            if (this.$refs.yqBody && this.$refs.yqBody.contentRef) {
+                                const result = this.$refs.yqBody.contentRef[0].externalMethod();
+                                console.log('调用结果:', result);
+                            } else {
+                                console.error('组件引用不存在:', { yqBody: this.$refs.yqBody, contentRef: this.$refs.yqBody?.contentRef });
+                            }
+                        })
+                    }
+                },
+                async externalIframeMethod() {
+                    if (this.type === 'iframe') {
+                        // 等待组件渲染完成
+                        await this.$nextTick(() => {
+                            // 验证ref链是否存在
+                            if (this.$refs.yqBody && this.$refs.yqBody.contentRef) {
+                                const iframe = this.$refs.yqBody.contentRef[0];
+                                console.log('调用结果:', iframe);
+                            } else {
+                                console.error('组件引用不存在:', { yqBody: this.$refs.yqBody, contentRef: this.$refs.yqBody?.contentRef });
+                            }
+                        });
+                    }
+                },
+                async externalHtmlMethod() {
+                    if (this.type === 'html') {
+                        // 等待组件渲染完成
+                        await this.$nextTick(() => {
+                            // 验证ref链是否存在
+                            if (this.$refs.yqBody && this.$refs.yqBody.contentRef) {
+                                const html = this.$refs.yqBody.contentRef[0];
+                                console.log('调用结果:', html);
+                            } else {
+                                console.error('组件引用不存在:', { yqBody: this.$refs.yqBody, contentRef: this.$refs.yqBody?.contentRef });
+                            }
+                        })
+                    }
+                },
+            }
+        });
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

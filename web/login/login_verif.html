@@ -1,0 +1,113 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="login,session,console"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登录</title>
+</head>
+
+<body>
+    <div id="app">
+        <phone-email :verif="verifParams"></phone-email>
+    </div>
+    <script>
+        let verif = <uieip>verif_params</uieip>;
+        console.log("verif:", JSON.stringify(verif, null, 2))
+    </script>
+    <script type="module">
+        import { ref, createApp } from 'vue'
+        import { YqPhoneEmail } from '/src'
+
+        createApp({
+            components: {
+                'phone-email': YqPhoneEmail
+            },
+            setup() {
+                const verifParams = ref(verif);
+                return {
+                    verifParams,
+                }
+            }
+        }).mount('#app')
+    </script>
+
+
+    <script runat="server">
+        verif_params = {};
+        function init() {
+            // 处理回调URL
+            const backurl = request.param("backurl");
+            var lg_state = login.state();
+            if (lg_state) {
+                if (backurl) {
+                    response.redirect(backurl);
+                }
+                else {
+                    response.redirect("/index.html");
+                }
+                return;
+            }
+
+            if (backurl) {
+                session.set("backurl", backurl);
+            }
+
+            var verif_check = request.param("verif");
+            if (verif_check === null) {
+                verif_check = 0;
+            }
+
+            var verif_data = {
+                default: "phone",
+                login: true,
+                phone: "",
+                email: "",
+                phoneAvailable: true,
+                emailAvailable: true
+            };
+            if (verif_check == 1) {
+                var phone = session.getString("verif:phone");
+                var email = session.getString("verif:email");
+                if (!(phone === undefined)) {
+                    verif_data.login = false;
+                    verif_data.phone = phone;
+                }else{
+                    verif_data.phoneAvailable = false;
+                }
+                if (!(email === undefined)) {
+                    verif_data.login = false;
+                    verif_data.email = email;
+                }else{
+                    verif_data.emailAvailable = false;
+                }
+                
+                if (!verif_data.login) {
+                    if (verif_data.phone == "") {
+                        verif_data.default = "email";
+                        delete verif_data.phone;
+                    }
+                    if (verif_data.email == "") {
+                        delete verif_data.email;
+                    }
+                }
+            }
+
+            /*
+                default: 默认校验方式
+                login:   登录状态 true:登录操作，使用手机、邮箱进行登录
+                                 false:校验操作,已经登录成功，二次校验
+                phone:   手机号
+                email:   邮箱
+            */
+            verif_params = JSON.stringify(verif_data, null, 4);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

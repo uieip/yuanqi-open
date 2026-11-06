@@ -1,0 +1,100 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_vue_inc.html"></uieip>
+    <script src="http://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js"></script>
+    <title>登录</title>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-4 col-md-4 col-md-offset-3 col-md-5" style="padding: 30px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">微信登录关联</div>
+                    <div class="panel-body">
+                        <div id="login_container" style="width: 100px; height: 160px;"></div>
+                        <div id="login_info"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+
+    <script>
+        var login_info;
+        init();
+
+        async function init() {
+            // 获取登录前的页面url
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code') || '';
+            let link_type = urlParams.get('type') || 'weixin';
+
+            if (code === '') {
+                document.getElementById("login_info").innerHTML = "登录失败，code为空";
+
+                const origin = window.location.origin
+                const backurl = urlParams.get('backurl') || '/'
+                let redirect_uri = `${origin}/login/login_link.html`;
+
+                let formData = new FormData();
+                formData.append('action', 'thirdauthorize');
+                formData.append('backurl', backurl);
+                formData.append('type', link_type);
+                formData.append('redirect_uri', redirect_uri);
+
+                const response = await fetch('/_login.html', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                console.log(data);
+
+                if (data.error === 0) {
+                    top.location.href = data.url;
+                } else {
+                    document.getElementById("login_info").innerHTML = "登录失败，" + data.info;
+                }
+                return;
+            }
+
+            let state = urlParams.get('state') || '';
+            if (state === null) {
+                state = "";
+                link_type = "weixin";
+            } else {
+                var vals = state.split("@");
+                link_type = vals[0];
+                if (vals.length > 1) {
+                    state = vals[1];
+                }
+            }
+
+            let formData = new FormData();
+            formData.append('action', 'thirdlink');
+            formData.append('type', link_type);
+            formData.append('code', code);
+
+            const response = await fetch('/_login.html', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            if (data.error === 0) {
+                top.location.href = data.url;
+            } else {
+                document.getElementById("login_info").innerHTML = "关联失败，" + data.info;
+            }
+        }
+    </script>
+</body>
+
+</html>

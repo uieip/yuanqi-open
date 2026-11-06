@@ -1,0 +1,257 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="login,session,console"></uieip>
+<!doctype html>
+<html>
+
+<head>
+  <uieip type="file" value="inc" src="/cms/inc/pc_head_vue_inc.html"></uieip>
+  <title>登录页</title>
+  <style>
+    body {
+            background: linear-gradient(180deg, #e8f1fb 0%, #f5f7fa 45%);
+        }
+
+    .container.inner-info {
+      margin-top: 56px;
+    }
+
+    *:focus,
+    *:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+      outline-color: transparent !important;
+      outline-style: none !important;
+      outline-width: 0 !important;
+      --el-focus-ring-color: transparent !important;
+    }
+
+    /* 左侧品牌区 */
+    .login-brand {
+      padding: 40px 30px;
+    }
+
+    .login-brand .brand-logo {
+      max-height: 64px;
+    }
+
+    .login-brand .brand-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a2a3a;
+      margin: 18px 0 8px;
+    }
+
+    .login-brand .brand-slogan {
+      color: #6b7a8a;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    .login-brand .brand-features {
+      list-style: none;
+      padding: 0;
+      margin: 30px 0 0;
+    }
+
+    .login-brand .brand-features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      color: #3d4a57;
+      font-size: 15px;
+    }
+
+    .login-brand .brand-features li i {
+      color: #27c08d;
+      font-size: 16px;
+    }
+
+    @media (max-width: 767px) {
+      .container.inner-info {
+        margin-top: 24px;
+      }
+
+      .login-brand {
+        padding: 8px 20px 0;
+        text-align: center;
+      }
+
+      .login-brand .brand-features {
+        display: none;
+      }
+
+      .login-brand .brand-title {
+        font-size: 20px;
+        margin: 10px 0 4px;
+      }
+    }
+
+    #app {
+      width: 400px;
+      max-width: 100%;
+      min-height: 370px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #eef2f6;
+      border-radius: 16px;
+      box-shadow: 0 12px 40px rgba(20, 60, 90, 0.1);
+      padding: 36px;
+    }
+
+    .login-tabs {
+      display: flex;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .login-tab {
+      flex: 1;
+      padding: 10px 0;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      color: #666;
+      font-size: 16px;
+      font-weight: 400;
+      position: relative;
+      transition: color 0.2s ease;
+      outline: none;
+      box-shadow: none;
+    }
+
+    .login-tab:focus,
+    .login-tab:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    #app .login-tabs .login-tab:focus,
+    #app .login-tabs .login-tab:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    #app .login-tabs a.login-tab:focus,
+    #app .login-tabs a.login-tab:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    .login-tab:hover {
+      color: #1677ff;
+    }
+
+    .login-tab.active {
+      color: #1677ff;
+      font-weight: 500;
+    }
+
+    .login-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 2px;
+      background: #1677ff;
+      border-radius: 1px;
+    }
+  </style>
+</head>
+
+<body>
+  <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+  <div class="container inner-info">
+    <div class="row">
+      <div class="col-md-6 col-sm-12">
+        <div class="login-brand">
+          <img src="/images/uieiplogo3.png" alt="UIEIP" class="brand-logo" />
+          <h2 class="brand-title">远齐低代码开发平台</h2>
+          <p class="brand-slogan">自主 · 国产 · 开源 · 自研架构开发</p>
+          <ul class="brand-features">
+            <li><i class="bi bi-check-circle-fill"></i> 支持服务端跨平台部署系统</li>
+            <li><i class="bi bi-check-circle-fill"></i> 支持主流数据库</li>
+            <li><i class="bi bi-check-circle-fill"></i> 可嵌入物联网设备</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-md-6 col-sm-12">
+        <div id="app">
+          <div class="login-tabs">
+            <yq-label class="login-tab" :class="{ active: currentType === 'password' }"
+              label="账密登录" :label-dict="{ 'zh-CN': '账密登录', 'en': 'Password' }"
+              @click="showLogin('password')"></yq-label>
+            <yq-label class="login-tab" :class="{ active: currentType === 'phone' }"
+              label="手机/邮箱登录" :label-dict="{ 'zh-CN': '手机/邮箱登录', 'en': 'Phone/Email' }"
+              @click="showLogin('phone')"></yq-label>
+            <yq-label class="login-tab" :class="{ active: currentType === 'wechat' }"
+              label="微信登录" :label-dict="{ 'zh-CN': '微信登录', 'en': 'WeChat' }"
+              @click="showLogin('wechat')"></yq-label>
+          </div>
+          <div ref="loginRef" class="login-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+
+  <script>
+    const { createApp, onMounted, ref } = Vue;
+    const { YqLogin, YqPhoneEmail, YqLoginThird, YqLabel } = YqwinPlus;
+
+    createApp({
+      components: {
+        'login': YqLogin,
+        'phone-email': YqPhoneEmail,
+        'login-third': YqLoginThird,
+        YqLabel,
+      },
+      setup() {
+        const loginRef = ref(null)
+        const currentType = ref('password')
+
+        const showLogin = (type) => {
+          currentType.value = type
+          if (type === 'password') {
+            createApp(YqLogin).mount(loginRef.value);
+          }
+          else if (type === 'phone') {
+            createApp(YqPhoneEmail).mount(loginRef.value);
+          }
+          else if (type === 'wechat') {
+            createApp(YqLoginThird).mount(loginRef.value);
+          }
+        }
+
+        onMounted(() => {
+          createApp(YqLogin).mount(loginRef.value);
+        })
+        return {
+          loginRef,
+          showLogin,
+          currentType
+        }
+      }
+    }).mount('#app')
+  </script>
+  <script runat="server">
+    // 如果是登录状态，重定向到回调URL
+    const backurl = request.param("backurl");
+    var lg_state = login.state();
+    if (lg_state) {
+      if (backurl === null) {
+        response.redirect("/index.html");
+      }
+      else {
+        response.redirect(backurl);
+      }
+    }
+  </script>
+</body>
+
+</html>

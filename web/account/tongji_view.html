@@ -1,0 +1,75 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <!-- 主题引导：首屏绘制前同步应用 data-theme 与临界底色，防止主题闪烁 -->
+    <script src="/scripts/theme-boot.js"></script>
+    <!-- Element Plus 暗色变量：html.dark 由 src/theme.ts 按主题切换时挂载 -->
+    <link rel="stylesheet" href="/scripts/vue/element-plus/dark/css-vars.css">
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding: 2px; ">
+        <yq-data-grid ref="mRef" v-bind="mProps"></yq-data-grid>
+    </div>
+   <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme, YqDataGrid, YqWindowApi } = YqwinPlus;
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+        let mainParams = {
+            m_tb: _tb
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const mRef = ref(null);
+                    const mProps = computed(() => ({
+                        ...mainParams.m_tb,
+                        menuType: 3,
+                        loadTitles: false,
+                        loadData: true,
+                    }));
+              
+                    onMounted(async () => {
+                        await mRef.value.initTitles();
+                    });
+
+                    return {
+                        mRef,
+                        mProps
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown Example with Marked.js</title>
+  <link rel="stylesheet" href="/scripts/yqwin/yqwin-plus.css">
+  <script src="/scripts/theme-boot.js"></script>
+  <link rel="stylesheet" href="../css/markdown-light.css">
+  <style>
+    body {
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    .markdown-body {
+      background-color: transparent;
+      color: var(--yq-text);
+    }
+  </style>
+</head>
+
+<body class="markdown-body">
+  <a href="javascript:window.history.back();">返回</a>
+  <h1>Markdown Example</h1>
+  <textarea id="markdown-input" rows="10" cols="50">
+  # Hello World
+  
+  - This is a simple markdown example using **marked.js**.
+    ```javascript
+    function helloWorld() {
+     console.log('Hello, world!');
+    }
+    ```
+</textarea>
+  <button onclick="convertMarkdown()">Convert to HTML</button>
+  <div id="output"></div>
+  <script src="../highlight.min.js"></script>
+  <script src="../marked.min.js"></script>
+  <script>
+    function convertMarkdown() {
+      // 获取 markdown 内容
+      const markdownText = document.getElementById('markdown-input').value;
+      // 使用 marked.js 将 markdown 转换为 HTML
+      const html = marked.parse(markdownText);
+      // 将生成的 HTML 显示在页面上
+      document.getElementById('output').innerHTML = html;
+      // 对代码块进行高亮处理
+      hljs.highlightAll();
+    }
+
+    // 初始化加载 markdown 显示
+    window.onload = function () {
+      convertMarkdown();
+    };
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,332 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="login,session,console"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+    <title>登录</title>
+    <!-- 极验 SDK -->
+    <script src="https://static.geetest.com/v4/gt4.js"></script>
+    <style>
+        #btn_checkcode {
+            cursor: pointer;
+            text-decoration: none;
+            user-select: none;
+        }
+
+        #btn_checkcode:hover {
+            text-decoration: none;
+        }
+
+        .btn-submit {
+            color: #fff;
+            background-color: #337ab7;
+            border-color: #2e6da4;
+        }
+    </style>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-2 col-md-4 col-sm-6" style="padding: 5px;">
+                <div class="panel panel-default" style="height: 260px;">
+                    <img style="max-width:100%;max-height:100%;" src="/images/uieiplogo3.png" />
+                </div>
+            </div>
+            <div class="col-md-4 col-md-5 col-sm-6" style="padding: 5px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">登录验证</div>
+                    <div class="panel-body">
+                        <label>验证方式</label>
+                        <div class="veriftype"></div>
+                        <input type="text" class="form-control" id="txt_veriftype" placeholder="密码" />
+                        <label id="lbl_checkcode" for="txt_verifcode">验证码</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="txt_checkcode" placeholder="验证码" />
+                            <a class="input-group-addon btn btn-submit" id="btn_checkcode"
+                                href="javascript:void(0);">获取验证码</a>
+                        </div>
+                        <p></p>
+                        <button id="btn_login" type="button" class="btn btn-submit pull-right">登录</button>
+                        <a class="a_default" href="javascript:default_login();">登录名登录</a>
+                        <a class="a_weixin" href="javascript:third_login('weixin');">微信登录</a>
+                        <label id="lbl_info"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+    <!-- 密码学计算库 -->
+    <script src="/scripts/crypto/sha256.min.js"></script>
+    <script src="js/login.js"></script>
+    <script>
+        let verif = <uieip>verif_params</uieip>;
+
+        let $form = {
+            div_veriftype: $(".veriftype"),
+        }
+
+        $(function () {
+            // 定义需要检查的字段及其对应的显示文本
+            const fields = [
+                { key: 'phone', label: '手机' },
+                { key: 'email', label: '邮件' }
+            ];
+
+            // 动态生成 HTML 并追加到目标元素
+            fields.forEach(field => {
+                if (verif[field.key] != null) { // 检查字段是否存在且不为 null 或 undefined
+                    const html = `
+            <div class="radio-inline">
+                <label>
+                    <input type="radio" name="veriftype" value="${field.key}"/>
+                    ${field.label}
+                </label>
+            </div>
+        `;
+                    $form.div_veriftype.append(html);
+                }
+            });
+
+            $form = {
+                veriftype: $('input[name="veriftype"]'),
+                veriftype_checked: $('input[name="veriftype"]:checked'),
+                txt_veriftype: $("#txt_veriftype"),
+                txt_checkcode: $("#txt_checkcode"),
+                btn_checkcode: $("#btn_checkcode"),
+                btn_login: $("#btn_login"),
+                a_weixin: $(".a_weixin"),
+                lbl_info: $("#lbl_info"),
+            };
+
+            for (let index = 0; index < $form.veriftype.length; index++) {
+                const e = $form.veriftype[index];
+                if (e.value === verif.default) {
+                    e.checked = true;
+                    veriftype(e.value);
+                    break;
+                }
+            }
+
+            // 验证方式选择
+            $form.veriftype.change(function () {
+                verif.default = $(this).val();
+                veriftype($(this).val());
+            });
+
+            // 验证方式输入框
+            let txt_veriftype_timer;
+            $form.txt_veriftype.on('input', function () {
+                clearTimeout(txt_veriftype_timer);
+                txt_veriftype_timer = setTimeout(() => {
+                    $form.lbl_info.text("");
+                    const value = $(this).val();
+                    verif[verif.default] = value;
+                    console.log('防抖后的输入:', value);
+                }, 500); // 延迟 500ms 后执行
+            });
+
+            // 验证码输入框
+            $form.txt_checkcode.attr("disabled", "disabled");
+            let txt_checkcode_timer;
+            $form.txt_checkcode.on('input', function () {
+                clearTimeout(txt_checkcode_timer);
+                txt_checkcode_timer = setTimeout(() => {
+                    $form.lbl_info.text("");
+                    let value = $(this).val().replace(/[^0-9]/g, '');
+                    if (value.length > 6) {
+                        value = value.substring(0, 6);
+                    }
+                    $(this).val(value);
+                    console.log('防抖后的输入:', value);
+                }, 500); // 延迟 500ms 后执行
+            }).on('keypress', function (e) {
+                if (e.which === 13 && !$form.btn_login.prop('disabled')) {
+                    $form.btn_login.click();
+                }
+            });
+
+            $form.btn_checkcode.click(function () {
+                $form.lbl_info.text("");
+
+                $form.btn_checkcode.attr("disabled", "disabled");
+                $form.btn_checkcode.text("正在发送验证码");
+
+                $._request("verifcode", {
+                    type: verif.login ? "1" : "2",    // 1: 登录 2: 校验
+                    verif: verif.default,
+                    no: verif[verif.default],
+                }, function (res) {
+                    if (res.error == 0) {
+                        checkcode_timer();
+                    } else {
+                        $form.lbl_info.text(res.info);
+
+                        $form.btn_checkcode.removeAttr("disabled");
+                        $form.btn_checkcode.text("获取验证码");
+                    }
+                });
+            });
+
+            $form.btn_login.attr("disabled", "disabled");
+            $form.btn_login.click(function () {
+                var code = $form.txt_checkcode.val();
+                if (code.length != 6) {
+                    $form.lbl_info.text("验证码输入错误，长度为6位");
+                    return;
+                }
+                $form.btn_login.attr("disabled", "disabled");
+                $form.btn_login.text("登录中");
+
+                $._request("checkverif", {
+                    type: verif.login ? "1" : "2",    // 1: 登录 2: 校验
+                    verif: verif.default,
+                    no: verif[verif.default],
+                    code: code,
+                }, function (res) {
+                    if (res.error == 0) {
+                        $form.lbl_info.text("");
+                        if (res.uppw) {
+                            window.location.href = "/login/index.html?backurl=" + encodeURIComponent(backurl_get());
+                        } else {
+                            window.location.href = backurl_get();
+                        }
+
+                    } else {
+                        $form.lbl_info.text(res.info);
+
+                        $form.btn_login.removeAttr("disabled");
+                        $form.btn_login.text("登录");
+                    }
+                });
+            });
+        });
+
+        function veriftype(type) {
+            var placeholder = "";
+            if (type == "phone") {
+                placeholder = "手机号";
+            } else if (type == "email") {
+                placeholder = "邮箱";
+            }
+            $form.txt_veriftype.attr("placeholder", placeholder);
+            $form.txt_veriftype.val(verif[type]);
+            $form.txt_veriftype.attr("disabled", !verif.login);
+            if (verif.login) {
+                $form.a_weixin.show();
+            } else {
+                $form.a_weixin.hide();
+            }
+        }
+
+        function checkcode_timer() {
+            $form.txt_checkcode.removeAttr("disabled");
+            $form.btn_login.removeAttr("disabled");
+            verif.login_time = 300;
+            if (verif.login_timer) {
+                clearInterval(verif.login_timer);
+            }
+            verif.login_timer = setInterval(() => {
+                clearInterval(verif.login_timer);
+                $form.txt_checkcode.attr("disabled", "disabled");
+                $form.btn_login.attr("disabled", "disabled");
+            }, 1000 * 60);
+
+            verif.checkcode_time = 60;
+            verif.checkcode_time_upp = function () {
+                $form.btn_checkcode.text(verif.checkcode_time + "秒后重新获取");
+            };
+            verif.checkcode_time_upp();
+            verif.checkcode_timer = setInterval(() => {
+                verif.checkcode_time--;
+                verif.checkcode_time_upp();
+                if (verif.checkcode_time <= 0) {
+                    clearInterval(verif.checkcode_timer);
+                    $form.btn_checkcode.removeAttr("disabled");
+                    $form.btn_checkcode.text("获取验证码");
+                }
+            }, 1000);
+        }
+
+        function default_login() {
+            window.location.href = "/login/login.html?backurl=" + encodeURIComponent(backurl_get());
+        }
+
+        function backurl_get() {
+            return $.urlRequest("backurl") || "/index.html";
+        }
+    </script>
+
+    <script runat="server">
+        verif_params = {};
+        function init() {
+            // 处理回调URL
+            const backurl = request.param("backurl");
+            var lg_state = login.state();
+            if (lg_state) {
+                if (backurl) {
+                    response.redirect(backurl);
+                }
+                else {
+                    response.redirect("/index.html");
+                }
+                return;
+            }
+
+            if (backurl) {
+                session.set("backurl", backurl);
+            }
+
+            var verif_check = request.param("verif");
+            if (verif_check === null) {
+                verif_check = 0;
+            }
+
+            var verif_data = {
+                default: "phone",
+                login: true,
+                phone: "",
+                email: "",
+            };
+            if (verif_check == 1) {
+                var phone = session.getString("verif:phone");
+                var email = session.getString("verif:email");
+                if (!(phone === undefined)) {
+                    verif_data.login = false;
+                    verif_data.phone = phone;
+                }
+                if (!(email === undefined)) {
+                    verif_data.login = false;
+                    verif_data.email = email;
+                }
+
+                if (!verif_data.login) {
+                    if (verif_data.phone == "") {
+                        verif_data.default = "email";
+                        delete verif_data.phone;
+                    }
+                    if (verif_data.email == "") {
+                        delete verif_data.email;
+                    }
+                }
+            }
+
+            /*
+                default: 默认校验方式
+                login:   登录状态 true:登录操作，使用手机、邮箱进行登录
+                                 false:校验操作,已经登录成功，二次校验
+                phone:   手机号
+                email:   邮箱
+            */
+            verif_params = JSON.stringify(verif_data, null, 4);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

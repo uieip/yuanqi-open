@@ -1,0 +1,213 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_vue_inc.html"></uieip>
+
+    <title>登录主页</title>
+    <style>
+        body {
+            background: linear-gradient(180deg, #e8f1fb 0%, #f5f7fa 45%);
+        }
+
+        .container.inner-info {
+            margin-top: 40px;
+        }
+
+        *:focus,
+        *:focus-visible {
+            outline: none !important;
+            box-shadow: none !important;
+            outline-color: transparent !important;
+            outline-style: none !important;
+            outline-width: 0 !important;
+            --el-focus-ring-color: transparent !important;
+        }
+
+        /* Vue 挂载点不参与布局，恢复 Bootstrap 栅格 */
+        #app {
+            display: contents;
+        }
+
+        .user-container {
+            padding: 28px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #edf1f5;
+            box-shadow: 0 2px 10px rgba(20, 60, 90, 0.04);
+            margin-bottom:0 10px;
+        }
+
+        .login-container {
+            width: 100%;
+            background: #fff;
+            border: 1px solid #edf1f5;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(20, 60, 90, 0.04);
+            padding: 20px 30px 26px;
+            margin:0 10px 5px 10px;
+        }
+
+        .third-login-section {
+            padding: 18px 30px;
+            font-size: 14px;
+            color: #6b7a8a;
+        }
+
+        /* 组件标题（修改密码 h2 默认色过淡，加深并加分隔线） */
+        .login-container h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a2a3a;
+            margin: 4px 0 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #f0f3f7;
+        }
+
+        /* 左侧用户卡：头像与欢迎语 */
+        .user-container .avatar-img {
+            width: 72px !important;
+            height: 72px !important;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 10px rgba(20, 60, 90, 0.12);
+        }
+
+        .user-container h3 {
+            font-size: 17px;
+            font-weight: 600;
+            color: #1a2a3a;
+        }
+
+        .third-login-section ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        .third-login-section li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .third-login-section label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+            min-width: 50px;
+        }
+
+        .third-login-section uieip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .third-login-section uieip img {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            border: 2px solid #f0f0f0;
+        }
+
+        .third-login-section uieip a {
+            color: #1677ff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .third-login-section uieip a:hover {
+            text-decoration: underline;
+        }
+
+        .third-login-section uieip span {
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+    <div class="container inner-info">
+        <div class="row">
+            <div id="app">
+                <div class="col-md-6 col-sm-12">
+                    <div class="user-container">
+                        <login-home :show-close="false"></login-home>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="login-container">
+                        <up-pwd></up-pwd>
+                    </div>
+                    <div class="login-container third-login-section">
+                        <ul class="list-unstyled">
+                            <li>
+                                <yq-label label="微信：" :label-dict="{ 'zh-CN': '微信：', 'en': 'WeChat:' }"></yq-label>
+                                <div id="link_weixin"></div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+
+    <script>
+        get_link_weixin();
+        async function get_link_weixin() {
+            let formData = new FormData();
+            formData.append('action', 'thirdlinkinfo');
+            formData.append('type', 'weixin');
+
+            const response = await fetch('/_login.html', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+
+            console.log("get_link_weixin:", data);
+
+            let link_weixin = "";
+            if (data.error == 0) {
+                link_weixin = "<span>" + data.row.nickname + "</span>";
+                link_weixin += "<img src=\"" + data.row.image_url + "\"  style=\"width: 30px;height: 30px;\"></img>";
+                link_weixin += "<a href=\"javascript:third_unlink('weixin');\" class=\"glyphicon glyphicon-remove\"></a>";
+            } else if (data.error == 1) {
+                link_weixin = "<a href=\"javascript:third_link('weixin');\">微信登录关联</a>";
+            } else {
+                link_weixin = data.info + "[" + data.info + "]"
+            }
+
+            console.log("link_weixin:", link_weixin);
+            document.getElementById("link_weixin").innerHTML = link_weixin;
+        }
+    </script>
+
+    <script>
+        const { createApp } = Vue;
+        const { YqLoginHome, YqUpPwd, YqLoginClass, YqLabel } = YqwinPlus;
+
+        createApp({
+            components: {
+                'login-home': YqLoginHome,
+                'up-pwd': YqUpPwd,
+                YqLabel,
+            }
+        }).mount('#app')
+
+        function third_link(link_type) {
+            YqLoginClass.third_link(link_type, "/login/index.html");
+        }
+
+        function third_unlink(link_type) {
+            YqLoginClass.third_unlink(link_type, "/login/index.html");
+        }
+    </script>
+</body>
+
+</html>

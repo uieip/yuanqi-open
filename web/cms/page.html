@@ -1,0 +1,90 @@
+<!doctype html>
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,cms"></uieip>
+
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_inc.html"></uieip>
+    <uieip id="div_title" type="tmpl" value="cms.title"></uieip>
+</head>
+
+<body>
+    <div class="container py-3">
+        <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+        <uieip type="file" value="exec" src="/cms/inc/pc_breadcrumb_exec.html"></uieip>
+        <div class="row">
+            <div class="col-md-8 col-sm-7">
+                <uieip id="div_row" type="tmpl" value="cms.datarow" dbname="yqbase" tbname="cms_news" seek="tid='{id}'"
+                    order="time desc" js="datarow_js" current="true"></uieip>
+            </div>
+            <div class="col-md-4 col-sm-5">
+                <div class="listright">
+                    <uieip id="div_list" type="tmpl" value="cms.datalist" dbname="yqbase" tbname="cms_news" pageno="1"
+                        pagesize="10" where="" order="time desc" js="datalist_js"></uieip>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+    <script runat="server">
+        function datalist_js(data) {
+            var t_url = "/" + data.path + "/";
+            var h_ = `<div class="card side-card"><h4 class="listtitle">推荐<a href="` + t_url + `" class="float-end">more</a></h4>`;
+            h_ += `<div class="list-group list-group-flush rec-list">`;
+            for (var i = 0; i < data.rows.length; i++) {
+                h_ += `   <a href="` + data.rows[i].tid + `.html" class="list-group-item list-group-item-action">`;
+                h_ += '      <div class="rec-title">' + data.rows[i].title + '</div>';
+                h_ += '      <div class="rec-date"><i class="bi bi-calendar3"></i>' + data.rows[i].time.substring(0, data.rows[i].time.indexOf(" ")) + '</div>';
+                h_ += `   </a>`;
+            }
+            h_ += `</div></div>`;
+            return h_;
+        }
+
+        function datarow_js(data) {
+            if (data.row) {
+                let nav = request.data("cms.nav");
+                cms.title(
+                    (data.row.title ? data.row.title + " - " : "") + (nav.nav[0].PTitle || ""),
+                    (data.row.summary ? data.row.summary + " - " : "") + (nav.nav[0].PDescribe || ""),
+                    (data.row.keywords ? data.row.keywords + "," : "") + (nav.nav[0].PKeywords || "")
+                );
+
+                var h_ = '<div class="article jumbotron">';
+                h_ += '   <h2 class="title">' + data.row.title + '</h2>';
+                h_ += '   <div class="article-meta">';
+                h_ += '      <span class="meta-date"><i class="bi bi-calendar3"></i>' + data.row.time.split(" ")[0] + '</span>';
+                h_ += '      <span class="meta-stats">';
+                h_ += '          <span class="uieip-tongji-view" style="display: none;">阅读数量<i class="view"></i></span>';
+                h_ += '          <span class="uieip-tongji-list" data-type="like,fav,comment" data-link="/' + nav.path + '/' + data.row.tid + '.html" data-status="active" style="display: none;">';
+                h_ += '              <span class="like"><i class="bi bi-hand-thumbs-up"></i></span>';
+                h_ += '              <span class="fav"><i class="bi bi-star"></i></span>';
+                h_ += '              <span class="comment"><i class="bi bi-chat"></i></span>';
+                h_ += '          </span>';
+                h_ += '      </span>';
+                h_ += '   </div>';
+
+                h_ += JSON.parse(data.row.body).html;
+                h_ += '   <div class="page">';
+                if (data.prev) {
+                    h_ += '      <a href="' + data.prev.tid + '.html">前一条：' + data.prev.title + '</a>';
+                }
+                if (data.next) {
+                    h_ += '      <a href="' + data.next.tid + '.html" class="float-end">下一条：' + data.next.title + '</a>';
+                }
+                h_ += '   </div>';
+
+                h_ += '   <div class="uieip-tongji-comment" style="display: none;"></div>';
+
+                h_ += '</div>';
+
+                return h_;
+            } else {
+                return "";
+            }
+        }
+    </script>
+</body>
+
+</html>

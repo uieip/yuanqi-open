@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqwinPlus Global Test</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+      color: #303133;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    h1 {
+      color: #409eff;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    #result {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    p {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    p:hover {
+      background-color: #f0f9eb;
+    }
+
+    .success {
+      color: #67c23a;
+      background-color: #f0f9eb;
+      border-left: 4px solid #67c23a;
+    }
+
+    .error {
+      color: #f56c6c;
+      background-color: #fef0f0;
+      border-left: 4px solid #f56c6c;
+    }
+
+    .info {
+      color: #409eff;
+      background-color: #ecf5ff;
+      border-left: 4px solid #409eff;
+    }
+
+    .test-section {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #e4e7ed;
+      border-radius: 4px;
+    }
+
+    .test-section h3 {
+      margin-top: 0;
+      color: #606266;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>YqwinPlus Global Object Test</h1>
+  <div id="result">
+    <!-- Test results will be displayed here -->
+  </div>
+
+  <script>
+    if (window.YqwinPlus && window.YqwinPlus.initTheme) window.YqwinPlus.initTheme();
+    const resultDiv = document.getElementById('result');
+
+    // Test 1: Check if YqwinPlus is defined globally
+    const test1Section = document.createElement('div');
+    test1Section.className = 'test-section';
+    test1Section.innerHTML = '<h3>Test 1: Global YqwinPlus Check</h3>';
+
+    if (typeof window.YqwinPlus !== 'undefined') {
+      test1Section.innerHTML += '<p class="success">✅ YqwinPlus is defined globally</p>';
+
+      // Test 5: Check if there are other exports
+      const exports = Object.keys(window.YqwinPlus);
+      test1Section.innerHTML += `<p class="info">📦 Available exports: ${exports.join(', ')}</p>`;
+
+      // Test 2: Check YqWindowApi
+      if (typeof window.YqwinPlus.YqWindowApi !== 'undefined') {
+        test1Section.innerHTML += '<p class="success">✅ YqWindowApi is available</p>';
+      } else {
+        test1Section.innerHTML += '<p class="error">❌ YqWindowApi is not available</p>';
+      }
+
+    } else {
+      test1Section.innerHTML += '<p class="error">❌ YqwinPlus is not defined globally</p>';
+    }
+
+    resultDiv.appendChild(test1Section);
+  </script>
+</body>
+
+</html>

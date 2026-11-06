@@ -1,0 +1,179 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqDrawer测试页面</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .yq-popover-test {
+            padding: 2rem;
+            font-family: Arial, sans-serif;
+        }
+
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+
+        .test-section h2 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #1e293b;
+            font-size: 1.25rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="yq-popover-test">
+        <h1>YqDrawer测试</h1>
+        <!-- 基础功能测试区 -->
+        <div class="test-section">
+             <el-switch style="display: block" v-model="showTitle" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949"
+                active-text="显示标题" inactive-text="隐藏标题">
+            </el-switch>
+            <el-switch style="display: block" v-model="showClose" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949"
+                active-text="显示关闭按钮" inactive-text="隐藏关闭按钮">
+            </el-switch>
+            <el-switch style="display: block" v-model="showFooter" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949"
+                active-text="显示底部按钮" inactive-text="隐藏底部按钮">
+            </el-switch>
+            <div class="test-buttons">
+                <el-button @click="createDrawer('left','50%')">打开抽屉[left]</el-button>
+                <el-button @click="createDrawer('right','50%')">打开抽屉[right]</el-button>
+                <el-button @click="createDrawer('bottom','60%')">打开抽屉[bottom]</el-button>
+                <el-button @click="createDrawer('top','60%')">打开抽屉[top]</el-button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, createVNode, render, h } = Vue;
+        // 导入YqDrawer组件
+        const { YqDrawer, initTheme } = YqwinPlus;
+        const { ElButton } = ElementPlus;
+        initTheme();
+
+        const applet = {
+            data() {
+                return {
+                    showTitle: true,
+                    icon: '/icon/远齐.jpg',
+                    title: '我是抽屉',
+                    showClose: true,
+                    drawerVNode: null,
+                    showFooter: true,
+                    footerButtons: [
+                        { label: '取消', type: 'cancel', onClick: this.handleCancel },
+                        { label: '确定', type: 'primary', onClick: this.handleOk }
+                    ],
+                };
+            },
+            components: {
+                ElButton
+            },
+            methods: {
+                createDrawer(placement, size) {
+                    console.log('createDrawer', placement)
+                    const self = this // 捕获组件实例
+                    // 创建抽屉组件实例
+                    this.drawerVNode = createVNode(YqDrawer, {
+                        modelValue: true,
+                        showTitle: this.showTitle,
+                        icon: this.icon,
+                        title: this.title,
+                        placement: placement,
+                        size: size || '30%',
+                        // 抽屉是否显示关闭按钮
+                        showClose: this.showClose,
+                        // 抽屉关闭时是否销毁DOM元素
+                        destroyOnClose: false,
+                        // 移除iframe配置，启用默认插槽
+                        type: 'iframe',
+                        content: 'http://www.uieip.com/',
+                        // 隐藏底部按钮
+                        showFooter: this.showFooter,
+
+                        'onUpdate:modelValue': (visible) => {
+                            if (!visible) {
+                                this.cleanupDrawer();
+                            }
+                        },
+                        'onClosed': () => {
+                            console.log('抽屉关闭了[closed]');
+                        },
+                        'onOpened': () => {
+                            console.log('抽屉打开了[opened]');
+                        },
+                        'onClose': () => {
+                            console.log('抽屉开始关闭[close]');
+                        }
+                    }, {
+                        // 使用函数形式的默认插槽以获得更好的性能
+                        footer: () => {
+                            return h('div', {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            }, this.footerButtons.map((button, index) => h(ElButton, {
+                                key: index,
+                                type: button.type || 'primary',
+                                size: 'default',
+                                onClick: button.onClick
+                            }, () => button.label)));
+                        }
+                    });
+
+                    render(this.drawerVNode, document.body);
+                },
+                handleCancel() {
+                    this.close()
+                },
+                async handleOk() {
+                    // 等待组件渲染完成
+                    await this.$nextTick();
+                    const contentRef = this.drawerVNode?.component?.exposed?.contentRef.value;
+                    console.log('获取到的bodyRef对象:', contentRef);
+                    console.log('点击了确定按钮')
+                },
+                close() {
+                    this.drawerVNode.component.props.modelValue = false;
+                },
+                cleanupDrawer() {
+                    if (this.drawerVNode) {
+                        render(null, document.body);
+                        this.drawerVNode = null;
+                    }
+                }
+            }
+        };
+
+        const app = createApp(applet);
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

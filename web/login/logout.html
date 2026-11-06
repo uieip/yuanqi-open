@@ -1,0 +1,24 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <title>登录</title>
+</head>
+
+<body>
+    <script runat="server">
+        let login_info;
+        function init() {
+            // 执行登出操作
+            login.logout();
+            // 获取并处理回跳地址
+            const backurl = request.param("backurl") || request.baseurl();
+            response.redirect(backurl);
+        }
+        init();
+    </script>
+</body>
+
+</html>

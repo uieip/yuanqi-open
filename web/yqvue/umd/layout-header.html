@@ -1,0 +1,177 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqHeader 页头组件测试</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 测试控制面板 */
+    .test-panel {
+      position: absolute;
+      top: 72px;
+      left: 16px;
+      right: 16px;
+      padding: 16px 20px;
+      background-color: var(--el-bg-color);
+      border: 1px solid var(--el-border-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .test-panel h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--el-text-color-secondary);
+    }
+
+    .test-panel .btn-row {
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const { createApp, ref } = Vue;
+    const { initTheme, YqHeader, i18n } = YqwinPlus;
+    const { ElMessage } = ElementPlus;
+    initTheme();
+
+    const app = createApp({
+      components: { YqHeader },
+      setup() {
+        // YqHeader组件引用
+        const yqHeaderRef = ref(null)
+
+        // 侧边栏折叠状态
+        const isCollapse = ref(true)
+
+        // 顶部导航菜单
+        const navItems = ref([
+          { id: 'home', label: '首页', icon: 'fa fa-home', path: '/home', active: true },
+          { id: 'workplace', label: '工作台', icon: 'fa fa-briefcase', isUrl: true, path: '/test/simple.html' }
+        ])
+
+        // 第二组导航菜单（用于切换）
+        const navItems2 = ref([
+          { id: 'list', label: '列表页', path: '/dashboard/list', active: true, icon: 'list' },
+          { id: 'form', label: '表单页', path: '/dashboard/form', icon: 'form' },
+          { id: 'profile', label: '详情页', path: '/dashboard/profile', icon: 'profile' },
+          { id: 'result', label: '结果页', path: '/dashboard/result', icon: 'check-circle' }
+        ])
+
+        // 面包屑数据
+        const breadcrumb = ref([
+          { id: 'home', label: '首页', icon: 'fa fa-home', path: '/home', active: true },
+          { id: 'workplace', label: '工作台', icon: 'fa fa-briefcase', isUrl: true, path: '/test/simple.html' }
+        ])
+
+        // 用户信息
+        const userInfo = ref({ name: '张三', icon: 'avatar' })
+
+        // 用户下拉菜单
+        const userDropdownItems = ref([
+          { id: 'profile', label: '个人中心', icon: 'fa fa-user', path: '/profile' },
+          { id: 'settings', label: '设置', icon: 'fa fa-gear', path: '/settings' },
+          { id: 'logout', label: '退出登录', icon: 'fa fa-sign-out', path: '/logout' }
+        ])
+
+        // 右侧工具栏
+        const toolbarItems = ref([
+          { id: 'refresh', label: '刷新', icon: 'fa fa-refresh', path: '/refresh' },
+          { id: 'fullscreen', label: '全屏', icon: 'fa fa-expand', path: '/fullscreen' }
+        ])
+
+        // 各区域显示开关
+        const showCollapseBtn = ref(true)
+        const showNav = ref(true)
+        const showBreadcrumb = ref(true)
+        const showUserInfo = ref(true)
+        const showUserDropdown = ref(true)
+        const showToolbar = ref(true)
+
+        // 测试选择控件的选中选项
+        const checkedOptions = ref(['showCollapseBtn', 'showNav', 'showBreadcrumb', 'showToolbar', 'showUserInfo', 'showUserDropdown'])
+
+        // 处理测试选择控件的变化
+        const handleOptionChange = (values) => {
+          showCollapseBtn.value = values.includes('showCollapseBtn')
+          showNav.value = values.includes('showNav')
+          showBreadcrumb.value = values.includes('showBreadcrumb')
+          showUserInfo.value = values.includes('showUserInfo')
+          showUserDropdown.value = values.includes('showUserDropdown')
+          showToolbar.value = values.includes('showToolbar')
+        }
+
+        // 切换导航菜单
+        const changeNavItems = () => {
+          const temp = [...navItems.value]
+          navItems.value = [...navItems2.value]
+          navItems2.value = temp
+        }
+
+        const menu_onClick = (event, item, type) => {
+          ElMessage({ message: `点击了 ${item.label}`, type: 'info' })
+        }
+
+        const toggleSidebar = (tf) => {
+          isCollapse.value = tf
+          ElMessage({ message: `点击了 ${tf ? '展开' : '折叠'} 侧边栏`, type: 'success' })
+        }
+
+        const toggleSidebarOnClick = () => {
+          yqHeaderRef.value?.toggleSidebarOnClick?.()
+        }
+
+        return {
+          yqHeaderRef, isCollapse, navItems, breadcrumb, userInfo, userDropdownItems, toolbarItems,
+          showCollapseBtn, showNav, showBreadcrumb, showUserInfo, showUserDropdown, showToolbar,
+          checkedOptions, handleOptionChange, changeNavItems, menu_onClick, toggleSidebar, toggleSidebarOnClick
+        }
+      },
+      template: `
+        <yq-header ref="yqHeaderRef" :is-collapse="isCollapse"
+          :show-collapse-btn="showCollapseBtn" :show-nav="showNav" :nav-items="navItems"
+          :show-breadcrumb="showBreadcrumb" :breadcrumb="breadcrumb"
+          :show-user-info="showUserInfo" :user-info="userInfo"
+          :show-user-dropdown="showUserDropdown" :user-dropdown-items="userDropdownItems"
+          :show-toolbar="showToolbar" :toolbar-items="toolbarItems"
+          @onClick="menu_onClick" @onToggleSidebar="toggleSidebar"></yq-header>
+        <div class="test-panel">
+          <h3>YqHeader 组件测试面板</h3>
+          <el-checkbox-group v-model="checkedOptions" @change="handleOptionChange">
+            <el-checkbox label="showCollapseBtn">显示折叠按钮</el-checkbox>
+            <el-checkbox label="showNav">显示顶部导航菜单</el-checkbox>
+            <el-checkbox label="showBreadcrumb">显示面包屑</el-checkbox>
+            <el-checkbox label="showToolbar">显示右侧工具栏</el-checkbox>
+            <el-checkbox label="showUserInfo">显示用户信息</el-checkbox>
+            <el-checkbox label="showUserDropdown">显示用户下拉菜单</el-checkbox>
+          </el-checkbox-group>
+          <div class="btn-row">
+            <el-button type="primary" @click="toggleSidebarOnClick">{{ isCollapse ? '展开' : '折叠' }}侧边栏</el-button>
+            <el-button type="primary" @click="changeNavItems">切换导航菜单</el-button>
+          </div>
+        </div>
+      `
+    })
+
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+  </script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+    <title>退出登录</title>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-4 col-md-4 col-md-offset-3 col-md-5" style="padding: 30px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">退出登录</div>
+                    <div class="panel-body">
+                        <uieip>login_info</uieip>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+    <script runat="server">
+        var login_info;
+
+        init();
+
+        function init() {
+            var backurl = request.param("backurl");
+            if (!login.state()) {
+                if (backurl === null) {
+                    response.redirect(request.baseurl());
+                } else {
+                    response.redirect(backurl);
+                }
+                return;
+            }
+
+            login.logout();
+            response.redirect(token_clear());
+        }
+
+        function token_clear() {
+            var backurl = request.param("backurl");
+            if (backurl === null) {
+                backurl = request.baseurl();
+            }
+
+            return "http://sso.uieip.com/login/logout.html?backurl=" + encodeURIComponent(backurl);
+            //return "http://sso.uieip.com/connect/oauth2/logout?appid=6f443b3811a52d3cc857e34765c71cd5&redirect_uri=" + encodeURIComponent(backurl);
+            //return "http://sso.uieip.com/connect/cas/logout?service=" + encodeURIComponent(backurl);
+            //return "http://sso.uieip.com/connect/oidc/logout?client_id=6f443b3811a52d3cc857e34765c71cd5&post_logout_redirect_uri=" + encodeURIComponent(backurl) + "&state=STATE";
+            //.net old集成
+            //return "http://sso.uieip.com/SSO/ClsToken.html?BackURL=" + encodeURIComponent(backurl);
+        }
+    </script>
+</body>
+
+</html>

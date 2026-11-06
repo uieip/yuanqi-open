@@ -1,0 +1,274 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+    <!--
+     appno="0" menuno="111"
+    -->
+    <uieip type="tmpl" value="model.title"></uieip>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style=" padding: 1px 0 0 0;">
+        <yq-container aside-position="right" v-model:aside-width="treeWidth" style="height: 100%;">
+            <yq-con-main style="padding: 0;margin: 0;">
+                <yq-data-grid ref="gridRef" v-bind="gridProps" @row-click="gridRowClick"></yq-data-grid></yq-con-main>
+            <yq-con-aside style="padding: 0;margin: 0 0 0 1px;overflow: hidden;">
+                <yq-button type="primary" :disabled="!selectRow" @click="saveSettings" label="保存设置"
+                    :label-dict="btnLabelDict" style="margin: 0 0 3px 0;"></yq-button>
+                <div style="height: calc(100vh - 38px);">
+                    <yq-data-tree ref="treeRef" v-bind="treeProps"></yq-data-tree>
+                </div>
+            </yq-con-aside>
+        </yq-container>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme, YqWindowApi, yqData, YqDataGrid, YqDataTree, YqMessageBox, YqButton, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+        //console.log('_app', _app);
+
+        let mainParams = {
+            app: _app,
+            org: _org,
+        };
+
+        window.onload = function () {
+            //console.log('app', JSON.stringify(mainParams.app, null, 2));
+            //console.log('org', JSON.stringify(mainParams.org, null, 2));
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid,
+                    YqDataTree,
+                    YqButton,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain
+                },
+                setup() {
+                    const get_uuid = () => {
+                        return 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'.replace(/[x]/g, c =>
+                            (Math.random() * 16 | 0).toString(16)
+                        );
+                    }
+
+                    const get_app_secret = () => {
+                        return "yq-" + get_uuid();
+                    }
+
+                    let rightWidth = window.innerWidth * 0.23;
+                    if (rightWidth.value < 200) rightWidth.value = 200;
+                    if (rightWidth.value > 450) rightWidth.value = 450;
+                    const treeWidth = ref(rightWidth + 'px');
+                    const gridRef = ref(null);
+                    const treeRef = ref(null);
+                    const gridProps = computed(() => ({
+                        ...mainParams.app,
+                        menuType: 3,
+                        loadTitles: false,
+                        loadData: true,
+                        border: true,
+                        linkField: ['name'], //连接字段
+                        editLinks: [{
+                            divided: true,
+                        }, {
+                            name: 'delcache',
+                            label: '清理登录缓存',
+                            toptip: '清理登录缓存',
+                            icon: 'fa fa-eraser',
+                            type: "primary",
+                            divided: false,
+                            disabled: (() => {
+                                return false;
+                            }),
+                            click: async (e) => {
+                                YqMessageBox.confirm({
+                                    message: '确定清理应用缓存...',
+                                    title: '提示',
+                                    type: 'message',
+                                    el: e.target,
+                                }).then(async () => {
+                                    await yqData.clearCache("app:");
+                                }).catch(() => {
+                                    //console.log('用户点击了取消');
+                                });
+                            }
+                        }],
+                        beforeSetTitles: async (titles) => {
+                            for (var i = 0; i < titles.length; i++) {
+                                if (titles[i].name == "app_id") {
+                                    titles[i].ui_mask.callback = async (e) => {
+                                        try {
+                                            await YqMessageBox.confirm({
+                                                message: '确定重建app_id...',
+                                                title: '提示',
+                                                type: 'message',
+                                                el: e // 使用 $el 获取 DOM 元素
+                                            });
+                                            return {
+                                                error: 0,
+                                                info: "",
+                                                value: get_uuid(),
+                                            };
+                                        } catch {
+                                            return {
+                                                error: 9,
+                                                info: "用户点击了取消",
+                                                value: "",
+                                                alert: false,
+                                            };
+                                        }
+                                    };
+                                } else if (titles[i].name == "app_secret" || titles[i].name == "app_secret_v2") {
+                                    titles[i].ui_mask.callback = async (e) => {
+                                        try {
+                                            await YqMessageBox.confirm({
+                                                message: '确定重建app_secret...',
+                                                title: '提示',
+                                                type: 'message',
+                                                el: e // 使用 $el 获取 DOM 元素
+                                            });
+                                            return {
+                                                error: 0,
+                                                info: "",
+                                                value: get_app_secret(),
+                                            };
+                                        } catch {
+                                            return {
+                                                error: 9,
+                                                info: "用户点击了取消",
+                                                value: "",
+                                                alert: false,
+                                            };
+                                        }
+                                    };
+
+                                    titles[i].ui_mask.funcCallback = function (prevent_e, mdiinfo, callback) {
+                                        $.yqConfirm("提示", "确定重建app_secret...", function (r) {
+                                            callback(r, main_fun.get_app_secret());
+                                        });
+                                    };
+                                    titles[i].ui_mask.beforeClear = function (callback) {
+                                        $.yqConfirm("提示", "确定清除...", function (r) {
+                                            callback(r);
+                                        })
+                                    };
+                                }
+                            }
+
+                            return titles;
+                        },
+                        afterSetData: async () => {
+                            await treeRef.value.loadData();
+                        },
+                        beforeEdit: async (action, row) => {
+                            if (action == 'add') {
+                                row.app_id = get_uuid();
+                                row.app_secret = get_app_secret();
+                            }
+                            return { cancel: false, row: row }
+                        },
+                    }));
+
+                    const treeProps = computed(() => ({
+                        ...mainParams.org,
+                        menuType: 3,
+                        showMenu: false,
+                        loadTitles: false,
+                        loadData: false,
+                        loadDataType: 1,
+                        showCheckbox: true,
+                        defaultExpandAll: true,
+                    }));
+
+                    const selectRow = ref(null);
+                    const btnLabelDict = ref({ "zh-CN": "保存设置", "en": "Save Settings" });
+                    const gridRowClick = ({ row }) => {
+                        selectRow.value = row;
+                        console.log('gridRowClick', row);
+                        let orgs = [];
+                        if (row && row.orgs) {
+                            orgs = row.orgs.split(',');
+                        }
+                        treeRef.value.getRef().setCheckedKeys(orgs);
+                    }
+
+                    const saveSettings = async () => {
+                        const orgsData = await treeRef.value.getRef().getCheckedNodes();
+                        let orgs = [];
+                        for (let i = 0; i < orgsData.length; i++) {
+                            orgs.push(orgsData[i].sid);
+                        }
+                        const removeChild = (org) => {
+                            if (org.children) {
+                                for (let i = 0; i < org.children.length; i++) {
+                                    const index = orgs.indexOf(org.children[i].sid);
+                                    if (index > -1) {
+                                        orgs.splice(index, 1);
+                                    }
+                                    removeChild(org.children[i]);
+                                }
+                            }
+                        }
+
+                        for (let i = 0; i < orgsData.length; i++) {
+                            removeChild(orgsData[i]);
+                        }
+
+                        const _orgs = orgs.length > 0 ? orgs.join(',') : null;
+                        selectRow.value.orgs = _orgs;
+                        await gridRef.value.saveData([{
+                            action: 'upp_',
+                            row: { sid: selectRow.value.sid, orgs: _orgs },
+                            key: selectRow.value['_addKey']
+                        }]);
+
+                        console.log('tree', orgsData, orgs.join(','));
+                    }
+
+                    onMounted(async () => {
+                        await gridRef.value.initTitles();
+                    });
+
+                    return {
+                        treeWidth,
+                        gridRef,
+                        gridProps,
+                        treeProps,
+                        treeRef,
+                        selectRow,
+                        btnLabelDict,
+                        gridRowClick,
+                        saveSettings,
+                    }
+                }
+            })
+            app.use(ElementPlus, {
+
+            });
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

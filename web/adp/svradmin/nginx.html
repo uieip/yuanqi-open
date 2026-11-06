@@ -1,0 +1,595 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>dns配置</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        .el-container {
+            height: 100%;
+        }
+
+        .el-header {
+            height: 76px !important;
+            padding: 0 !important;
+
+            flex-direction: row;
+            align-items: baseline;
+        }
+
+        .el-header .line {
+            display: flex;
+            align-items: center;
+            padding: 5px 5px 2px 5px;
+        }
+
+        .el-switch {
+            margin: 0 10px 0 5px;
+        }
+
+
+        .el-switch__label--left {
+            margin-right: 4px;
+        }
+
+        .el-switch__label--right {
+            margin-left: 4px;
+        }
+    </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0; height: 100%;">
+    <div id="app">
+        <yq-container style="height: 100%;padding: 1px 0 0 0;">
+            <yq-con-header style="padding: 0 20px;">
+                <div class="line">
+                    <template v-for="(item, index) in switchItems" :key="item.value">
+                        <span style="padding: 0 5px 0 5px;">{{ item.label }}</span>
+                        <el-switch v-model="item.checked" :active-value="true" :inactive-value="false" active-text="on"
+                            inactive-text="off" @change="item.change" :disabled="item.disabled()">
+                        </el-switch>
+                    </template>
+                    <div style="margin-left: auto;display: flex;align-items: center;">
+                        <yq-menu type="inline" :menu-items="menuItems" :mini="false"></yq-menu>
+                        <span style="margin: 0 0 0 20px;" v-cloak>当前状态:</span>
+                       <span :style="{margin: '0 5px', 'font-weight': 'bold', color: switchItems[0].checked ? '#009688' : '#ff4040' }" v-cloak>{{ switchItems[0].checked
+                            ? '运行中' : '已停止' }}</span>
+                    </div>
+                </div>
+                <div class="line">
+                    <span style="padding: 0 5px 0 5px;" v-cloak>配置文件</span>
+                    <el-select v-model="selectedConfig" placeholder="请选择配置文件" @change="configChange"
+                        style="width: 250px;">
+                        <el-option v-for="item in configItems" :key="item.value" :label="item.label"
+                            :value="item.value"></el-option>
+                    </el-select>
+                    <yq-menu type="inline" :menu-items="menuEdits" :mini="true"></yq-menu>
+                </div>
+            </yq-con-header>
+            <yq-con-main style="padding: 0;margin: 2px 0 0 0;overflow: hidden;">
+                <yq-code-edit v-bind="codeProps"></yq-code-edit>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed } = Vue;
+        const { ElSwitch, ElInputNumber } = ElementPlus;
+        const { initTheme, YqMessage, YqMenu, yqData, YqCodeEdit, YqWindowApi, YqMessageBox, yqUiPub, YqContainer, YqConHeader, YqConMain  } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMenu,
+                ElSwitch,
+                YqCodeEdit,
+                YqContainer,
+                YqConHeader,
+                YqConMain
+            },
+            setup() {
+                const status = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:status");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error === 0) {
+                        switchItems.value[0].checked = res.status == 'active';
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                // 服务操作
+                // start：启动服务, stop：停止服务, restart：重启服务
+                const serviceOperation = async (operation) => {
+                    var formData = new FormData();
+                    formData.append("action", 'nginx:' + operation);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("serviceOperation", res);
+                    if (res.error === 0) {
+                        const msg = {
+                            start: '启动成功',
+                            stop: '停止成功',
+                            restart: '重启成功'
+                        };
+                        YqMessage.success(msg[operation]);
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    await status();
+                }
+
+                const logService = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:log");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        return;
+                    }
+
+                    console.log("logService", res);
+                    const a = document.createElement('a');
+                    a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(res.log);
+                    a.download = 'nginx.log';
+                    a.click();
+                    a.remove();
+                }
+
+                const getConfFiles = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:files");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error === 0) {
+                        return res.files.map(item => ({
+                            label: item,
+                            value: item
+                        }));
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        return [];
+                    }
+                }
+
+                const getConfFileInfo = async (filename) => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:file:get");
+                    formData.append("file", filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+
+                    if (res.error === 0) {
+                        return res.content;
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        return '';
+                    }
+                }
+
+                const saveConfFile = async (filename, content) => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:file:set");
+                    formData.append("file", filename);
+                    formData.append("content", content);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+
+                    return res.error === 0;
+                }
+
+                const addConfFile = async (filename) => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:file:add");
+                    formData.append("file", filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error != 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    return res.error === 0;
+                }
+
+                // 显示添加配置文件对话框
+                const addConfFile_show = async (el) => {
+                    let filename = await YqMessageBox.input({
+                        el: el,
+                        title: '添加配置文件',
+                        icon: 'fa fa-file-text',
+                        describe: '请输入配置文件名',
+                        width: 400,
+                        height: 180,
+                        check: async (value) => {
+                            if (!value.match(/^[a-zA-Z0-9_]+$/)) {
+                                YqMessage.error({
+                                    message: "文件名只能包含字母、数字和下划线",
+                                    labelDict: {
+                                        "zh-CN": { message: "文件名只能包含字母、数字和下划线" },
+                                        "en": { message: "Filename can only contain letters, digits, and underscores" },
+                                    },
+                                });
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
+
+                    filename = 'conf.d/' + filename + (filename.endsWith('.') || filename.endsWith('\\') ? '' : '.conf');
+
+                    //console.log(filename);
+                    const success = await addConfFile(filename);
+                    if (success) {
+                        YqMessage.success({
+                            message: "添加成功",
+                            labelDict: {
+                                "zh-CN": { message: "添加成功" },
+                                "en": { message: "Add succeeded" },
+                            },
+                        });
+                        await initFiles();
+                        selectedConfig.value = filename;
+                        code.value = "";
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const uploadConfFile = async (old_filename, new_filename) => {
+                    var formData = new FormData();
+                    formData.append("action", "nginx:file:upp");
+                    formData.append("file", old_filename);
+                    formData.append("tofile", new_filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    return res.error === 0;
+                }
+
+                  // 显示添加配置文件对话框
+                const uploadConfFile_show = async (el) => {
+                    const old_filename = selectedConfig.value.substring(selectedConfig.value.indexOf('/') + 1, selectedConfig.value.indexOf('.conf'));
+                    let filename = await YqMessageBox.input({
+                        el: el,
+                        title: '修改配置文件名',
+                        icon: 'fa fa-file-text',
+                        describe: '请输入配置文件名',
+                        default: old_filename,
+                        width: 400,
+                        height: 180,
+                        check: async (value) => {
+                            if (value === old_filename) {
+                                YqMessage.error({
+                                    message: "文件名不能与旧文件相同",
+                                    labelDict: {
+                                        "zh-CN": { message: "文件名不能与旧文件相同" },
+                                        "en": { message: "Filename cannot be the same as the old file" },
+                                    },
+                                });
+                                return false;
+                            }        
+                            if (!value.match(/^[a-zA-Z0-9_]+$/)) {
+                                YqMessage.error({
+                                    message: "文件名只能包含字母、数字和下划线",
+                                    labelDict: {
+                                        "zh-CN": { message: "文件名只能包含字母、数字和下划线" },
+                                        "en": { message: "Filename can only contain letters, digits, and underscores" },
+                                    },
+                                });
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
+
+                    filename = 'conf.d/' + filename + (filename.endsWith('.') || filename.endsWith('\\') ? '' : '.conf');
+
+                    //console.log(filename);
+                    const success = await uploadConfFile(selectedConfig.value, filename);
+                    if (success) {
+                        YqMessage.success({
+                            message: "修改成功",
+                            labelDict: {
+                                "zh-CN": { message: "修改成功" },
+                                "en": { message: "Update succeeded" },
+                            },
+                        });
+                        await initFiles();
+                        selectedConfig.value = filename;
+                        code.value = await getConfFileInfo(filename);
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const delConfFile = async (filename) => {
+                    if (filename === null || filename === undefined || filename == '') {
+                        YqMessage.error({
+                            message: "请选择配置文件",
+                            labelDict: {
+                                "zh-CN": { message: "请选择配置文件" },
+                                "en": { message: "Please select a config file" },
+                            },
+                        });
+                        return;
+                    }
+
+                    var formData = new FormData();
+                    formData.append("action", "nginx:file:del");
+                    formData.append("file", filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    return res.error === 0;
+                }
+
+                const copyConfFile = async () => {
+                    const filename = selectedConfig.value;
+                    var copy_filename = filename.replace(/\.conf$/, '') + "-copy.conf";
+
+                    let success = await addConfFile(copy_filename);
+                    if (!success) {
+                        return;
+                    }
+
+                    const files = await getConfFiles();
+                    await initFiles();
+                    selectedConfig.value = copy_filename;
+                    const content = await getConfFileInfo(filename);
+                    code.value = content;
+                    success = await saveConfFile(copy_filename, content);
+                    if (success) {
+                        YqMessage.success({
+                            message: "复制成功",
+                            labelDict: {
+                                "zh-CN": { message: "复制成功" },
+                                "en": { message: "Copy succeeded" },
+                            },
+                        });
+                    }
+                }
+
+                const initFiles = async () => {
+                    const files = await getConfFiles();
+                    configItems.value = [
+                        {
+                            label: '-- 请选择配置 --',
+                            value: ''
+                        }, ...files];
+                }
+
+                const switchItems = ref([{
+                    value: 'nginx',
+                    label: 'Nginx',
+                    checked: false,
+                    disabled: () => {
+                        return false;
+                    },
+                    change: async (val) => {
+                        // 启动/停止服务
+                        await serviceOperation(val ? 'start' : 'stop');
+                    }
+                }]);
+                const menuItems = ref([
+                    {
+                        name: "reload",
+                        label: "重启",
+                        toptip: "重启",
+                        icon: "fa fa-repeat",
+                        type: "primary",
+                        disabled: () => {
+                            return false;
+                        },
+                        click: async () => {
+                            await serviceOperation('restart');
+                        }
+                    }, {
+                        divided: true
+                    }, {
+                        name: "log",
+                        label: "下载日志",
+                        toptip: "下载日志",
+                        icon: "fa fa-file",
+                        type: "primary",
+                        disabled: () => {
+                            return false;
+                        },
+                        click: async () => {
+                            await logService();
+                        }
+                    }
+                ]);
+
+                const selectedConfig = ref('');
+                const configItems = ref([
+                    {
+                        label: '-- 请选择配置 --',
+                        value: ''
+                    }
+                ]);
+
+                const menuEdits = ref([{
+                    name: "add",
+                    label: "新建配置文件",
+                    toptip: "新建配置文件",
+                    icon: "fa fa-plus",
+                    type: "primary",
+                    disabled: () => {
+                        return false;
+                    },
+                    click: async (obj) => {
+                        console.log(obj);
+                        addConfFile_show(obj.target);
+                    }
+                }, {
+                    name: "copy",
+                    label: "拷贝配置文件",
+                    toptip: "拷贝配置文件",
+                    icon: "fa fa-copy",
+                    type: "primary",
+                    disabled: () => {
+                        if (selectedConfig.value === 'conf/nginx.conf') {
+                            return true;
+                        }
+                        return (selectedConfig.value === '');
+                    },
+                    click: async () => {
+                        await copyConfFile();
+                    }
+                },
+                {
+                    name: "del",
+                    label: "删除配置文件",
+                    toptip: "删除配置文件",
+                    icon: "fa fa-trash",
+                    type: "primary",
+                    disabled: () => {
+                        if (selectedConfig.value === 'conf/nginx.conf') {
+                            return true;
+                        }
+                        return (selectedConfig.value === '');
+                    },
+                    click: async (obj) => {
+                        YqMessageBox.confirm({
+                            el: obj.target,
+                            message: '您确定要执行此操作吗？',
+                            title: '确认操作',
+                            type: 'warning'
+                        }).then(async () => {
+                            const success = await delConfFile(selectedConfig.value);
+                            if (success) {
+                                YqMessage.success({
+                                    message: "删除成功",
+                                    labelDict: {
+                                        "zh-CN": { message: "删除成功" },
+                                        "en": { message: "Delete succeeded" },
+                                    },
+                                });
+                                selectedConfig.value = '';
+                                code.value = '';
+                                const files = await getConfFiles();
+                                await initFiles();
+                            }
+                        });
+                    }
+                }, {
+                    divided: true
+                },
+                {
+                    name: "save",
+                    label: "保存配置文件",
+                    toptip: "保存配置文件",
+                    icon: "fa fa-save",
+                    type: "primary",
+                    disabled: () => {
+                        return (selectedConfig.value === '');
+                    },
+                    click: async () => {
+                        const success = await saveConfFile(selectedConfig.value, code.value);
+                        if (success) {
+                            YqMessage.success({
+                                message: "保存成功",
+                                labelDict: {
+                                    "zh-CN": { message: "保存成功" },
+                                    "en": { message: "Save succeeded" },
+                                },
+                            });
+                        }
+                    }
+                },
+                {
+                    name: "rename",
+                    label: "修改配置文件名称",
+                    toptip: "修改配置文件名称",
+                    icon: "fa fa-edit",
+                    type: "primary",
+                    disabled: () => {
+                        if (selectedConfig.value === 'conf/nginx.conf') {
+                            return true;
+                        }
+                        return (selectedConfig.value === '');
+                    },
+                    click: async (obj) => {
+                       await uploadConfFile_show(obj.target);
+                    }
+                }
+                ]);
+
+                const code = ref('');
+                const codeProps = computed(() => ({
+                    code: code.value,
+                    lineNumbers: true,
+                    isEdit: true,
+                    mode: 'text',
+                    types: ['text'],
+                    indentSize: 2,
+                    autoCompletion: true,
+                    autoFold: true,
+                    highlightActiveLine: true,
+                    tabSize: 2,
+                    wordWrap: true,
+
+                    setting: false,
+                    clear: false,
+                    'onUpdate:code': (value) => {
+                        code.value = value;
+                    } 
+                }));
+
+                const configChange = async (val) => {
+                    if (val === '') {
+                        code.value = '';
+                        return;
+                    }
+                    code.value = await getConfFileInfo(val);
+                    console.log(code.value);
+                }
+
+                onMounted(async () => {
+                    await status();
+                    await initFiles();
+                })
+
+                return {
+                    menuItems,
+                    switchItems,
+                    selectedConfig,
+                    configItems,
+                    configChange,
+                    menuEdits,
+                    codeProps,
+                };
+            }
+        })
+        app.use(ElementPlus);
+        app.mount('#app');
+
+        window.app = app;
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        };
+    </script>
+
+</body>
+
+</html>

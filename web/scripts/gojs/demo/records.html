@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+    <title>records</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .test-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+            flex-shrink: 0;
+        }
+
+        .main-body {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .preview-panel {
+            width: 40%;
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #e4e7ed;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            padding: 6px 12px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+            font-weight: bold;
+            font-size: 13px;
+            color: #303133;
+        }
+
+        .saved-model {
+            flex: 1;
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            padding: 8px;
+            font-family: Consolas, Monaco, monospace;
+            font-size: 13px;
+            resize: none;
+            outline: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="test-header">
+            <a href="javascript:window.history.back();">返回</a>
+            <el-button @click="isEdit = true">enabled</el-button>
+            <el-button @click="isEdit = false">disable</el-button>
+            <el-button @click="onGetValue">getValue</el-button>
+            <el-button @click="onSetValue">setValue</el-button>
+            <el-button @click="onClear">clear</el-button>
+            <el-button @click="onAddNode">addNode</el-button>
+            <el-button @click="onDestroy">destroy</el-button>
+            <el-button @click="onReinit">reinit</el-button>
+        </div>
+        <div class="main-body">
+            <div class="chart-container">
+                <yq-chart-db-rel v-if="isMounted" v-model="chartData" :is-edit="isEdit" :on-save="onSave"
+                    :select-table="selectTable" @change="onChange" />
+            </div>
+            <div class="preview-panel">
+                <div class="preview-header">数据预览</div>
+                <textarea v-model="savedModel" class="saved-model"></textarea>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqChartDbRel } = YqwinPlus;
+
+        initTheme();
+
+        const defaultVal = {
+            "nodes": [
+                {
+                    "key": "Record1",
+                    "name": "Record1",
+                    "isdata": true,   //数据表
+                    "fields": [
+                        { "name": "field1", "title": "", "type": 1 },
+                        { "name": "field2", "title": "the second one", "type": 1 },
+                        { "name": "fieldThree", "title": "3rd", "type": 2 },
+                        { "name": "fieldThree2", "title": "time", "type": 3 }
+                    ],
+                    "loc": "-285 -58"
+                },
+                {
+                    "key": "Record2",
+                    "name": "Record2",
+                    "isdata": false,   //维度表
+                    "fields": [
+                        { "name": "fieldA", "title": "", "type": 6 },
+                        { "name": "fieldB", "title": "", "type": 7 },
+                        { "name": "fieldC", "title": "", "type": 9 },
+                        { "name": "fieldD", "title": "fourth" }
+                    ],
+                    "loc": "73 36"
+                }
+            ],
+            "links": [
+                { "from": "Record1", "fromPort": "field1", "to": "Record2", "toPort": "fieldA", "join": 1 },
+                { "from": "Record1", "fromPort": "fieldThree", "to": "Record2", "toPort": "fieldB", "join": 2 },
+                { "from": "Record1", "to": "Record2", "fromPort": "field2", "toPort": "fieldD", "join": 3 }
+            ]
+        };
+
+        const cloneData = (v) => JSON.parse(JSON.stringify(v));
+        const formatJson = (v) => JSON.stringify(v, null, 2);
+
+        const app = createApp({
+            components: {
+                YqChartDbRel
+            },
+            setup() {
+                const isEdit = ref(true);
+                const isMounted = ref(true);
+                const chartData = ref(cloneData(defaultVal));
+                const savedModel = ref(formatJson(chartData.value));
+
+                const onSave = async (event, data) => {
+                    console.log('save event:', event, 'data:', data);
+                };
+
+                const selectTable = async (event) => {
+                    console.log('selectTable event:', event);
+                    // 模拟选择表：返回新的节点数据
+                    const key = 'NewTable_' + Date.now();
+                    return {
+                        key: key,
+                        name: key,
+                        isdata: true,
+                        loc: "0 0",
+                        fields: [
+                            { name: "id", title: "主键", type: 6 },
+                            { name: "name", title: "名称", type: 1 }
+                        ]
+                    };
+                };
+
+                const onChange = (data) => {
+                    savedModel.value = formatJson(data);
+                };
+
+                const onGetValue = () => {
+                    savedModel.value = formatJson(chartData.value);
+                };
+
+                const onSetValue = () => {
+                    try {
+                        chartData.value = JSON.parse(savedModel.value);
+                    } catch (e) {
+                        ElementPlus.ElMessage.error('JSON 解析失败：' + e.message);
+                    }
+                };
+
+                const onClear = () => {
+                    chartData.value = { info: {}, nodes: [], links: [] };
+                    savedModel.value = formatJson(chartData.value);
+                };
+
+                const onAddNode = () => {
+                    const list = Array.isArray(chartData.value.nodes) ? chartData.value.nodes : [];
+                    list.push({
+                        key: 'NewTable_' + Date.now(),
+                        name: 'NewTable',
+                        isdata: true,
+                        loc: "0 0",
+                        fields: [
+                            { name: "id", title: "主键", type: 6 },
+                            { name: "name", title: "名称", type: 1 }
+                        ]
+                    });
+                    chartData.value = { info: chartData.value.info || {}, nodes: list, links: chartData.value.links || [] };
+                    savedModel.value = formatJson(chartData.value);
+                };
+
+                const onDestroy = () => {
+                    isMounted.value = false;
+                };
+
+                const onReinit = () => {
+                    chartData.value = cloneData(defaultVal);
+                    savedModel.value = formatJson(chartData.value);
+                    isMounted.value = true;
+                };
+
+                return {
+                    isEdit,
+                    isMounted,
+                    chartData,
+                    savedModel,
+                    onSave,
+                    selectTable,
+                    onChange,
+                    onGetValue,
+                    onSetValue,
+                    onClear,
+                    onAddNode,
+                    onDestroy,
+                    onReinit
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

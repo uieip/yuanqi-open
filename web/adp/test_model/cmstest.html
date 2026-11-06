@@ -1,0 +1,77 @@
+<uieip type="page" value="login" timeout="5000"></uieip>
+<uieip type="reg" value="console,model" />
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding: 1px 0 0 0;">
+        <yq-data-grid ref="gridRef" v-bind="gridProps"></yq-data-grid>
+    </div>
+    <!-- 使用ES模块 -->
+    <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme, YqWindowApi, yqData, YqDataPub, YqMessageBox, PasswordEncoder, YqDataGrid  } = YqwinPlus;
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+        let mainParams = {
+            tb: _tb,
+        };
+
+        //console.log(JSON.stringify(mainParams.tb, null, 2));
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const gridRef = ref(null);
+
+                    const gridProps = computed(() => ({
+                        ...mainParams.tb,
+                        loadTitles: true,
+                        loadData: true,
+                        beforeSetTitles: async (titles) => {
+                            return Promise.resolve(titles);
+                        },
+                    }));
+
+                    onMounted(async () => {
+
+                    });
+
+                    return {
+                        gridRef,
+                        gridProps
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

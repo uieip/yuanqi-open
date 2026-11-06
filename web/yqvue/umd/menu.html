@@ -1,0 +1,269 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqMenu 测试页面</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .menu-container {
+            padding: 20px;
+            border: 1px solid #e4e7ed;
+            border-radius: 4px;
+            background-color: white;
+            height: 400px;
+            width: 300px;
+            overflow: auto;
+            min-height: 200px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body style="height: auto;">
+    <div id="app">
+        <h1>YqMenu 组件测试</h1>
+        <div>
+            <el-switch v-model="mini" :active-value="true" :inactive-value="false" active-text="不显示名称"
+                inactive-text="显示名称" />
+        </div>
+        <h3>横向菜单 (type="inline")</h3>
+        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #e4e7ed; border-radius: 4px;">
+            <yq-menu :type="'inline'" :menu-items="menuItems" :mini="mini" />
+        </div>
+        <h3>垂直菜单 (type="vertical")</h3>
+        <div class="menu-container">
+            <yq-menu :type="'vertical'" :menu-items="menuItems" :mini="mini" />
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqMenu, i18n } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMenu
+            },
+            setup() {
+                // 通用的click事件处理函数
+                const handleClick = (event, actionName) => {
+                    console.log(`=== ${actionName} 点击事件处理开始 ===`);
+                    
+                    // 判断事件参数类型
+                    if (event && typeof event === 'object') {
+                        // 检查是否是MenuItemRegistered对象（垂直菜单传递的）
+                        if ('index' in event && 'indexPath' in event && 'active' in event) {
+                            console.log('类型: ElMenuItem（垂直菜单）');
+                            console.log('菜单项数据:', {
+                                index: event.index,
+                                indexPath: event.indexPath,
+                                active: event.active
+                            });
+                            console.log('说明: ElMenuItem传递的是MenuItemRegistered对象，包含菜单项数据，不包含DOM元素引用。');
+                        }
+                        // 检查是否是MouseEvent对象（水平按钮传递的）
+                        else if ('currentTarget' in event || 'target' in event) {
+                            console.log('类型: ElButton（水平菜单）');
+                            console.log('DOM元素:', event.currentTarget || event.target);
+                            console.log('说明: ElButton传递的是标准MouseEvent对象，可以通过currentTarget获取DOM元素。');
+                        }
+                        // 其他对象类型
+                        else {
+                            console.log('类型: 未知对象');
+                            console.log('对象:', event);
+                        }
+                    } else {
+                        console.log('类型: 非对象类型');
+                        console.log('值:', event);
+                    }
+                    
+                    console.log(`执行操作: ${actionName}`);
+                    console.log(`=== ${actionName} 点击事件处理结束 ===`);
+                };
+
+                // 菜单数据
+                const menuItems = ref([
+                    {
+                        name: "addpath",
+                        label: "新建文件夹",
+                        toptip: "新建文件夹",
+                        icon: "fa fa-home",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '新建文件夹')
+                    }, {
+                        name: "addfile",
+                        label: "新建文件",
+                        toptip: "新建文件",
+                        icon: "fa fa-home",
+                        type: "primary",
+                        disabled: () => {
+                            return true
+                        },
+                        click: (event) => handleClick(event, '新建文件')
+                    }, {
+                        name: "rename",
+                        label: "重命名",
+                        toptip: "重命名",
+                        icon: "fa fa-home",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '重命名')
+                    }, {
+                        name: "delete",
+                        label: "删除",
+                        toptip: "删除",
+                        icon: "fa fa-home",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '删除')
+                    }, {
+                        name: 'divided',
+                        divided: true,
+                    }, {
+                        name: "cut",
+                        label: "剪切",
+                        toptip: "剪切",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '剪切')
+                    }, {
+                        name: "copy",
+                        label: "复制",
+                        toptip: "复制",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '复制')
+                    }, {
+                        name: "paste",
+                        label: "粘贴",
+                        toptip: "粘贴",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '粘贴')
+                    }, {
+                        name: 'divided',
+                        divided: true,
+                    }, {
+                        name: "refresh",
+                        label: "刷新",
+                        toptip: "刷新",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '刷新')
+                    }, {
+                        name: "viewfile",
+                        label: "查看文件",
+                        toptip: "查看文件",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '查看文件')
+                    }, {
+                        name: "uploadfile",
+                        label: "上传文件",
+                        toptip: "上传文件",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        disabled: () => {
+                            return false
+                        },
+                        click: (event) => handleClick(event, '上传文件')
+                    }, {
+                        name: "more",
+                        label: "更多..",
+                        toptip: "更多..",
+                        icon: "fa fa-files-o",
+                        type: "primary",
+                        children: [{
+                            name: "copypath",
+                            label: "复制路径",
+                            toptip: "复制路径",
+                            icon: "fa fa-files-o",
+                            type: "primary",
+                            disabled: () => {
+                                return false
+                            },
+                            click: (event) => handleClick(event, '复制路径')
+                        }, {
+                            name: "minjs",
+                            label: "js=>min",
+                            toptip: "js=>min",
+                            icon: "fa fa-files-o",
+                            type: "primary",
+                            disabled: () => {
+                                return false
+                            },
+                            click: (event) => handleClick(event, 'js=>min')
+                        }, {
+                            name: "mincss",
+                            label: "css=>min",
+                            toptip: "css=>min",
+                            icon: "fa fa-files-o",
+                            type: "primary",
+                            disabled: () => {
+                                return false
+                            },
+                            click: (event) => handleClick(event, 'css=>min')
+                        }, {
+                            name: "tomin",
+                            label: "=>min",
+                            toptip: "=>min",
+                            icon: "fa fa-files-o",
+                            type: "primary",
+                            disabled: () => {
+                                return false
+                            },
+                            click: (event) => handleClick(event, '=>min')
+                        }]
+                    }
+                ]);
+                const mini = ref(true);
+                return {
+                    menuItems,
+                    mini,
+                };
+            }
+        });
+
+        app.use(i18n);
+        app.use(ElementPlus);
+
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console"></uieip>
+
+<html>
+    <head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<title>code error</title>
+		<meta name="keywords" content="yuanqi ltd.">
+	</head>
+    <body>
+        <p>aaaa:<uieip>aaaa</uieip></p>
+        <p>bbbb:<uieip>bbbb</uieip></p>
+        <script>
+            var a='<a>asdasdasd</a>'
+        </script>
+        <script runat="server">
+            var aaaa='<a>aaaaaaaaaaaa</a>';
+            response.write('<i>response.write</i>');
+        </script>
+        <script runat="server">
+            var a = "a1";
+            var b = "b1";
+
+            var bbbb='<a>bbbbbbbbbbbb'+a+b+'</a>';
+            response.want("ddsfsdfsdfsdf")
+
+        </script>
+    </body>
+</html>

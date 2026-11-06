@@ -1,0 +1,40 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+    <title>登录</title>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-4 col-md-4 col-md-offset-3 col-md-5" style="padding: 30px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">用户退出</div>
+                    <div class="panel-body">
+                        <uieip>login_info</uieip>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+    <script runat="server">
+        let login_info;
+        function init() {
+            // 执行登出操作
+            login.logout();
+
+            // 获取并处理回跳地址
+            const backurl = request.param("backurl") || request.baseurl();
+            response.redirect(backurl);
+        }
+        init();
+    </script>
+</body>
+
+</html>

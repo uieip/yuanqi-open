@@ -1,0 +1,174 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding:0; ">
+        <yq-data-grid ref="tbRef" v-bind="tbProps"></yq-data-grid>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed, nextTick } = Vue;
+        const { initTheme, YqWindowApi, yqData, YqDataPub, YqMessageBox, YqDataGrid  } = YqwinPlus;
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+        let mainParams = {
+            dbname: _dbname,
+            tb: _tb,
+        };
+
+        window.onload = function () {
+            console.log("mainParams", JSON.stringify(mainParams.tb,null,2));
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const tbRef = ref(null);
+
+                    let selectedRow = ref(null);
+
+                    const transShow = (row) => {
+                        let el = tbRef.value?.selectEl();
+                        let height = 500;
+                        let width = 625;
+                        let top = 40;
+                        let left = -50;
+                        if (row.type === 1 || row.type === 2) {
+                            width = 570;
+                        } else if (row.type === 3) {
+                            width = 625;
+                        } else if (row.type === 4 || row.type === 9) {
+                            width = 625;
+                        }
+
+                        let editH = height - 113;
+                        left = (window.innerWidth - 625) / 2;
+
+                        let t_type = row.type;
+                        let t_name = row.name;
+                        let t_lang = row.lang;
+
+                        let dialogId = ''
+                        let parent = true;
+                        if (!window.parent || window.parent === window) {
+                            parent = false;
+                        }
+
+                        const content = `trans.html?type=${t_type}&name=${t_name}&lang=${t_lang}&height=${editH}`;
+                        console.log("content", content);
+                        dialogId = YqWindowApi.show({
+                            containerRef: el,
+                            placement: 'popper',
+                            title: "语言",
+                            width: width,
+                            height: height,
+                            left: left,
+                            top: top,
+                            type: 'iframe',
+                            content: content,
+                            parent: parent,
+                            overflow: 'none',
+                            showFooter: false,
+                            labelDict: {
+                                en: {
+                                    title: "Language"
+                                }
+                            },
+                        });
+
+                        YqWindowApi.setParams(dialogId, {
+                            reload: async () => {
+                                console.log("reload");
+                                await tbRef.value?.refreshData();
+                            }
+                        }, parent);
+                    }
+
+                    const tbProps = computed(() => ({
+                        ...mainParams.tb,
+                        menuType: 3,
+                        loadTitles: false,
+                        loadData: true,
+                        editLinks: [
+                            {
+                                name: "language",
+                                label: "语言",
+                                toptip: "语言",
+                                icon: "fa fa-language",
+                                type: "primary",
+                                disabled: () => {
+                                    return selectedRow.value === null;
+                                },
+                                click: (event) => {
+                                    transShow(selectedRow.value);
+                                }
+                            }
+                        ],
+                        labelDict: {
+                            language: {
+                                en: {
+                                    label: "Language",
+                                    toptip: "Language",
+                                }
+                            }
+                        },
+                        beforeSetTitles: async (titles) => {
+                            return Promise.resolve(titles);
+                        },
+                        afterSetTitles: async () => {
+
+                        },
+                        onRowClick: ({ row, index, key }) => {
+                            if (row) {
+                                selectedRow.value = row;
+                            }
+                            else {
+                                selectedRow.value = null;
+                            }
+                        },
+                        beforeEdit: async (action, row, params) => {
+                            transShow(row);
+                            return { cancel: true, row: row };
+                        },
+                    }));
+
+                    onMounted(async () => {
+                        await tbRef.value.initTitles();
+                    });
+
+                    return {
+                        tbRef,
+                        tbProps
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

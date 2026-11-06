@@ -1,0 +1,560 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>缓存管理</title>
+    <style>
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        .el-aside {
+            background-color: var(--el-bg-color);
+            border: 1px solid var(--yq-border);
+        }
+    </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0; height: 100%;">
+    <div id="app" style=" padding: 1px 0 0 0;">
+        <yq-container style="height: 100%;" v-model:aside-width="leftWidth">
+            <yq-con-aside @contextmenu="containerContextMenu">
+                <yq-tree-view ref="treeRef" v-bind="treeProps"></yq-tree-view>
+            </yq-con-aside>
+            <yq-con-main style="margin: 0 0 0 1px;padding: 0;background-color: var(--el-bg-color);">
+                <div style="padding: 5px;display: flex;align-items: center;">
+                    <span style="margin: 0 5px;">group</span>
+                    <el-checkbox v-model="isGroup"></el-checkbox>
+                    <span style="margin: 0 5px 0 15px;">key</span>
+                    <el-input v-model="keyVal" placeholder="请输入获取key" style="width: calc(100% - 380px);"></el-input>
+                    <div style="margin-left: auto;display: flex;align-items: center;">
+                        <span style="margin: 0 5px;">seconds</span>
+                        <el-input-number v-model="keySeconds" controls-position="right" :min="0"
+                            style="width: 130px;"></el-input-number>
+                        <yq-button type="primary" @click="handleSave" style="margin-left: 5px;" label="保存"
+                            :label-dict="{ 'zh-CN': '保存', 'en': 'Save' }"><yq-icon icon="fa fa-save"
+                                title="保存"></yq-icon></yq-button>
+                    </div>
+                </div>
+
+                <yq-table v-if="isGroup" v-bind="tableProps"></yq-table>
+                <el-pagination v-if="isGroup" :total="pageSize*pageCount" v-model:current-page="pageNo"
+                    :page-sizes="[10, 20, 30, 40]" v-model:page-size="pageSize" :page-count="pageCount"
+                    :hide-on-single-page="false" @size-change="handleSizeChange" @current-change="handleCurrentChange"
+                    layout="prev, pager, next, jumper, -> ,sizes, total" style="margin: 5px;"></el-pagination>
+                <div v-if="isGroup" style="padding: 10px 5px 5px 5px;">
+                    <span style="margin: 0 5px;">keyName</span>
+                    <el-input v-model="keyName" placeholder="请输入key名称" style="width: calc(100% - 90px);"></el-input>
+                </div>
+
+                <div :style="{height: codeHeight + 'px'}">
+                    <yq-code-edit v-bind="codeProps"></yq-code-edit>
+                </div>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, computed, onMounted, createApp } = Vue;
+        const { initTheme, YqMessage, YqTreeView, YqTable, YqCodeEdit, YqMenu, YqIcon, YqWindowApi, yqData, YqButton, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        initTheme();
+
+        let mainParams = {
+            leftW: 310,
+        };
+
+        window.onload = function () {
+            mainParams.leftW = window.innerWidth * 0.20;
+            if (mainParams.leftW < 310) {
+                mainParams.leftW = 310;
+            }
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqMenu,
+                    YqIcon,
+                    YqTreeView,
+                    YqTable,
+                    YqCodeEdit,
+                    YqButton,
+                    YqContainer,
+                    YqConAside,
+                    YqConMain
+                },
+                setup() {
+                    const treeRef = ref(null);
+
+                    const getTreeData = async (node) => {
+                        let formData = new FormData();
+                        formData.append("action", "keys");
+                        if (node && typeof node == "object") {
+                            formData.append("path", node.id);
+                        }
+
+                        const res = await yqData.post("/_cache.html", formData);
+                        console.log(res);
+
+                        //数据,用“:”切分的数据,分隔的位置,数据key
+                        function pastedata(data, s_key, index, key) {
+                            //最后一个
+                            if (s_key.length == (index + 1)) {
+                                var _id = "";
+                                for (var i = 0; i < s_key.length; i++) {
+                                    _id += (_id == "" ? "" : ":") + s_key[i];
+                                }
+
+                                data.push({
+                                    id: _id + (key.group ? "`" : ""),
+                                    text: s_key[index],
+                                    type: "key",
+                                    value: key
+                                });
+                                return;
+                            }
+
+                            //不是最后一个
+                            for (var i = 0; i < data.length; i++) {
+                                if (s_key[index] == data[i].text && data[i]["type"] === "path") {
+                                    pastedata(data[i].children, s_key, index + 1, key);
+                                    return;
+                                }
+                            }
+
+                            var path = "";
+                            for (var i = 0; i <= index; i++) {
+                                if (i == 0) {
+                                    path = s_key[i];
+                                } else {
+                                    path += ":" + s_key[i];
+                                }
+                            }
+
+                            var item = {
+                                id: path + ":",
+                                text: s_key[index],
+                                type: "path",
+                                value: path,
+                                children: [],
+                            };
+                            data.push(item);
+
+                            pastedata(item.children, s_key, index + 1, key);
+                        }
+
+                        //获取key数据
+                        function getKeyData(key, data) {
+                            for (var i = 0; i < data.length; i++) {
+                                if (data[i].id == key) {
+                                    return data[i];
+                                } else if (data[i].children && data[i].children.length > 0) {
+                                    return getKeyData(key, data[i].children);
+                                }
+                            }
+
+                            return null;
+                        }
+
+                        var keys = res.keys.sort();
+                        var data = [];
+
+                        keys.forEach(key => {
+                            var s_key = key.value.split(":");
+                            pastedata(data, s_key, 0, key);
+                        });
+
+                        //console.log("data:", data);
+                        if (node && typeof node == "object") {
+                            const _node = getKeyData(node.id, data);
+                            console.log(_node);
+                            treeRef.value.update(selectKey, _node);
+                        } else {
+                            treeProps.value.rows = data;
+                        }
+                    }
+
+                    const nodeType = ref("path");
+                    const isGroup = ref(false);
+                    const keyVal = ref('');
+                    const keySeconds = ref(0);
+                    const pageSize = ref(10);
+                    const pageNo = ref(1);
+                    const pageCount = ref(0);
+                    const recordCount = ref(0);
+                    const handleSizeChange = (val) => {
+                        pageSize.value = val;
+                        pageNo.value = 1;
+                        nodeSelect(selectNode, pageNo.value);
+                    }
+                    const handleCurrentChange = async (val) => {
+                        pageNo.value = val;
+                        nodeSelect(selectNode, pageNo.value);
+                    }
+
+                    const keyDatas = ref([]);
+                    const keyName = ref('');
+                    const keyData = ref(null);
+
+                    let mouseEvent = null;
+                    let selectNode = null;
+                    let selectKey = null;
+                    let menuPopperId = '';
+                    let menuParent = true;
+                    //取得节点值信息
+                    const nodeSelect = async (node, pageno) => {
+                        keyVal.value = "";
+                        isGroup.value = false;
+                        keySeconds.value = 0;
+                        //pageSize.value = 10;
+                        pageNo.value = 1;
+                        pageCount.value = 0;
+                        recordCount.value = 0;
+                        keyDatas.value = [];
+
+                        keyName.value = '';
+                        keyData.value = '';
+
+                        if (node == null || node["type"] == "path") {
+                            nodeType.value = "path";
+                            return;
+                        } else {
+                            nodeType.value = "key";
+                        }
+
+                        var val = node["value"];
+                        keyVal.value = val.value;
+                        isGroup.value = val.group;
+
+                        var formData = new FormData();
+                        formData.append("action", "info");
+                        formData.append("group", isGroup.value);
+                        formData.append("key", keyVal.value);
+
+                        if (isGroup.value) {
+                            if (pageno === undefined) {
+                                pageno = 1;
+                            }
+                            pageNo.value = pageno;
+                            formData.append("pagesize", pageSize.value);
+                            formData.append("pageno", pageno);
+                        }
+
+                        const res = await yqData.post("/_cache.html", formData);
+                        if (res.error === 0) {
+                            keySeconds.value = res.seconds;
+                            if (isGroup.value) {
+                                if (res.data && typeof res.data === 'object') {
+                                    keyDatas.value = Object.entries(res.data).map(([key, value]) => ({
+                                        key: key,
+                                        value: value,
+                                    }));
+                                } else {
+                                    keyDatas.value = [];
+                                }
+
+                                pageNo.value = res.pageno;
+                                pageCount.value = res.pagecount;
+                                recordCount.value = res.recordcount;
+                            } else {
+                                keyData.value = res.data;
+                            }
+                        } else {
+                            YqMessage.error(res.msg);
+                        }
+
+                        console.log(res);
+                    }
+
+                    const nodeDel = async (node) => {
+                        await yqData.clearCache((node === null ? "" : node["id"]));
+                    }
+
+                    const leftWidth = ref(mainParams.leftW + "px");
+
+                    //弹出菜单 ------------------
+                    const treeNodeContextMenu = ({ e, row, key }) => {
+                        e.preventDefault();
+                        console.log('treeNodeContextMenu:', e, row, key);
+                        mouseEvent = e;
+                        selectNode = row || null;
+                        selectKey = key || null;
+
+                        treeRef.value?.setCurrentKey(selectKey);
+
+                        menuOpen(e);
+                    }
+
+                    // div背景区域右键点击事件处理
+                    const containerContextMenu = (e) => {
+                        e.preventDefault();
+                        //console.log('containerContextMenu:', e);
+                        mouseEvent = e;
+                        // 设置选中行为空（点击的是背景区域）
+                        selectNode = null;
+                        selectKey = null;
+
+                        menuOpen(e);
+                    }
+
+                    let treeMenu = [
+                        {
+                            name: "delete",
+                            label: "删除",
+                            toptip: "删除",
+                            icon: "fa fa-trash-o",
+                            type: "primary",
+                            disabled: () => {
+                                return (selectNode === null);
+                            },
+                            click: () => {
+                                if (menuPopperId) {
+                                    YqWindowApi.close(menuPopperId, menuParent);
+                                }
+
+                                nodeDel(selectNode);
+                            }
+                        }, {
+                            name: 'divided',
+                            divided: true,
+                        }, {
+                            name: "refresh",
+                            label: "刷新节点",
+                            toptip: "刷新节点",
+                            icon: "fa fa-refresh",
+                            type: "primary",
+                            disabled: () => {
+                                return (selectNode === null);
+                            },
+                            click: async () => {
+                                if (menuPopperId) {
+                                    YqWindowApi.close(menuPopperId, menuParent);
+                                }
+
+                                getTreeData(selectNode);
+                                //console.log('refresh', selectNode, selectKey);
+                            }
+                        }, {
+                            name: "reload",
+                            label: "重新加载",
+                            toptip: "重新加载",
+                            icon: "fa fa-repeat",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: async () => {
+                                if (menuPopperId) {
+                                    YqWindowApi.close(menuPopperId, menuParent);
+                                }
+                                treeProps.value.rows = [];
+                                getTreeData(null);
+                            }
+                        }
+                    ];
+
+                    const menuOpen = (e) => {
+                        menuPopperId = '';
+
+                        menuParent = true;
+                        if (!window.parent || window.parent === window) {
+                            menuParent = false;
+                        }
+                        const content = {
+                            h: 'YqMenu',
+                            props: {
+                                type: 'vertical',
+                                menuItems: treeMenu
+                            }
+                        }
+
+                        const el = e.target;
+                        const rect = el.getBoundingClientRect();
+
+                        // 计算鼠标相对于目标元素的偏移量
+                        const mouseX = e.clientX;
+                        const mouseY = e.clientY;
+                        const offsetX = mouseX - rect.left;
+                        const offsetY = mouseY - rect.top;
+
+                        const options = {
+                            containerRef: el, //调用控件
+                            placement: 'popper', // 抽屉位置
+                            showTitle: false,
+                            showClose: false,
+                            modal: false,
+                            top: offsetY,    // 使用鼠标相对于元素的垂直偏移
+                            left: offsetX,   // 使用鼠标相对于元素的水平偏移
+                            width: 250,
+                            height: 105,
+                            fullscreen: false,
+                            type: 'param',
+                            content: content,
+                            overflow: 'auto',
+                            showFooter: false,
+                            parent: menuParent,
+                        }
+
+                        menuPopperId = YqWindowApi.show(options);
+                    }
+                    //---------------
+
+                    const treeProps = ref({
+                        rows: [],
+                        children: 'children',
+                        displayMember: 'text',
+                        showIcon: true,
+                        getNodeIcon: (data) => {
+                            if (data.type === 'path') {
+                                return 'fa fa-folder-o';
+                            } else {
+                                if (data.value.group) {
+                                    return 'fa fa-file-text-o';
+                                } else {
+                                    return 'fa fa-file-o';
+                                }
+                            }
+                        },
+                        onNodeContextMenu: treeNodeContextMenu,
+                        'onRowClick': ({ row, key }) => {
+                            selectNode = row || null;
+                            selectKey = key || null;
+
+                            nodeSelect(row, 1);
+                            console.log(row, key);
+                        }
+                    });
+
+                    const tableProps = computed(() => {
+                        let h = (window.innerHeight - 44) / 2;
+                        if (isGroup.value) {
+                            h = h - 43;
+                        }
+                        let w = window.innerWidth - mainParams.leftW - 65;
+                        return {
+                            titles: [{
+                                name: "key",
+                                isFunc: false,
+                                ui_title: "Key",
+                                ui_type: 1,
+                                ui_width: w * 2 / 5,
+                                ui_visible: true,
+                                ui_readonly: false,
+                                ui_mask: {
+                                }
+                            }, {
+                                name: "value",
+                                ui_title: "Value",
+                                ui_type: 2,
+                                ui_width: w * 3 / 5,
+                                ui_visible: true,
+                                ui_readonly: false,
+                                ui_mask: {
+                                }
+                            }],
+                            rows: keyDatas.value,
+                            editMode: 1,
+                            isEdit: false,
+                            rownumbers: true,
+                            isPage: true,
+                            pageSize: pageSize.value,
+                            currentPage: pageNo.value,
+                            frozenNum: 0, //锁定列数量（锁定左侧）
+                            border: false,
+                            height: h,
+                            'onRowClick': ({ row, index, key }) => {
+                                if (row) {
+                                    keyName.value = row.key;
+                                    keyData.value = row.value;
+                                }
+                            }
+                        };
+                    });
+
+                    const codeHeight = computed(() => {
+                        let h = (window.innerHeight - 48);
+                        if (isGroup.value) {
+                            h = h / 2 - 48;
+                        }
+                        if (h < 300) {
+                            h = 300;
+                        }
+                        return h;
+                    });
+
+                    const codeProps = computed(() => ({
+                        code: (typeof keyData.value == "string" ? keyData.value : JSON.stringify(keyData.value, null, 2)),                  // 初始代码为空
+                        lineNumbers: true,         // 开启行号显示
+                        isEdit: true,           // 初始为可编辑状态
+                        mode: 'json',            // 初始模式为json
+                        types: ['json'],
+                        setting: true,
+                        clear: true,                 // 是否清空代码
+                    }));
+
+                    //保存
+                    const handleSave = async () => {
+                        YqMessage.error({
+                            message: "待开发",
+                            labelDict: {
+                                "zh-CN": { message: "待开发" },
+                                "en": { message: "Under development" },
+                            },
+                        });
+                        // var formData = new FormData();
+                        // formData.append("action", "add");
+                        // formData.append("key", key);
+                        // formData.append("seconds", seconds);
+                        // formData.append("value", val);
+                        // if (res.error === 0) {
+                        //     YqMessage.success("保存成功");
+                        // } else {
+                        //     YqMessage.error(res.msg);
+                        // }
+                        // console.log(res);
+                    }
+
+                    onMounted(async () => {
+                        await getTreeData(null);
+                    })
+
+                    return {
+                        treeRef,
+                        leftWidth,
+                        treeProps,
+                        nodeType,
+                        isGroup,
+                        keyVal,
+                        keySeconds,
+                        pageSize,
+                        pageNo,
+                        pageCount,
+                        recordCount,
+                        handleSizeChange,
+                        handleCurrentChange,
+                        tableProps,
+                        keyName,
+                        codeHeight,
+                        codeProps,
+                        containerContextMenu,
+                        handleSave,
+                    };
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+
+            window.app = app;
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        };
+    </script>
+</body>
+
+</html>

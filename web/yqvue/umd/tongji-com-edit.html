@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqTongjiComEdit 评论编辑器测试</title>
+    <style>
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-panel {
+            padding: 16px;
+            background-color: #f0f2f5;
+            border-radius: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 20px;
+            min-height: 400px;
+        }
+
+        .editor-container {
+            flex: 1;
+            min-width: 350px;
+            max-width: 520px;
+            background-color: #ffffff;
+            padding: 16px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .editor-container .com-edit__textarea {
+            min-height: 80px;
+        }
+
+        .data-container {
+            flex: 1;
+            min-width: 350px;
+            background-color: #ffffff;
+            padding: 16px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .data-container h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #303133;
+        }
+
+        .data-container pre {
+            background-color: #f5f7fa;
+            padding: 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #e4e7ed;
+            font-size: 13px;
+            max-height: calc(100vh - 250px);
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h1>评论编辑器 YqTongjiComEdit 测试</h1>
+
+        <div class="control-panel">
+            <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑模式"
+                inactive-text="查看模式"></el-switch>
+
+            <span style="font-size:14px; color:#909399; margin:0 4px;">
+                最大图片: {{ maxImages }}
+            </span>
+            <el-input-number v-model="maxImages" :min="1" :max="20" size="small" style="width:100px;"></el-input-number>
+
+            <el-button type="primary" size="small" @click="setSampleDataNew">加载示例(新建)</el-button>
+            <el-button type="success" size="small" @click="setSampleDataEdit">加载示例(编辑)</el-button>
+            <el-button type="warning" size="small" @click="clearData">清空数据</el-button>
+
+            <el-tag type="info" size="small" style="margin-left:4px;">
+                提交事件请看控制台输出
+            </el-tag>
+        </div>
+
+        <div class="main-container">
+            <div class="editor-container">
+                <yq-tongji-com-edit
+                    :data="comData"
+                    :is-edit="isEdit"
+                    :max-images="maxImages"
+                    placeholder="写下你的评论..."
+                    submit-text="发表评论"
+                    @update:data="onDataUpdate"
+                    @submit="onSubmit"
+                ></yq-tongji-com-edit>
+            </div>
+
+            <div class="data-container">
+                <h3>编辑器数据 (JSON):</h3>
+                <pre>{{ comData ? JSON.stringify(comData, null, 2) : '(空)' }}</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqTongjiComEdit } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqTongjiComEdit
+            },
+            setup() {
+                const isEdit = ref(true)
+                const maxImages = ref(9)
+
+                const comData = ref(null)
+
+                // 示例数据：新建场景（file=File对象, url=blobUrl）
+                const sampleNew = {
+                    text: "",
+                    files: []
+                }
+
+                // 示例数据：编辑场景（已有内容的评论）
+                const sampleEdit = {
+                    text: "这篇文章写得很不错！👍 期待后续更新。",
+                    files: [
+                        {
+                            name: "示例图片1.jpg",
+                            size: 102400,
+                            type: "image/jpeg",
+                            src: "/images/userdemo.png",
+                            size: 102400,
+                            type: "image/png",
+                            src: "/images/userdemo.png",
+                            size: 204800,
+                            type: "image/png",
+                            src: "/images/userdemo.png",
+                        },
+                        {
+                            name: "示例图片2.png",
+                            size: 204800,
+                            type: "image/png",
+                            src: "/images/userdemo.png"
+                        }
+                    ]
+                }
+
+                const setSampleDataNew = () => {
+                    comData.value = { ...sampleNew }
+                }
+
+                const setSampleDataEdit = () => {
+                    comData.value = JSON.parse(JSON.stringify(sampleEdit))
+                }
+
+                const clearData = () => {
+                    comData.value = null
+                }
+
+                const onDataUpdate = (data) => {
+                    comData.value = data
+                    console.log('[update:data]', JSON.stringify(data, null, 2))
+                }
+
+                const onSubmit = (data) => {
+                    console.log('[提交评论]', JSON.stringify(data, null, 2))
+
+                    // 统计信息
+                    const textLen = data.text ? data.text.length : 0
+                    const fileCount = data.files ? data.files.length : 0
+                    const newFiles = data.files ? data.files.filter(f => f.file) : []
+                    const editFiles = data.files ? data.files.filter(f => !f.file && f.url) : []
+
+                    console.log(`[提交信息] 文字: ${textLen}字符, 图片: ${fileCount}张 (新增${newFiles.length}张, 已有${editFiles.length}张)`)
+                }
+
+                return {
+                    isEdit,
+                    maxImages,
+                    comData,
+                    setSampleDataNew,
+                    setSampleDataEdit,
+                    clearData,
+                    onDataUpdate,
+                    onSubmit
+                }
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,555 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>dns配置</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        .el-container {
+            height: 100%;
+        }
+
+        .el-header {
+            height: 38px !important;
+            padding: 2px 0 5px 0 !important;
+            display: flex;
+            flex-direction: row;
+            align-items: baseline;
+        }
+
+        .el-switch {
+            margin: 0 10px 0 5px;
+        }
+
+        .el-switch__label--left {
+            margin-right: 4px;
+        }
+
+        .el-switch__label--right {
+            margin-left: 4px;
+        }
+    </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0; height: 100%;">
+    <div id="app">
+        <yq-container style="height: 100vh;">
+            <yq-con-header style="padding: 0 20px;">
+                <template v-for="(item, index) in switchItems" :key="item.value">
+                    <span style="padding: 0 5px 0 10px;">{{ item.label }}</span>
+                    <el-switch v-model="item.checked" :active-value="true" :inactive-value="false" active-text="on"
+                        inactive-text="off" @change="item.change" :disabled="item.disabled()">
+                    </el-switch>
+                </template>
+                <yq-menu type="inline" :menu-items="menuItems" :mini="false"></yq-menu>
+                <div style="margin-left: auto;padding-right: 5px;">
+                    <span style="margin: 0 5px;">端口号</span>
+                    <el-input-number v-model="addr" controls-position="right" :min="1" :max="65535"
+                        style="width: 100px;"></el-input-number>
+                </div>
+            </yq-con-header>
+            <yq-con-main style="padding: 0;;overflow: hidden;">
+                <yq-container aside-width="380px">
+                    <yq-con-aside>
+                        <yq-table-edit ref="mainRef" v-bind="mainProps"></yq-table-edit>
+                    </yq-con-aside>
+                    <yq-con-main style="padding: 0 0 0 1px;margin: 0;">
+                        <yq-table-edit ref="subRef" v-bind="subProps"></yq-table-edit>
+                    </yq-con-main>
+                </yq-container>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed } = Vue;
+        const { ElSwitch, ElInputNumber } = ElementPlus;
+        const { initTheme, YqMessage, YqMenu, yqData, YqTableEdit, YqWindowApi, yqUiPub, YqContainer, YqConHeader, YqConAside, YqConMain  } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMenu,
+                ElSwitch,
+                ElInputNumber,
+                YqTableEdit,
+                YqContainer,
+                YqConHeader,
+                YqConAside,
+                YqConMain,
+            },
+            setup() {
+                // dns status
+                const status = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "dns:status");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    if (res.error === 0) {
+                        if (switchItems.value[0].checked !== res.status) {
+                            switchItems.value[0].checked = res.status;
+                        }
+                        addr.value = res.addr;
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                // dns start stop 
+                const startOrStop = async (state) => {
+                    var formData = new FormData();
+                    formData.append("action", state ? "dns:start" : "dns:stop");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+
+                    // if (res.error === 0) {
+                    //     status();
+                    // } else {
+                    //     YqMessage.error(res.info + '[' + res.error + ']');
+                    // }
+                }
+
+                // dns json get
+                const jsonGet = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "dns:get");
+
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log(res);
+                    if (res.error === 0) {
+                        return res.dns;
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        return {
+                            addr: 53,
+                            data: []
+                        };
+                    }
+                }
+
+                // dns json set
+                const jsonSet = async (dns_json) => {
+                    var formData = new FormData();
+                    formData.append("action", "dns:set");
+                    formData.append("dns", dns_json);
+
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    if (res.error === 0) {
+                        YqMessage.success({
+                            message: "保存成功",
+                            labelDict: {
+                                "zh-CN": { message: "保存成功" },
+                                "en": { message: "Save succeeded" },
+                            },
+                        });
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                // dns data
+                const dnsData = ref({
+                    addr: 53,
+                    data: [{
+                        domain: "example.com",
+                        tag: "base",
+                        sub: [{
+                            dnstype: "A",
+                            name: "yq",
+                            value: ['115.190.25.126'],
+                        }]
+                    }]
+                })
+
+                const addr = ref(53);
+
+                const switchItems = ref([{
+                    value: 'dns',
+                    label: 'DNS',
+                    checked: false,
+                    disabled: () => {
+                        return false;
+                    },
+                    change: async (val) => {
+                        await startOrStop(val);
+                    }
+                }]);
+
+                const menuItems = ref([
+                    {
+                        divided: true
+                    }, {
+                        name: "save",
+                        label: "保持配置",
+                        toptip: "保持配置",
+                        icon: "fa fa-save",
+                        type: "primary",
+                        disabled: () => {
+                            return false;
+                        },
+                        click: async () => {
+                            dnsData.value.addr = addr.value;
+                            dnsData.value.data = mainRef.value.rows();
+                            await jsonSet(JSON.stringify(dnsData.value, null, 2));
+                            await status();
+                        }
+                    }
+                ]);
+
+                const _height = ref(600);
+
+                const mainRef = ref(null);
+                const subRef = ref(null);
+                let mainIndex = -1;
+                let mainKey = null;
+                const mainProps = computed(() => ({
+                    titles: [{
+                        "name": "domain",
+                        "ui_title": "domain",
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                        }
+                    }, {
+                        "name": "tag",
+                        "ui_title": "tag",
+                        "ui_type": 5,
+                        "ui_width": 105,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "editModeW": 400,
+                            "editModeH": 300,
+                            "default": "base",
+                            "types": [
+                                "base"
+                            ]
+                        }
+                    }, {
+                        "name": "sub",
+                        "ui_title": "sub",
+                        "ui_type": 15,
+                        "ui_width": 130,
+                        "ui_visible": false,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "editModeW": 450,
+                            "editModeH": 450,
+                            "editType": 0,
+                            "modelNo": -1,
+                            "panelWidth": 500,
+                            "panelHeight": 400,
+                            "param": {
+                                "titles": [],
+                                "model": []
+                            },
+                            "rows": []
+                        }
+                    }],
+                    rows: dnsData.value.data,
+                    showEdit: true,
+                    isEdit: true,
+                    editType: 0,
+                    rownumbers: true,
+                    frozenNum: 1,
+                    mini: true,
+                    add: true,
+                    copy: true,
+                    del: true,
+                    move: true,
+                    blankTag: "*",
+                    border: true,
+                    'onRowClick': function ({ row, index, key }) {
+                        console.log(row, index, key);
+                        mainIndex = index;
+                        mainKey = key;
+                        if (!row) {
+                            subIsEdit.value = false;
+                            subRef.value.setRows([]);
+                            return;
+                        }
+
+                        subIsEdit.value = true;
+                        if (row.sub) {
+                            subRef.value.setRows(row.sub);
+                        } else {
+                            subRef.value.setRows([]);
+                        }
+                    }
+                }));
+                const subIsEdit = ref(false);
+                let subSelectIndex = -1;
+                const subProps = computed(() => ({
+                    titles: [{
+                        "name": "dnstype",
+                        "ui_title": "type",
+                        "ui_type": 6,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "type": "string",
+                            "lists": [
+                                {
+                                    "no": "A",
+                                    "name": "A"
+                                },
+                                {
+                                    "no": "AAAA",
+                                    "name": "AAAA"
+                                },
+                                {
+                                    "no": "MX",
+                                    "name": "MX"
+                                },
+                                {
+                                    "no": "TXT",
+                                    "name": "TXT"
+                                }
+                            ],
+                            "default": 1,
+                            "blank": false,
+                        },
+
+                    }, {
+                        "name": "name",
+                        "ui_title": "name",
+                        "ui_type": 2,
+                        "ui_width": 80,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                        }
+                    }, {
+                        "name": "value",
+                        "ui_title": "value",
+                        "ui_type": 21,
+                        "ui_width": 240,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            callback: async (obj, data, func) => {
+                                //console.log(obj, data, func)
+                                try {
+                                    const res = await handleOpen(obj, func);
+                                    return res;
+                                } catch (error) {
+                                    YqMessage.error(error.message);
+                                    return {
+                                        error: 1,
+                                        info: error.message,
+                                        value: data.value,
+                                        alert: true
+                                    };
+                                }
+                            }
+                        }
+                    }, {
+                        "name": "tag",
+                        "ui_title": "tag",
+                        "ui_type": 5,
+                        "ui_width": 230,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "editModeW": 350,
+                            "editModeH": 200,
+                            "default": "base",
+                            "types": [
+                                "base"
+                            ]
+                        }
+                    }],
+                    rows: [],
+                    showEdit: true,
+                    isEdit: subIsEdit.value,
+                    editType: 0,
+                    rownumbers: true,
+                    frozenNum: 1,
+                    mini: true,
+                    add: true,
+                    copy: true,
+                    del: true,
+                    move: true,
+                    blankTag: "*",
+                    border: true,
+                    'onRowClick': function ({ row, index, key }) {
+                        subSelectIndex = index;
+                    },
+                    'onUpdate:rows': function (value) {
+                        console.log('onUpdate:rows', value);
+
+                        const row = mainRef.value.rows()[mainIndex];
+                        if (row) {
+                            row.sub = value;
+                            mainRef.value.update({
+                                row: row,
+                                key: mainKey,
+                            });
+                        }
+                    },
+                }));
+
+                const handleOpen = async (el, func) => {
+                    let parent = true
+                    if (!window.parent || window.parent === window) {
+                        parent = false
+                    }
+
+                    const row = subRef.value.rows()[subSelectIndex];
+
+                    let _value = row.value;
+                    let content = {};
+                    switch (row.dnstype) {
+                        case 'A':
+                            content =  {
+                                h: 'YqCodeEdit',
+                                props: {
+                                    code: _value && _value[0],
+                                    lineNumbers: true,
+                                    isEdit: true,
+                                    mode: 'text',
+                                    types: ['text'],
+                                    indentSize: 2,
+                                    autoCompletion: true,
+                                    autoFold: true,
+                                    highlightActiveLine: true,
+                                    tabSize: 2,
+                                    wordWrap: true,
+                                    setting: false,
+                                    clear: false,
+                                    'onChange': (val) => {
+                                        func([val]);
+                                    }
+                                }
+                            };
+                            break;
+                        default:
+                            let rows = [];
+                            if (_value) {
+                                rows = _value.map((item) => ({
+                                    val: item,
+                                }));
+                            }
+
+                            content = {
+                                h: 'div',
+                                props: {
+                                    style: {
+                                        padding: '5px',
+                                        overflow: 'hidden',
+                                        background: '#f5f7fa',
+                                    },
+                                },
+                                children: {
+                                    h: 'YqTableEdit',
+                                    props: {
+                                        titles: [{
+                                            "name": "val",
+                                            "ui_title": "值",
+                                            "ui_type": 2,
+                                            "ui_width": 355,
+                                            "ui_visible": true,
+                                            "ui_readonly": false,
+                                            "ui_mask": {},
+                                        }],
+                                        rows: rows,
+                                        isEdit: true,
+                                        rownumbers: true,
+                                        frozenNum: 0,
+                                        fkrows: [],
+                                        mini: false,
+                                        add: true,
+                                        copy: true,
+                                        del: true,
+                                        move: true,
+                                        height: 300,
+                                        'onUpdate:rows': (val) => {
+                                            func(val.map((item) => item.val));
+                                        },
+                                    }
+                                }
+                            }
+                            break;
+                    }
+
+                    const rect = el.getBoundingClientRect()
+
+                    return new Promise((resolve) => {
+                        const options = {
+                            containerRef: el,
+                            placement: 'popper',
+                            showTitle: false,
+                            modal: false,
+                            top: rect.height,
+                            left: 0,
+                            width: row.dnstype === 'A' ? 350 : 500,
+                            height: row.dnstype === 'A' ? 100 : 350,
+                            fullscreen: false,
+                            type: 'param',
+                            content: content,
+                            overflow: 'auto',
+                            showFooter: false,
+                            parent: parent,
+                            onClosed: () => {
+                                // 异步返回
+                                resolve({
+                                    error: 1,
+                                    info: '',
+                                    value: '',
+                                    alert: false
+                                });
+                            }
+                        }
+
+                        YqWindowApi.show(options);
+                    });
+                }
+
+                onMounted(async () => {
+                    _height.value = window.innerHeight - 100;
+                    await status();
+                    dnsData.value = await jsonGet();
+                    addr.value = dnsData.value.addr;
+                })
+
+                return {
+                    menuItems,
+                    switchItems,
+                    addr,
+                    mainRef,
+                    subRef,
+                    mainProps,
+                    subProps,
+                };
+            }
+        })
+        app.use(ElementPlus);
+        app.mount('#app');
+
+        window.app = app;
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        };
+    </script>
+
+</body>
+
+</html>

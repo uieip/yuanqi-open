@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>基础柱状图</title>
+  <link rel="stylesheet" href="/scripts/yqwin/yqwin-plus.css">
+  <link rel="stylesheet" href="/scripts/editor.md/lib/codemirror/codemirror.min.css">
+  <link rel="stylesheet" href="/scripts/editor.md/lib/codemirror/theme/darcula.css">
+  <link rel="stylesheet" href="/scripts/editor.md/lib/codemirror/theme/eclipse.css">
+  <link rel="stylesheet" href="/scripts/editor.md/lib/codemirror/addon/fold/foldgutter.css">
+  <script src="/scripts/theme-boot.js"></script>
+  <script type="text/javascript" src="/scripts/echarts/echarts.min.js"></script>
+  <script src="/scripts/editor.md/lib/codemirror/codemirror.min.js"></script>
+  <script src="/scripts/editor.md/lib/codemirror/modes.min.js"></script>
+  <script src="/scripts/editor.md/lib/codemirror/addon/fold/foldcode.js"></script>
+  <script src="/scripts/editor.md/lib/codemirror/addon/fold/brace-fold.js"></script>
+  <script src="/scripts/editor.md/lib/codemirror/addon/fold/foldgutter.js"></script>
+  <script src="/scripts/echarts/demo/echarts-demo.js"></script>
+  <style>
+    body {
+      margin: 16px;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    #div_container,
+    #div_editor {
+      border: 1px solid var(--yq-border);
+    }
+
+    #div_editor .CodeMirror {
+      height: 100%;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <a href="javascript:window.history.back();">返回</a>
+  <table style="margin-top: 10px;">
+    <tr>
+      <td>
+        <div id="div_container" style="width:800px;height:600px;padding:0px;">
+        </div>
+      </td>
+      <td>
+        <div id="div_editor" style="width:450px;height:600px;"></div>
+      </td>
+    </tr>
+  </table>
+  <script type="text/javascript">
+    var option = {
+      xAxis: {
+        type: 'category',
+        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          data: [120, 200, 150, 80, 70, 110, 130],
+          type: 'bar'
+        }
+      ]
+    };
+
+    EchartsDemo.initChart(document.getElementById('div_container'), option);
+    EchartsDemo.initJsonEditor(document.getElementById('div_editor'), JSON.stringify(option, null, 2));
+  </script>
+</body>
+
+</html>

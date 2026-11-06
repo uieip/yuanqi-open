@@ -1,0 +1,196 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqDrawer测试页面</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .yq-popover-test {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .test-section {
+            padding: 10px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="yq-popover-test">
+        <h1>YqDialog测试</h1>
+        <!-- 基础功能测试区 -->
+        <div class="test-section">
+            <el-button ref="el_button_1" @click="createDrawer_1()">打开弹窗</el-button>
+            <p></p>
+            <span>width</span><el-input-number v-model="width" :min="1" :max="100"
+                style="width: 100px;"></el-input-number>vw |
+            <span>height</span><el-input-number v-model="height" :min="1" :max="100"
+                style="width: 100px;"></el-input-number>vh |
+            <span>left</span><el-input-number v-model="left" :min="0" :max="800"
+                style="width: 100px;"></el-input-number>px |
+            <span>top</span><el-input-number v-model="top" :min="0" :max="600"
+                style="width: 100px;"></el-input-number>px
+            <p></p>
+            <el-radio-group v-model="placement">
+                <el-radio value="center">center</el-radio>
+                <el-radio value="popper">popper</el-radio>
+                <el-radio value="other">other</el-radio>
+            </el-radio-group>
+            <el-switch style="display: block" v-model="showTitle" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949" active-text="显示标题" inactive-text="隐藏标题">
+            </el-switch>
+            <el-switch style="display: block" v-model="showClose" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949" active-text="显示关闭按钮" inactive-text="隐藏关闭按钮">
+            </el-switch>
+            <el-switch style="display: block" v-model="showFooter" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949" active-text="显示底部按钮" inactive-text="隐藏底部按钮">
+            </el-switch>
+            <el-switch style="display: block" v-model="fullscreen" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949" active-text="全屏" inactive-text="非全屏">
+            </el-switch>
+            <el-switch style="display: block" v-model="modal" :active-value="true" :inactive-value="false"
+                active-color="#13ce66" inactive-color="#ff4949" active-text="弹窗模式" inactive-text="非弹窗模式">
+            </el-switch>
+
+            <el-button ref="el_button_2" @click="createDrawer_2()">打开弹窗</el-button>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, render, ref } = Vue;
+        // 导入YqDialog组件
+        const { YqWindowApi, initTheme } = YqwinPlus;
+        const { ElButton } = ElementPlus;
+        initTheme();
+
+        const applet = {
+            data() {
+                return {
+                    placement: "center",
+                    showTitle: true,
+                    icon: 'fa fa-pencil-square-o',
+                    title: '测试',
+                    showClose: true,
+                    modal: true,
+                    width: 50,
+                    height: 50,
+                    left: 0,
+                    top: 0,
+                    fullscreen: false,
+                    showFooter: true,
+                    drawerVNode: null,
+                    footerButtons: [
+                        { label: '取消', type: 'default', onClick: this.handleCancel },
+                        { label: '确定', type: 'primary', onClick: this.handleOk }
+                    ],
+                };
+            },
+            setup() {
+                const myRef = ref(null);
+
+                return {
+                    myRef
+                }
+            },
+            components: {
+                ElButton
+            },
+            methods: {
+                createDrawer_1() {
+                    const buttonElement = this.$refs.el_button_1?.$el || this.$refs.el_button_1
+                    this.createDrawer(buttonElement)
+                },
+                createDrawer_2() {
+                    const buttonElement = this.$refs.el_button_2?.$el || this.$refs.el_button_2
+                    this.createDrawer(buttonElement)
+                },
+                createDrawer(buttonElement) {
+                    let id = '';
+                    id = YqWindowApi.show({
+                        frameClass: "my-drawer",
+                        containerRef: buttonElement,
+                        placement: 'popper', // 抽屉位置
+                        showTitle: this.showTitle,
+                        icon: this.icon,
+                        title: this.title,
+                        modal: this.modal,
+                        placement: this.placement,
+                        left: this.left,
+                        top: this.top,
+                        width: this.width + 'vw',
+                        height: this.height + 'vh',
+                        showClose: this.showClose,
+                        fullscreen: this.fullscreen,
+                        // 移除iframe配置，启用默认插槽
+                        type: 'iframe',
+                        content: '/yqvue/test/window-dialog-childen.html',
+                        // 隐藏底部按钮
+                        showFooter: this.showFooter,
+                        children: {
+                            h: "div",
+                            props: {
+                                style: {
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    gap: '8px'
+                                }
+                            },
+                            children: [{
+                                h: "el-button",
+                                props: {
+                                    type: 'danger',
+                                    onClick: () => {
+                                        YqWindowApi.close(id);
+                                    }
+                                },
+                                children: '取消'
+                            },
+                            {
+                                h: "el-button",
+                                props: {
+                                    type: 'primary',
+                                    onClick: this.handleOk
+                                },
+                                children: '确定'
+                            }]
+                        },
+                    });
+                },
+                handleCancel() {
+                    this.close()
+                },
+                async handleOk() {
+                    // 等待组件渲染完成
+                    await this.$nextTick();
+                    const contentRef = this.drawerVNode?.component?.exposed?.contentRef.value;
+                    console.log('获取到的bodyRef对象:', contentRef);
+                    console.log('点击了确定按钮')
+                },
+                close() {
+                    this.drawerVNode.component.props.modelValue = false;
+                },
+                cleanupDrawer() {
+                    if (this.drawerVNode) {
+                        render(null, document.body);
+                        this.drawerVNode = null;
+                    }
+                }
+            }
+        };
+
+        const app = createApp(applet);
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+</body>
+
+</html>

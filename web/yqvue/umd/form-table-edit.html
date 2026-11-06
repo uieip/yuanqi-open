@@ -1,0 +1,699 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="编辑"
+            inactive-text="查看"></el-switch> |
+        <el-switch v-model="rownumbers" :active-value="true" :inactive-value="false" active-text="显示行号"
+            inactive-text="隐藏行号"></el-switch> |
+        <span>编辑模式</span>
+        <el-select v-model="editType" placeholder="请选择" style="width: 120px;">
+            <el-option label="行编辑模式" :value="0"></el-option>
+            <el-option label="属性编辑模式" :value="1"></el-option>
+            <el-option label="form编辑模式" :value="2"></el-option>
+        </el-select>|
+        <span>冻结列数</span>
+        <el-input v-model="frozenNum" type="number" placeholder="冻结列数" min="0" max="titles.length" step="1"
+            :disabled="!rownumbers" style="width: 80px;"></el-input>|
+        <p>-------------------------------------</p>
+        titles <el-select v-model="changeTitle" placeholder="请选择" style="width: 120px;" @change="changeTitles">
+            <el-option v-for="item in titles_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+        </el-select> |
+        rows <el-select v-model="changeRow" placeholder="请选择" style="width: 120px;" @change="changeRows">
+            <el-option v-for="item in rows_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+        </el-select>
+        <p>-------------------------------------</p>
+        <div style="width:350px;">
+            <yq-table-text ref="tableTextRef" :is-demo="isDemo" :titles="titles" v-model:rows="rows"
+                v-model:fkrows="fkrows" :is-edit="isEdit" :edit-type="editType" :rownumbers="rownumbers"
+                :frozen-num="frozenNumInt" @row-click="handleRowClick" @select-change="handleSelectChange"
+                :edit-mode-w="500" :edit-mode-h="300"></yq-table-text>
+        </div>
+        <p>-------------------------------------</p>
+        <div style="height: 40vh;width: 100%;  overflow: auto;">
+            <yq-table-edit ref="tableRef" :is-demo="isDemo" :titles="titles" v-model:rows="rows" v-model:fkrows="fkrows"
+                :is-edit="isEdit" :edit-type="editType" :rownumbers="rownumbers" :frozen-num="frozenNumInt"
+                @row-click="handleRowClick" @select-change="handleSelectChange"></yq-table-edit>
+        </div>
+        <p>-------------------------------------</p>
+        <div style="height: 20vh;width: 100%;  overflow: auto;">
+            {{ rows }}
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { initTheme, YqTableEdit, YqTableText } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqTableEdit,
+                YqTableText
+            },
+            data() {
+                return {
+                    isDemo: true,
+                    isEdit: true,
+                    editType: 1, // 0-行编辑模式 1-属性编辑模式 2-form编辑模式
+                    rownumbers: true,
+                    frozenNum: 1,
+                }
+            },
+            setup() {
+                const disabledNames = ref(['del']);
+                const index = ref(-1);
+                const row = ref(null);
+
+                const titles_1 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "lable",
+                        "is_func": false,
+                        "ui_title": "Lable",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": true,
+                        "ui_mask": {
+                            "default": "默认值1"
+                        }
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        }
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        }
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    },
+                    {
+                        "name": "richbox",
+                        "is_func": false,
+                        "ui_title": "Richbox",
+                        "fd_type": "nvarchar",
+                        "length": 2000,
+                        "decimal": 0,
+                        "ui_type": 5,
+                        "ui_width": 190,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "types": [
+                                "json",
+                                "html",
+                                "js"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "combobox",
+                        "is_func": false,
+                        "ui_title": "Combobox",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 6,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": 2,
+                            "blank": false,
+                            "lists": [
+                                {
+                                    "no": 1,
+                                    "name": "111111"
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "222222"
+                                },
+                                {
+                                    "no": 3,
+                                    "name": "333333"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "foreignkey",
+                        "is_func": false,
+                        "ui_title": "ForeignKey",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 7,
+                        "ui_width": 180,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "dbName": "yqbase",
+                            "tbName": "sys.sys_table",
+                            "tempNo": -1,
+                            "displayType": 1,
+                            "valueMember": "sid",
+                            "displayMember": "textbox",
+                            "isPage": true,
+                            "pageSize": 10,
+                            "addWhere": "",
+                            "order": "textbox",
+                            "panelWidth": 400,
+                            "panelHeight": 260,
+                            "expandMember": null,
+                            "seekNo": -1,
+                            "seekModeW": 800,
+                            "seekModeH": 600
+                        }
+                    },
+                    {
+                        "name": "treeselect1",
+                        "is_func": false,
+                        "ui_title": "TreeSelect1",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": [
+                                2,
+                                201,
+                                20101
+                            ],
+                            "blank": false,
+                            "level": 1,
+                            "subfield": "treeselect2",
+                            "trees": [
+                                {
+                                    "no": 1,
+                                    "name": "root1",
+                                    "extend": "扩展",
+                                    "default": true,
+                                    "subs": [
+                                        {
+                                            "no": 101,
+                                            "name": "sub101",
+                                            "subs": [
+                                                {
+                                                    "no": 10101,
+                                                    "name": "三级10101"
+                                                },
+                                                {
+                                                    "no": 10102,
+                                                    "name": "三级10102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 102,
+                                            "name": "sub102",
+                                            "subs": [
+                                                {
+                                                    "no": 10201,
+                                                    "name": "三级10201"
+                                                },
+                                                {
+                                                    "no": 10202,
+                                                    "name": "三级10202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "root2",
+                                    "subs": [
+                                        {
+                                            "no": 201,
+                                            "name": "Sub201",
+                                            "subs": [
+                                                {
+                                                    "no": 20101,
+                                                    "name": "三级20101"
+                                                },
+                                                {
+                                                    "no": 20102,
+                                                    "name": "三级20102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 202,
+                                            "name": "Sub202",
+                                            "subs": [
+                                                {
+                                                    "no": 20201,
+                                                    "name": "三级20201"
+                                                },
+                                                {
+                                                    "no": 20202,
+                                                    "name": "三级20202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "treeselect2",
+                        "is_func": false,
+                        "ui_title": "TreeSelect2",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 2,
+                            "subfield": "treeselect3",
+                            "trees": []
+                        }
+                    },
+                    {
+                        "name": "treeselect3",
+                        "is_func": false,
+                        "ui_title": "TreeSelect3",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 3,
+                            "subfield": "",
+                            "trees": []
+                        }
+                    }
+                ]
+                const rows_1 = [
+                    {
+                        "sid": "sid-1",
+                        "lable": "Lable-1",
+                        "textbox": "Textbox-1",
+                        "checkbox": true,
+                        "datebox": "2022/11/04",
+                        "richbox": "Richbox-1",
+                        "combobox": 2,
+                        "foreignkey": "sid-2",
+
+                        "numberbox": 10001.0199,
+                        "numberspinner": 9,
+                        "timespinner": "11:11",
+                        "datetimebox": "2022/11/04 11:11",
+                        "ncombobox": "1,2"
+                    },
+                    {
+                        "sid": "sid-2",
+                        "lable": "Lable-2",
+                        "textbox": "Textbox-2",
+                        "datebox": "2022-11-04",
+                        "richbox": "Richbox-2",
+                        "combobox": 2,
+                        "foreignkey": "sid-3",
+                        "treeselect1": 1,
+                        "numberbox": 19901.9901,
+                        "numberspinner": 9,
+                        "timespinner": "11:11",
+                        "datetimebox": "2022-11-04 11:11",
+                        "ncombobox": "1,2"
+                    },
+                    {
+                        "sid": "sid-3",
+                        "lable": "Lable-3",
+                        "textbox": "Textbox-3",
+                        "checkbox": true,
+                        "datebox": "2022-11-04",
+                        "richbox": "Richbox-3",
+                        "combobox": 2,
+                        "foreignkey": "sid-2",
+                        "treeselect1": 2,
+                        "treeselect2": 201,
+                        "numberbox": 101.01,
+                        "numberspinner": 9,
+                        "timespinner": "11:11",
+                        "datetimebox": "2022-11-04 11:11"
+                    },
+                    {
+                        "sid": "sid-4",
+                        "lable": "Lable-4",
+                        "textbox": "Textbox-4",
+                        "checkbox": true,
+                        "richbox": "Richbox-4",
+                        "combobox": 2,
+                        "foreignkey": "sid-1",
+                        "treeselect1": 2,
+                        "treeselect2": 201,
+                        "treeselect3": 20101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    },
+                    {
+                        "sid": "sid-5",
+                        "lable": "Lable-5",
+                        "textbox": "Textbox-5",
+                        "checkbox": false,
+                        "richbox": "Richbox-5",
+                        "combobox": 1,
+                        "foreignkey": "foreignkey-5",
+                        "treeselect1": 1,
+                        "treeselect2": 101,
+                        "treeselect3": 10101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    },
+                    {
+                        "sid": "sid-6",
+                        "lable": "Lable-6",
+                        "textbox": "Textbox-6",
+                        "checkbox": false,
+                        "richbox": "Richbox-6",
+                        "combobox": 1,
+                        "foreignkey": "foreignkey-5",
+                        "treeselect1": 2,
+                        "treeselect2": 201,
+                        "treeselect3": 20101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    },
+                    {
+                        "sid": "sid-7",
+                        "lable": "Lable-7",
+                        "textbox": "Textbox-7",
+                        "checkbox": false,
+                        "richbox": "Richbox-7",
+                        "combobox": 1,
+                        "foreignkey": "foreignkey-5",
+                        "treeselect1": 1,
+                        "treeselect2": 101,
+                        "treeselect3": 10101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    },
+                    {
+                        "sid": "sid-8",
+                        "lable": "Lable-8",
+                        "textbox": "Textbox-8",
+                        "checkbox": false,
+                        "richbox": "Richbox-8",
+                        "combobox": 1,
+                        "foreignkey": "foreignkey-5",
+                        "treeselect1": 1,
+                        "treeselect2": 101,
+                        "treeselect3": 10101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    },
+                    {
+                        "sid": "sid-9",
+                        "lable": "Lable-9",
+                        "textbox": "Textbox-9",
+                        "checkbox": false,
+                        "richbox": "Richbox-9",
+                        "combobox": 1,
+                        "foreignkey": "foreignkey-5",
+                        "treeselect1": 2,
+                        "treeselect2": 201,
+                        "treeselect3": 20101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    },
+                    {
+                        "sid": "sid-10",
+                        "lable": "Lable-10",
+                        "textbox": "Textbox-10",
+                        "checkbox": false,
+                        "richbox": "Richbox-10",
+                        "combobox": 1,
+                        "foreignkey": "foreignkey-5",
+                        "treeselect1": 2,
+                        "treeselect2": 201,
+                        "treeselect3": 20101,
+                        "numberbox": 101.01,
+                        "numberspinner": 9
+                    }
+                ]
+
+                const titles_2 = [
+                    {
+                        "name": "sid",
+                        "is_func": false,
+                        "ui_title": "sId",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 1,
+                        "ui_width": 120,
+                        "ui_visible": false,
+                        "ui_readonly": true,
+                        "ui_mask": {}
+                    },
+                    {
+                        "name": "textbox",
+                        "ui_title": "Textbox",
+                        "fd_type": "nvarchar",
+                        "length": 50,
+                        "decimal": 0,
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "默认值",
+                            "min": 0,
+                            "max": 50,
+                            "blank": false,
+                            "format": ""
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "checkbox",
+                        "is_func": false,
+                        "ui_title": "Checkbox",
+                        "fd_type": "boolean",
+                        "length": 1,
+                        "decimal": 0,
+                        "ui_type": 3,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": true
+                        },
+                        "group": "group1"
+                    },
+                    {
+                        "name": "datebox",
+                        "is_func": false,
+                        "ui_title": "Datetbox",
+                        "fd_type": "date",
+                        "length": 0,
+                        "decimal": 0,
+                        "ui_type": 4,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": "2022-01-01",
+                            "min": "2000-01-01",
+                            "max": "2099-12-31",
+                            "blank": true,
+                            "format": "yyyy-MM-dd"
+                        }
+                    }
+                ];
+                const rows_2 = [{
+                    "sid": "sid-2",
+                    "lable": "Lable-1",
+                    "textbox": "Textbox-1",
+                    "checkbox": false,
+                    "datebox": "2026/01/08"
+                },{
+                    "sid": "sid-2",
+                    "lable": "Lable-2",
+                    "textbox": "Textbox-2",
+                    "checkbox": true,
+                    "datebox": "2026/01/08"
+                }];
+
+                const changeTitle = ref("titles_2");
+                const titles_all = computed(() => {
+                    return [
+                        { name: "titles_1", value: "titles_1", titles: titles_1 },
+                        { name: "titles_2", value: "titles_2", titles: titles_2 }]
+                });
+                function changeTitles() {
+                    titles.value = titles_all.value.find(item => item.value === changeTitle.value).titles;
+                }
+
+                const changeRow = ref("rows_2")
+                const rows_all = computed(() => {
+                    return [
+                        { name: "rows_1", value: "rows_1", rows: rows_1 },
+                        { name: "rows_2", value: "rows_2", rows: rows_2 }]
+                });
+                function changeRows() {
+                    console.log(rows_all.value, changeRow.value)
+                    rows.value = rows_all.value.find(item => item.value === changeRow.value).rows
+                }
+
+                const titles = ref(titles_2);
+                const rows = ref(rows_2);
+                watch(() => rows.value, (newValue) => {
+                    console.log("newValue", newValue);
+
+                    const _index = disabledNames.value.findIndex((name) => name === 'move');
+                    if (_index < 0 && newValue.length <= 1) {
+                        disabledNames.value.push('move');
+                    } else if (_index >= 0 && newValue.length > 1) {
+                        disabledNames.value.splice(_index, 1);
+                    }
+                },
+                    { deep: true })
+
+
+                const fkrows = ref([])
+                watch(fkrows, (newValue, oldValue) => {
+                    console.log("fkrows", newValue)
+                }, { deep: true })
+
+                return {
+                    titles,
+                    rows,
+                    fkrows,
+                    changeTitle,
+                    titles_all,
+                    changeTitles,
+                    changeRow,
+                    rows_all,
+                    changeRows,
+                    disabledNames,
+                    index,
+                    row,
+                }
+            },
+            computed: {
+                frozenNumInt() {
+                    return parseInt(this.frozenNum)
+                }
+            },
+            methods: {
+                handleRowClick({ row, index, key }) {
+                    this.index = index
+                    this.row = row
+
+                    const _index = this.disabledNames.findIndex((name) => name === 'del');
+                    if (this.index < 0 && _index < 0) {
+                        this.disabledNames.push('del');
+                    } else if (this.index >= 0 && _index >= 0) {
+                        this.disabledNames.splice(_index, 1);
+                    }
+
+                    console.log(`点击行 索引: ${index}  key: ${key} 数据: ${JSON.stringify(row, null, 2)}`)
+                },
+                handleSelectChange(rows) {
+                    console.log(`选择行数据: ${JSON.stringify(rows, null, 2)}`)
+                },
+            }
+        })
+
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+
+
+</body>
+
+</html>

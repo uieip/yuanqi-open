@@ -1,0 +1,71 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <!-- 主题引导：首屏绘制前同步应用 data-theme 与临界底色，防止主题闪烁 -->
+  <script src="/scripts/theme-boot.js"></script>
+  <!-- Element Plus 暗色变量：html.dark 由 src/theme.ts 按主题切换时挂载 -->
+  <link rel="stylesheet" href="/scripts/vue/element-plus/dark/css-vars.css">
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+  <title>YQWIN-Plus 页面框架组件测试</title>
+  <style>
+    #app {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0;">
+  <div id="app">
+    <yq-layout-index v-bind="indexProps"></yq-layout-index>
+  </div>
+  <!-- 使用ES模块 -->
+  <script>
+    const { ref, onMounted, createApp } = Vue;
+    const { initTheme, YqWindowApi, YqLayoutIndex, i18n } = YqwinPlus;
+    initTheme();
+
+    const app = createApp({
+      components: {
+        YqLayoutIndex,
+      },
+      setup() {
+        const indexProps = ref({
+          tag: 'account',
+          appNos: [9],
+          defaultUrl: '/account/desktop.html',
+          sidebarWidth: 220,
+          logo: {
+            text: 'UIEIP System',
+            icon: '/icon/远齐.png',
+            path: '/'
+          },
+          breadcrumb: [],
+          showUserInfo: false,
+          showProfile: false,
+          isMultiTab: false,
+        });
+
+        return {
+          indexProps
+        };
+      }
+    })
+    app.use(i18n);
+    app.use(ElementPlus, {
+    });
+    app.mount('#app');
+
+    window.app = app;
+    // 创建设置YqwinPlus全局对象，以便子项目可以访问
+    window.YqwinPlus = {
+      YqWindowApi: YqWindowApi,
+    };
+  </script>
+</body>
+
+</html>

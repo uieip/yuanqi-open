@@ -1,0 +1,65 @@
+<div class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3 col-xs-6">
+                <ul class="list-unstyled text-small">
+                    <li class="mb-1">
+                        <img class="mb-2 footlogo" src="/images/uieiplogo3.png" />
+                    </li>
+                </ul>
+            </div>
+            <div class="col-md-3 col-xs-6">
+                <h5>解决方案</h5>
+                <ul class="list-unstyled text-small">
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="#">管理系统</a></li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="#">网站</a></li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="#">定制开发</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3 col-xs-6">
+                <h5>产品文档</h5>
+                <ul class="list-unstyled text-small">
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="/doc/">uieip</a></li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none"
+                            href="/doc/server-wevsvr.html">服务路由规则</a></li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="/doc/data.html">数据库</a>
+                    </li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="/doc/jsvm.html">脚本</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3 col-xs-6">
+                <h5>关于作者</h5>
+                <ul class="list-unstyled text-small">
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="/author/"
+                            target="_blank">作者简介</a>
+                    </li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="https://www.yqsite.com/"
+                            target="_blank">远齐科技</a></li>
+                    <li class="mb-1"><a class="link-secondary text-decoration-none" href="/contact/">联系方式</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="row yq_line">
+            <div class="col-md-12 col-sm-12" align="center">
+                &copy; 2025 <a href="http://www.yqsite.com" target="_blank">远齐科技（北京）有限公司</a> All rights reserved
+                <a href="https://beian.miit.gov.cn/" target="_blank">京ICP备14021695号-1</a>
+                <br />
+                地址:北京市朝阳区朝阳路71号锐城国际1608室
+                邮箱:<a href="mailto:webmaster@yqsite.com">webmaster@yqsite.com</a> 电话:15210221375
+            </div>
+        </div>
+    </div>
+</div>
+<script src="/scripts/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+    function userlogin() {
+        var backurl = window.document.location.href;
+        window.top.location = "/login/login.html?backurl=" + encodeURIComponent(backurl);
+    }
+    //退出
+    function userlogout() {
+        var backurl = window.location.protocol + '//' + window.location.host;
+        //var backurl = window.document.location.href;
+        window.top.location = "/login/logout.html?backurl=" + encodeURIComponent(backurl);
+    }
+</script>

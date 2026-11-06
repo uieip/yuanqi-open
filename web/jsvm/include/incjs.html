@@ -1,0 +1,27 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console"></uieip>
+<html lang="zh">
+
+<head>
+	<uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+	<title>include</title>
+	<meta name="keywords" content="yuanqi ltd.">
+</head>
+
+<body>
+	<uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+	<div class="container">
+		<h1>include</h1>
+		set:bbbb:<uieip>bbbb</uieip>
+		<uieip type="file" value="code" src="incjs.html"></uieip>
+		<h1>incjs.js</h1>
+		<uieip type="file" value="code" src="incjs.js"></uieip>
+	</div>
+	<uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+	<script runat="server" src="/jsvm/include/incjs.js"></script>
+	<script runat="server">
+		var bbbb = '<span>' + a + " " + b + '! </span>';
+	</script>
+</body>
+
+</html>

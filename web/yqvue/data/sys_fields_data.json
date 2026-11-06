@@ -1,0 +1,266 @@
+{
+    "error": 0,
+    "info": "ok",
+    "rows": [
+        {
+            "sid": "1",
+            "name": "sid",
+            "is_func": false,
+            "ui_title": "sId",
+            "fd_type": "nvarchar",
+            "length": 36,
+            "decimal": 0,
+            "ui_type": 1,
+            "ui_width": 90,
+            "ui_visible": false,
+            "ui_readnnly": true,
+            "ui_mask": "{}",
+            "queue": 1
+        },
+        {
+            "sid": "2",
+            "name": "textbox",
+            "ui_title": "Textbox",
+            "fd_type": "nvarchar",
+            "length": 50,
+            "decimal": 0,
+            "ui_type": 2,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 2
+        },
+        {
+            "sid": "3",
+            "name": "checkbox",
+            "is_func": false,
+            "ui_title": "Checkbox",
+            "fd_type": "boolean",
+            "length": 1,
+            "decimal": 0,
+            "ui_type": 3,
+            "ui_width": 30,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 3
+        },
+        {
+            "sid": "4",
+            "name": "datebox",
+            "is_func": false,
+            "ui_title": "Datetbox",
+            "fd_type": "date",
+            "length": 0,
+            "decimal": 0,
+            "ui_type": 4,
+            "ui_width": 80,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 4
+        },
+        {
+            "sid": "5",
+            "name": "richbox",
+            "is_func": false,
+            "ui_title": "Richbox",
+            "fd_type": "nvarchar",
+            "length": 2000,
+            "decimal": 0,
+            "ui_type": 5,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 5
+        },
+        {
+            "sid": "6",
+            "name": "combobox",
+            "is_func": false,
+            "ui_title": "Combobox",
+            "fd_type": "int",
+            "length": 16,
+            "decimal": 0,
+            "ui_type": 6,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{\"lists\":[{\"no\":1,\"name\":\"name1\"}]}",
+            "queue": 6
+        },
+        {
+            "sid": "7",
+            "name": "foreignkey",
+            "is_func": false,
+            "ui_title": "ForeignKey",
+            "fd_type": "nvarchar",
+            "length": 36,
+            "decimal": 0,
+            "ui_type": 7,
+            "ui_width": 180,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 7
+        },
+        {
+            "sid": "8",
+            "name": "treeselect",
+            "is_func": false,
+            "ui_title": "TreeSelect",
+            "fd_type": "int",
+            "length": 16,
+            "decimal": 0,
+            "ui_type": 8,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": [
+                    2,
+                    201,
+                    20101
+                ],
+                "blank": false,
+                "level": 1,
+                "subfield": "treeselect2",
+                "trees": [
+                    {
+                        "no": 1,
+                        "name": "root1",
+                        "extend": "扩展",
+                        "default": true,
+                        "subs": [
+                            {
+                                "no": 101,
+                                "name": "sub101",
+                                "subs": [
+                                    {
+                                        "no": 10101,
+                                        "name": "三级10101"
+                                    },
+                                    {
+                                        "no": 10102,
+                                        "name": "三级10102"
+                                    }
+                                ]
+                            },
+                            {
+                                "no": 102,
+                                "name": "sub102",
+                                "subs": [
+                                    {
+                                        "no": 10201,
+                                        "name": "三级10201"
+                                    },
+                                    {
+                                        "no": 10202,
+                                        "name": "三级10202"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "no": 2,
+                        "name": "root2",
+                        "subs": [
+                            {
+                                "no": 201,
+                                "name": "Sub201",
+                                "subs": [
+                                    {
+                                        "no": 20101,
+                                        "name": "三级20101"
+                                    },
+                                    {
+                                        "no": 20102,
+                                        "name": "三级20102"
+                                    }
+                                ]
+                            },
+                            {
+                                "no": 202,
+                                "name": "Sub202",
+                                "subs": [
+                                    {
+                                        "no": 20201,
+                                        "name": "三级20201"
+                                    },
+                                    {
+                                        "no": 20202,
+                                        "name": "三级20202"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            "queue": 8
+        },
+        {
+            "sid": "9",
+            "name": "numberbox",
+            "is_func": false,
+            "ui_title": "Numberbox",
+            "fd_type": "number",
+            "length": 10,
+            "decimal": 2,
+            "ui_type": 9,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 9
+        },
+        {
+            "sid": "10",
+            "name": "numberspinner",
+            "is_func": false,
+            "ui_title": "Numberspinner",
+            "fd_type": "number",
+            "length": 10,
+            "decimal": 0,
+            "ui_type": 10,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 10
+        },
+        {
+            "sid": "11",
+            "name": "timespinner",
+            "is_func": false,
+            "ui_title": "TimeSpinner",
+            "fd_type": "varchar",
+            "length": 8,
+            "decimal": 0,
+            "ui_type": 11,
+            "ui_width": 80,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 11
+        },
+        {
+            "sid": "12",
+            "name": "datetimebox",
+            "is_func": false,
+            "ui_title": "DateTimebox",
+            "fd_type": "datetime",
+            "length": 0,
+            "decimal": 0,
+            "ui_type": 12,
+            "ui_width": 80,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": "{}",
+            "queue": 12
+        }
+    ]
+}

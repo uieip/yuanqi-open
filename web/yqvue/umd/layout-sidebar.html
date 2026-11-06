@@ -1,0 +1,194 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqSidebar 侧边栏组件测试</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 测试控制面板 */
+    .test-panel {
+      position: absolute;
+      top: 16px;
+      left: 266px;
+      padding: 16px 20px;
+      background-color: var(--el-bg-color);
+      border: 1px solid var(--el-border-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      transition: left 0.3s;
+    }
+
+    .test-panel.collapsed {
+      left: 80px;
+    }
+
+    .test-panel h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--el-text-color-secondary);
+    }
+
+    .test-panel .form-row {
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const { createApp, ref } = Vue;
+    const { initTheme, YqSidebar, i18n } = YqwinPlus;
+    const { ElMessage } = ElementPlus;
+    initTheme();
+
+    const app = createApp({
+      components: { YqSidebar },
+      setup() {
+        // 侧边栏折叠状态
+        const isCollapse = ref(false)
+
+        // YqSidebar组件引用
+        const yqSidebarRef = ref(null)
+
+        // 是否显示logo
+        const showLogo = ref(true)
+
+        // logo配置
+        const logo = ref({
+          text: 'Yqwin Plus',
+          icon: '/icon/远齐.jpg',
+          path: '/'
+        })
+
+        // 是否显示用户信息
+        const showUserInfo = ref(true)
+
+        // 用户信息
+        const user = ref({
+          name: '管理员',
+          icon: '/icon/人员管理.png',
+          role: 'admin'
+        })
+
+        // 菜单数据
+        const menuItems = ref([
+          { id: 'dashboard', label: '首页', icon: '/icon/工作流.png', path: '/dashboard', active: true },
+          { id: 'workplace', label: '工作台', icon: 'fa fa-briefcase', path: '/workplace' },
+          { id: 'documentation', label: '文档', icon: 'fa fa-file', path: '/documentation' },
+          {},
+          {
+            id: 'system',
+            label: '系统管理',
+            icon: 'fa fa-ellipsis-h',
+            children: [
+              {
+                id: 'system-user-2',
+                label: '用户管理',
+                icon: 'fa fa-user',
+                children: [
+                  { id: 'operation-log', label: '操作日志', icon: 'fa fa-bug', path: '/operation/log' },
+                  { id: '', label: '', icon: '' },
+                  { id: 'operation-monitor-2', label: '系统监控', icon: 'fa fa-window-restore', path: '/operation/monitor' }
+                ]
+              },
+              { id: 'system-role', label: '角色管理', icon: 'fa fa-address-book', path: '/system/role' },
+              { id: '', label: '', icon: '' },
+              { id: 'system-menu', label: '菜单管理', icon: 'fa fa-bars', path: '/system/menu' }
+            ]
+          },
+          {
+            id: 'operation',
+            label: '运维管理',
+            icon: 'fa fa-asterisk',
+            children: [
+              { id: 'operation-log', label: '操作日志', icon: 'fa fa-bug', path: '/operation/log' },
+              {
+                id: 'operation-monitor',
+                label: '系统监控',
+                icon: 'fa fa-window-restore',
+                children: [
+                  { id: 'operation-log-2', label: '操作日志', icon: 'fa fa-bug', path: '/operation/log' },
+                  { id: '', label: '', icon: '' },
+                  { id: 'operation-monitor-3', label: '系统监控', icon: 'fa fa-window-restore', path: '/operation/monitor' }
+                ]
+              }
+            ]
+          }
+        ])
+
+        // 第二组菜单数据（用于切换）
+        const menuItems2 = ref([
+          { id: 'dashboard', label: '首页', icon: '/icon/工作流.png', path: '/dashboard', active: true },
+          {
+            id: 'operation',
+            label: '运维管理',
+            icon: 'tools',
+            children: [
+              { id: 'operation-log', label: '操作日志', icon: 'memo', path: '/operation/log' },
+              { id: 'operation-monitor', label: '系统监控', icon: 'monitor', path: '/operation/monitor' }
+            ]
+          }
+        ])
+
+        // 切换菜单方法
+        const changeMenuItems = () => {
+          const temp = [...menuItems.value]
+          menuItems.value = [...menuItems2.value]
+          menuItems2.value = temp
+        }
+
+        // 折叠/展开侧边栏
+        const toggleCollapse = () => {
+          isCollapse.value = !isCollapse.value
+        }
+
+        // 菜单点击事件处理
+        const menu_onClick = (event, item, type) => {
+          ElMessage.success(`click：${item.label}`)
+        }
+
+        return {
+          isCollapse, yqSidebarRef, showLogo, logo, showUserInfo, user,
+          menuItems, changeMenuItems, toggleCollapse, menu_onClick
+        }
+      },
+      template: `
+        <yq-sidebar ref="yqSidebarRef" :is-collapse="isCollapse" :menu-items="menuItems"
+          :show-logo="showLogo" :logo="logo" :show-user-info="showUserInfo" :user-info="user"
+          @onClick="menu_onClick"></yq-sidebar>
+        <div class="test-panel" :class="{ collapsed: isCollapse }">
+          <h3>YqSidebar 组件测试面板</h3>
+          <div class="form-row">
+            <el-button type="primary" @click="toggleCollapse">{{ isCollapse ? '展开侧边栏' : '折叠侧边栏' }}</el-button>
+            <el-button type="primary" @click="changeMenuItems">切换菜单</el-button>
+          </div>
+          <div class="form-row">
+            <el-switch v-model="showLogo" active-text="显示Logo" inactive-text="隐藏Logo"></el-switch>
+          </div>
+          <div class="form-row">
+            <el-switch v-model="showUserInfo" active-text="显示用户信息" inactive-text="隐藏用户信息"></el-switch>
+          </div>
+        </div>
+      `
+    })
+
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+  </script>
+</body>
+</html>

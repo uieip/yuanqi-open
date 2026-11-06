@@ -1,0 +1,182 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>Document>from-file</title>
+    <!-- 引入基础样式 -->
+    <style>
+        /* 页面样式调整 */
+        body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 左右布局容器 */
+        .layout-container {
+            display: flex;
+            gap: 20px;
+            min-height: 600px;
+        }
+
+        /* 左侧编辑器容器 */
+        .editor-container {
+            flex: 1;
+            min-width: 400px;
+        }
+
+        /* 右侧内容容器 */
+        .content-container {
+            flex: 1;
+            min-width: 400px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            height: calc(100vh - 100px);
+            overflow-y: auto;
+        }
+
+        /* EasyMDE 编辑器样式调整 */
+        .EasyMDEContainer {
+            margin-bottom: 0;
+        }
+
+        /* 内容容器标题样式 */
+        .content-container h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #303133;
+        }
+
+        /* 内容容器代码块样式 */
+        .content-container pre {
+            background-color: #f5f7fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border: 1px solid #e4e7ed;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <h2>Markdown 测试</h2>
+        <!-- 左右布局容器 -->
+        <div class="layout-container">
+            <!-- 左侧：编辑器 -->
+            <div class="editor-container">
+                <div style="margin-bottom: 15px; padding: 10px; background-color: #f0f2f5; border-radius: 4px;">
+                    <el-switch v-model="isEdit" :active-value="true" :inactive-value="false" active-text="可编辑"
+                        inactive-text="只读模式"></el-switch> |
+                    <el-switch v-model="lineNumbers" :active-value="true" :inactive-value="false" active-text="显示行号"
+                        inactive-text="不显示行号"></el-switch> |
+                    <el-switch v-model="showView" :active-value="true" :inactive-value="false" active-text="显示预览"
+                        inactive-text="不显示预览"></el-switch> |
+                    <el-switch v-model="directup" :active-value="true" :inactive-value="false" active-text="直接上传"
+                        inactive-text="选择后不上传"></el-switch> |
+                    <el-switch v-model="chunk" :active-value="true" :inactive-value="false" active-text="分片上传"
+                        inactive-text="普通上传" style="margin-right: 20px;"></el-switch>
+                </div>
+                <div style="width: 350px;padding-bottom: 10px;">
+                    <yq-rich-text :type="type" v-model:value="markdownValue" :storage-type="storageType" :storage-name="storageName"
+                        :accept="accept" :chunk="chunk" :directup="directup" :is-edit="isEdit"
+                        :line-numbers="lineNumbers" :show-view="showView" :statusbar="statusbar">
+                    </yq-rich-text>
+                </div>
+                <!-- 使用 YqMarkdown 组件 -->
+                <div style="height:50vh; border: 1px solid #e4e7ed;">
+                    <yq-markdown v-model:value="markdownValue" :storage-type="storageType" :storage-name="storageName"
+                        :accept="accept" :chunk="chunk" :directup="directup" :is-edit="isEdit"
+                        :line-numbers="lineNumbers" :show-view="showView" :statusbar="statusbar">
+                    </yq-markdown>
+                </div>
+            </div>
+
+            <!-- 右侧：内容预览 -->
+            <div class="content-container">
+                <h2>编辑器内容:</h2>
+                <pre>{{ markdownValue.code }}</pre>
+                <h2>文件列表:</h2>
+                <pre>{{ JSON.stringify(markdownValue.files || [], null, 2) }}</pre>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqMarkdown, YqRichText } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMarkdown,
+                YqRichText
+            },
+            data() {
+                return {
+                    type: 2,
+                    storageType: 2,
+                    storageName: "sqlite",
+                    accept: "image/*",
+                    chunk: false,
+                    directup: false,
+                    isEdit: true,
+                    lineNumbers: false,
+                    showView: false,
+                    statusbar: false,
+                }
+            },
+            setup() {
+                // 初始化默认内容
+                const defaultContent = `![签名.png](@sqlite_1c9998aa-09ad-11f1-b463-9010576ae8bc)
+![证件照.jpg](@sqlite_1c9e6eec-09ad-11f1-b463-9010576ae8bc) \n
+# Hello Markdown!\n\n这是一个使用 EasyMDE 创建的 Markdown 编辑器示例。\n\n## 特性\n\n- 支持 Markdown 语法\n- 实时预览\n- 工具栏快捷操作\n- 自动保存\n\n## 如何使用\n\n1. 在编辑器中输入 Markdown 内容\n2. 查看实时预览效果\n3. 编辑器内容会自动保存
+ 
+`;
+                const markdownValue = ref({
+                    code: defaultContent, files: [
+                        {
+                            "sto_type": 2,
+                            "sto_name": "sqlite",
+                            "name": "签名.png",
+                            "type": "image/png",
+                            "size": 10529,
+                            "sid": "1c9998aa-09ad-11f1-b463-9010576ae8bc"
+                        },
+                        {
+                            "sto_type": 2,
+                            "sto_name": "sqlite",
+                            "name": "证件照.jpg",
+                            "type": "image/jpeg",
+                            "size": 41270,
+                            "sid": "1c9e6eec-09ad-11f1-b463-9010576ae8bc"
+                        }
+                    ]
+                })
+
+                return {
+                    markdownValue
+                }
+            }
+        })
+            .use(ElementPlus)
+            .mount('#app')
+    </script>
+
+</body>
+
+</html>

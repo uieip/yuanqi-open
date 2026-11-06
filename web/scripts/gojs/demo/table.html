@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="stylesheet" href="/scripts/yqwin/yqwin-plus.css">
+  <script src="/scripts/theme-boot.js"></script>
+  <script src="/scripts/gojs/go.js"></script>
+  <title>table</title>
+  <style>
+    body {
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+  </style>
+</head>
+
+<body>
+  <a href="javascript:window.history.back();">返回</a>
+  <div id="myDiagramDiv" style="border: 1px solid black; width: 100%; height: 400px; position: relative; cursor: auto;">
+  </div>
+  <p>Add a row or Remove the second row of the table held by the selected node:</p>
+  <button onclick="insertIntoArray()">Insert Into Array</button>
+  <button onclick="removeFromArray()">Remove From Array</button>
+  <p>Add a column or Remove the fourth column from the table of the selected node:</p>
+  <button onclick="addColumn()">Add Column</button>
+  <button onclick="removeColumn()">Remove Column</button>
+  <p>Swap the "phone" and "office" columns for each selected node:</p>
+  <button onclick="swapTwoColumns()">Swap Two Columns</button>
+
+  <script>
+    var opt = {};
+
+    init();
+
+    function init() {
+      opt.$ = go.GraphObject.make;
+
+      opt.diagram = new go.Diagram('myDiagramDiv', {
+        'undoManager.isEnabled': true
+      });
+
+
+      /*
+      opt.diagram.nodeTemplateMap.add("table",
+        opt.$(go.Node, 'Auto',
+          opt.$(go.Shape, {
+            fill: 'white'
+          }),
+          opt.$(go.Panel,
+            'Vertical', {
+            stretch: go.Stretch.Horizontal,
+            margin: 0.5
+          },
+            opt.$(go.Panel, 'Auto', {
+              stretch: go.Stretch.Horizontal
+            },
+              opt.$(go.Shape, {
+                fill: '#1570A6',
+                strokeWidth: 0
+              }),
+              opt.$(go.TextBlock,
+                {
+                  alignment: go.Spot.Center,
+                  margin: 3,
+                  stroke: 'white',
+                  textAlign: 'center',
+                  font: 'bold 12pt sans-serif',
+                },
+                new go.Binding('text', 'tbname')
+              )
+            ),
+
+            //表格
+            opt.$(go.Panel, 'Table',
+              new go.Binding('itemArray', 'rows'),
+              {
+                margin: 0.5,
+              },
+              opt.$(go.RowColumnDefinition, { row: 0, background: 'lightgray' }),
+              opt.$(go.RowColumnDefinition, { row: 1, separatorStroke: 'black' }),
+              opt.$(go.Panel, 'TableRow', {
+                isPanelMain: true,
+              },
+                new go.Binding('itemArray', 'titles'),
+                {
+                  itemTemplate: opt.$(go.Panel,
+                    {
+                      stretch: go.Stretch.None,  //影响列的宽带
+                      alignment: go.Spot.TopCenter
+                    },
+                    new go.Binding('column'),
+                    opt.$(go.TextBlock, {
+                      margin: new go.Margin(2, 2, 0, 2),
+                      font: 'bold 10pt sans-serif'
+                    },
+                      new go.Binding('text'))
+                  ),
+                }
+              ),
+
+              {
+                name: 'TABLE',
+                defaultAlignment: go.Spot.Left,
+                defaultColumnSeparatorStroke: 'gray',
+                defaultRowSeparatorStroke: 'gray',
+                itemTemplate: opt.$(go.Panel, 'TableRow',
+                  new go.Binding('itemArray', 'columns'),
+                  {
+
+                    itemTemplate: opt.$(go.Panel,
+                      {
+                        stretch: go.Stretch.None,  //影响列的宽带
+                        alignment: go.Spot.TopLeft,
+                      },
+                      new go.Binding('column', 'attr', (a, elt) => {
+                        var cd = findColumnDefinitionForName(elt.part.data, a);
+                        if (cd !== null) return cd.column;
+                        throw new Error('unknown column name: ' + a);
+                      }),
+                      opt.$(go.TextBlock, {
+                        editable: false,
+                        margin: new go.Margin(2, 2, 0, 2),
+                        font: 'bold 13px sans-serif',
+                      },
+                        new go.Binding('text').makeTwoWay())
+                    ),
+                  }
+                ),
+              },
+            )
+          )
+        ));
+
+      */
+
+      var fieldTemplate = opt.$(go.Panel,
+        'TableRow',
+        {
+          background: 'transparent',
+          fromSpot: go.Spot.Right,
+          toSpot: go.Spot.Left,
+          fromLinkable: true,
+          toLinkable: true,
+        },
+
+        new go.Binding('itemArray', 'columns'),
+        {
+          itemTemplate: opt.$(go.Panel,
+            {
+              stretch: go.Stretch.None,  //影响列的宽带
+              alignment: go.Spot.TopLeft,
+            },
+            new go.Binding('column', 'attr', (a, elt) => {
+              var cd = findColumnDefinitionForName(elt.part.data, a);
+              if (cd !== null) return cd.column;
+              throw new Error('unknown column name: ' + a);
+            }),
+            opt.$(go.TextBlock, {
+              editable: false,
+              margin: new go.Margin(2, 2, 0, 2),
+              font: 'bold 13px sans-serif',
+            },
+              new go.Binding('text').makeTwoWay())
+          ),
+        }
+      );
+
+      opt.diagram.nodeTemplateMap.add("table",
+        opt.$(go.Node,
+          'Auto',
+          opt.$(go.Shape, { fill: 'white' }),
+          opt.$(go.Panel,
+            'Vertical',
+            { stretch: go.Stretch.Horizontal, margin: 0.5 },
+            opt.$(go.Panel,
+              'Auto',
+              { stretch: go.Stretch.Horizontal },
+              opt.$(go.Shape, { fill: '#1570A6', strokeWidth: 0 }),
+              opt.$(go.TextBlock,
+                {
+                  alignment: go.Spot.Center,
+                  margin: 3,
+                  stroke: 'white',
+                  textAlign: 'center',
+                  font: 'bold 12pt sans-serif',
+                },
+                new go.Binding('text', 'tbname')
+              )
+            ),
+            opt.$(go.Panel,
+              'Table',
+              {
+                name: 'TABLE',
+                stretch: go.Stretch.Horizontal,
+                minSize: new go.Size(100, 10),
+                defaultAlignment: go.Spot.Left,
+                defaultStretch: go.Stretch.Horizontal,
+                defaultColumnSeparatorStroke: 'gray',
+                defaultRowSeparatorStroke: 'gray',
+                itemTemplate: fieldTemplate,
+              },
+              new go.Binding('itemArray', 'rows')
+            )
+          )
+        )
+      );
+
+      opt.diagram.linkTemplateMap.add("",
+        opt.$(go.Link, {
+          relinkableFrom: true,
+          relinkableTo: true,
+          toShortLength: 4
+        },
+          opt.$(go.Shape, {
+            strokeWidth: 1.5
+          }),
+          opt.$(go.Shape, {
+            toArrow: 'Standard',
+            stroke: null
+          })
+        ));
+
+      opt.diagram.model = new go.GraphLinksModel({
+        copiesArrays: true,
+        copiesArrayObjects: true,
+        linkFromPortIdProperty: 'fromPort',
+        linkToPortIdProperty: 'toPort',
+        nodeDataArray: [
+          {
+            category: "table",
+            key: 1,
+            tbname: "表1",
+            titles: [
+              { attr: 'name', text: 'Name', column: 0 },
+              { attr: 'phone', text: 'Phone #', column: 1 },
+              { attr: 'office', text: 'Office', column: 2 },
+            ],
+            rows: [
+              {
+                columns: [
+                  { attr: 'name', text: 'Alice' },
+                  // { attr: 'phone', text: '2345' },
+                  { attr: 'office', text: 'C4-E1811111111111111' },
+                ],
+              },
+              {
+                columns: [
+                  { attr: 'name', text: 'Bob' },
+                  { attr: 'phone', text: '9876' },
+                  { attr: 'office', text: 'E1-B3444444444444 \n 4444444444' },
+                ],
+              },
+              {
+                columns: [
+                  { attr: 'name', text: 'Carol' },
+                  { attr: 'phone', text: '1111' },
+                  { attr: 'office', text: 'C4-E23' },
+                ],
+              },
+              {
+                columns: [
+                  { attr: 'name', text: 'Ted' },
+                  { attr: 'phone', text: '2222' },
+                  { attr: 'office', text: 'C4-E197' },
+                ],
+              },
+            ],
+          },
+          {
+            category: "table",
+            key: 2,
+            tbname: "表2",
+            titles: [
+              { attr: 'name', text: 'Name', column: 0 },
+              { attr: 'phone', text: 'Phone #', column: 2 },
+              { attr: 'office', text: 'Office', column: 1 },
+            ],
+            rows: [
+              {
+                columns: [
+                  { attr: 'name', text: 'Robert' },
+                  { attr: 'phone', text: '5656' },
+                  { attr: 'office', text: 'B1-A27' },
+                ],
+              },
+              {
+                columns: [
+                  { attr: 'name', text: 'Natalie' },
+                  { attr: 'phone', text: '5698' },
+                  { attr: 'office', text: 'B1-B6' },
+                ],
+              },
+            ],
+          },
+          {
+            category: "table",
+            key: 3,
+            tbname: "表3",
+            titles: [
+              { attr: 'name', text: 'Name', column: 0 },
+              { attr: 'phone', text: 'Phone #', column: 2 },
+              { attr: 'office', text: 'Office', column: 1 },
+            ],
+            rows: [
+              {
+                columns: [
+                  { attr: 'name', text: 'Robert' },
+                  { attr: 'phone', text: '5656' },
+                  { attr: 'office', text: 'B1-A27' },
+                ],
+              },
+              {
+                columns: [
+                  { attr: 'name', text: 'Natalie' },
+                  { attr: 'phone', text: '5698' },
+                  { attr: 'office', text: 'B1-B6' },
+                ],
+              },
+            ],
+          },
+        ],
+        linkDataArray: [{ from: 1, to: 2 }, { from: 1, to: 3 }],
+      });
+    }
+
+    function insertIntoArray() {
+      var n = opt.diagram.selection.first();
+      if (n === null) return;
+      var d = n.data;
+      opt.diagram.startTransaction('insertIntoTable');
+      opt.diagram.model.insertArrayItem(d.rows, 1, {
+        columns: [
+          { attr: 'name', text: 'Elena' },
+          { attr: 'phone', text: '456' },
+          { attr: 'office', text: 'LA' },
+        ],
+      });
+      opt.diagram.commitTransaction('insertIntoTable');
+    }
+
+    function removeFromArray() {
+      var n = opt.diagram.selection.first();
+      if (n === null) return;
+      var d = n.data;
+      opt.diagram.startTransaction('removeFromTable');
+      // remove second item of list, at index #1
+      opt.diagram.model.removeArrayItem(d.rows, 1);
+      opt.diagram.commitTransaction('removeFromTable');
+    }
+
+    function findColumnDefinitionForName(nodedata, attrname) {
+      var columns = nodedata.titles;
+      for (var i = 0; i < columns.length; i++) {
+        if (columns[i].attr === attrname) return columns[i];
+      }
+      return null;
+    }
+
+    function findColumnDefinitionForColumn(nodedata, idx) {
+      var columns = nodedata.titles;
+      for (var i = 0; i < columns.length; i++) {
+        if (columns[i].column === idx) return columns[i];
+      }
+      return null;
+    }
+
+    function addColumn(attrname) {
+      var n = opt.diagram.selection.first();
+      if (n === null) return;
+      var d = n.data;
+      // if name is not given, find an unused column name
+      if (attrname === undefined || attrname === '') {
+        attrname = 'new';
+        var count = 1;
+        while (findColumnDefinitionForName(d, attrname) !== null) {
+          attrname = 'new' + (count++).toString();
+        }
+      }
+      // find an unused column #
+      var col = 3;
+      while (findColumnDefinitionForColumn(d, col) !== null) {
+        col++;
+      }
+      opt.diagram.startTransaction('addColumn');
+      var model = opt.diagram.model;
+      // add a column definition for the node's whole table
+      model.addArrayItem(d.titles, {
+        attr: attrname,
+        text: attrname,
+        column: col,
+      });
+      // add cell to each person in the node's table of rows
+      var rows = d.rows;
+      for (var j = 0; j < rows.length; j++) {
+        var person = rows[j];
+        model.addArrayItem(person.columns, {
+          attr: attrname,
+          text: Math.floor(Math.random() * 1000).toString(),
+        });
+      }
+      opt.diagram.commitTransaction('addColumn');
+    }
+
+    function removeColumn() {
+      var n = opt.diagram.selection.first();
+      if (n === null) return;
+      var d = n.data;
+      var coldef = d.titles[3]; // get the fourth column
+      if (coldef === undefined) return;
+      var attrname = coldef.attr;
+      opt.diagram.startTransaction('removeColumn');
+      var model = opt.diagram.model;
+      model.removeArrayItem(d.titles, 3);
+      n.findObject('TABLE').removeColumnDefinition(coldef.column);
+      // update columns for each person in this table
+      var rows = d.rows;
+      for (var j = 0; j < rows.length; j++) {
+        var person = rows[j];
+        var columns = person.columns;
+        for (var k = 0; k < columns.length; k++) {
+          var cell = columns[k];
+          if (cell.attr === attrname) {
+            // get rid of this attribute cell from the person.columns Array
+            model.removeArrayItem(columns, k);
+            break;
+          }
+        }
+      }
+      opt.diagram.commitTransaction('removeColumn');
+    }
+
+    function swapTwoColumns() {
+      opt.diagram.startTransaction('swapColumns');
+      var model = opt.diagram.model;
+      opt.diagram.selection.each((n) => {
+        if (!(n instanceof go.Node)) return;
+        var d = n.data;
+        var phonedef = findColumnDefinitionForName(d, 'phone');
+        if (phonedef === null) return;
+        var phonecolumn = phonedef.column; // remember the column number
+        var officedef = findColumnDefinitionForName(d, 'office');
+        if (officedef === null) return;
+        var officecolumn = officedef.column; // and this one too
+        model.setDataProperty(phonedef, 'column', officecolumn);
+        model.setDataProperty(officedef, 'column', phonecolumn);
+        model.updateTargetBindings(d); // update all bindings, to get the cells right
+      });
+      opt.diagram.commitTransaction('swapColumns');
+    }
+  </script>
+</body>
+
+</html>

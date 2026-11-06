@@ -1,0 +1,70 @@
+<!doctype html>
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console"></uieip>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>cms model edit</title>
+</head>
+
+<body style="margin: 0px;">
+    <div id="editor" style="width: 100%;height:100vh;">
+        <yq-file-edit :is-edit="isEdit" :file-path="filePath" :go-doc-end="goDocEnd" :runfile="runfile" :cms="cms"
+            :mobile="mobile"></yq-file-edit>
+    </div>
+
+    <script>
+        const { createApp, onMounted, ref, nextTick } = Vue;
+        const { ElSelect, ElOption } = ElementPlus;
+        const { initTheme, YqFileEdit  } = YqwinPlus;
+        initTheme();
+
+        const mainParams = {
+            path: '',
+            mobile: ''
+        };
+
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            mainParams.path = urlParams.get('path') || mainParams.path;
+            mainParams.mobile = urlParams.get('mobile') || mainParams.mobile;
+            console.log(mainParams);
+
+            initApp();
+        }
+
+        const initApp = () => {
+
+            const app = createApp({
+                components: {
+                    YqFileEdit
+                },
+                setup() {
+                    // 基本状态
+                    const isEdit = ref(true);
+                    const goDocEnd = ref(false);
+                    const runfile = ref(true);
+
+                    // 示例文件数据
+                    const filePath = ref(mainParams.path);
+                    const mobile = ref(mainParams.mobile);
+
+                    return {
+                        isEdit,
+                        goDocEnd,
+                        runfile,
+                        filePath,
+                        cms: true,
+                        mobile
+                    };
+                }
+            });
+
+            app.mount('#editor');
+        }
+
+    </script>
+</body>
+
+</html>

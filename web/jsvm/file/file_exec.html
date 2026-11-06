@@ -1,0 +1,23 @@
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console"></uieip>
+<h3>--file_exec.html begin--</h3>
+<p>set:aaaa:<uieip>aaaa</uieip>
+</p>
+<p>set:bbbb:<uieip>bbbb</uieip></p>
+<p>request.param("a"):<uieip>r_a</uieip>
+</p>
+<script>
+    var a = '<a>asdasdasd</a>'
+</script>
+<script runat="server">
+    var aaaa = '<span>aaaaaaaaaaaa</span>';
+    var r_a = request.param("a");
+    response.write('<i>response.writeresponse.writeresponse.writeresponse.write</i>');
+</script>
+<script runat="server">
+    var a = "a1";
+    var b = "b1";
+
+    var bbbb = '<span>bbbbbbbbbbbb' + a + b + '</span>';
+</script>
+<h3>--file_exec.html end--</h3>

@@ -1,0 +1,196 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 1px 0 0 0; overflow: hidden;display: block;">
+    <div id="app">
+        <yq-data-grid ref="tbRef" v-bind="tbProps"></yq-data-grid>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed, nextTick  } = Vue;
+        const { initTheme, YqWindowApi, yqData, YqDataPub, YqMessageBox, YqDataGrid  } = YqwinPlus;
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+             let mainParams = {
+            dbname: _dbname,
+            tb: _tb,
+        };
+
+        window.onload = function () {
+            console.log("mainParams", mainParams);
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const tbRef = ref(null);
+
+                    let selectedRow = ref(null);
+
+                    const transShow = (row) => {
+                        let el = tbRef.value?.selectEl();
+                        let height = 500;
+                        let width = 625;
+                      
+                        let top = 40;
+                        let left = -50;
+                        let editH = height - 113;
+                        left = (window.innerWidth - 625) / 2;
+
+                        let t_type = row.type;
+                        let t_name = row.name;
+                        let t_lang = "zh-CN";
+
+                        let dialogId = ''
+                        let parent = true;
+                        if (!window.parent || window.parent === window) {
+                            parent = false;
+                        }
+
+                        const content = `trans.html?type=${t_type}&name=${t_name}&lang=${t_lang}&height=${editH}`;
+                        console.log("content", content);
+                        dialogId = YqWindowApi.show({
+                            containerRef: el,
+                            placement: 'popper',
+                            title: "语言",
+                            width: width,
+                            height: height,
+                            left: left,
+                            top: top,
+                            type: 'iframe',
+                            content: content,
+                            parent: parent,
+                            overflow: 'none',
+                            showFooter: false,
+                        });
+                    }
+
+                    const tbProps = computed(() => ({
+                        ...mainParams.tb,
+                        menuType: 3,
+                        loadTitles: false,
+                        loadData: true,
+                        editLinks: [
+                            {
+                                divided: true,
+                            },
+                            {
+                                name: "language",
+                                label: "语言",
+                                toptip: "语言",
+                                icon: "fa fa-language",
+                                type: "primary",
+                                disabled: () => {
+                                    return selectedRow.value === null;
+                                },
+                                click: (event) => {
+                                    transShow(selectedRow.value);
+                                }
+                            }
+                        ],
+                        beforeSetTitles: async (titles) => {
+                            return Promise.resolve(titles);
+                        },
+                        afterSetTitles: async () => {
+
+                        },
+                        onRowClick: ({ row, index, key }) => {
+                            if (row) {
+                                selectedRow.value = row;
+                            }
+                            else {
+                                selectedRow.value = null;
+                            }
+                        },
+                        beforeEdit: async (action, row, params) => {
+                            let titles = params.editTitles;
+                            for (let i = 0; i < titles.length; i++) {
+                                if (titles[i].name == "type" || titles[i].name == "name") {
+                                    titles[i].ui_readonly = (action == "upp");
+                                }
+                            }
+                            params.editTitles = titles;
+                            return { cancel: false, row: row };
+                        },
+                        //异步：处理保存前
+                        saveDataBefore: async (res) => {
+                            if (res.rows[0].action == "del") {
+                                const clearRes = await yqData.transNumber({
+                                    dbname: mainParams.dbname,
+                                    type: selectedRow.value.type,
+                                    name: selectedRow.value.name,
+                                });
+
+                                if (clearRes.error == 0) {
+                                    if (clearRes.num == 0) {
+                                        res.cancel = false;
+                                        return Promise.resolve(res);
+                                    }
+                                    else {
+                                        res.cancel = true;
+                                        res.info = `请先清除${clearRes.num}条翻译信息`;
+                                        return Promise.resolve(res);
+                                    }
+                                }
+                                else {
+                                    res.cancel = true;
+                                    res.info = clearRes.info;
+                                    return Promise.resolve(res);
+                                }
+                            } else {
+                                res.cancel = false;
+                                return Promise.resolve(res);
+                            }
+                        },
+                        saveDataAfter: async (res) => {
+                            if (res.error == 0 && res.rows[0].action == "del") {
+                                await yqData.transClearAll({
+                                    dbname: mainParams.dbname,
+                                    type: selectedRow.value.type,
+                                    name: selectedRow.value.name,
+                                });
+                            }
+                            return Promise.resolve(res);
+                        }
+                    }));
+
+                    onMounted(async () => {
+                        await tbRef.value.initTitles();
+                    });
+
+                    return {
+                        tbRef,
+                        tbProps
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

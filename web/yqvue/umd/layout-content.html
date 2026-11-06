@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+  <title>YqContent 多页签组件测试</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--yq-bg);
+      color: var(--yq-text);
+    }
+
+    /* 工具栏 */
+    .yq-content-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background-color: var(--el-bg-color);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    .yq-input {
+      width: 240px;
+    }
+
+    .yq-position {
+      width: 120px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const { createApp, ref, h } = Vue;
+    const { initTheme, YqContent, i18n } = YqwinPlus;
+    const { ElMessage } = ElementPlus;
+    initTheme();
+
+    const app = createApp({
+      components: { YqContent },
+      setup() {
+        // YqContent组件引用
+        const yqContentRef = ref(null)
+
+        // 页签列表数据
+        const tabs = ref([
+          {
+            id: 'dashboard',
+            label: '首页',
+            icon: 'fa fa-file',
+            content: 'http://www.uieip.com/',
+            type: 'iframe',
+            active: true,
+            closable: false,
+            contextMenu: []
+          },
+          {
+            id: 'dashboard2',
+            label: '首页1',
+            icon: 'fa fa-file',
+            content: '/test/simple-2.html',
+            type: 'iframe',
+            active: false,
+            closable: true,
+            contextMenu: [
+              { label: '刷新', icon: 'fa fa-file', action: 'refresh' },
+              { label: '关闭', icon: 'fa fa-file', action: 'close' },
+              { label: '关闭其他', icon: 'fa fa-file', action: 'closeOthers' },
+              { label: '关闭全部', icon: 'fa fa-file', action: 'closeAll' },
+              {},
+              { label: '测试', icon: 'fa fa-file', action: 'test' }
+            ]
+          },
+          { id: 'dashboard3', label: '首页2', icon: 'fa fa-file', content: '/test/simple.html', type: 'iframe', active: false, closable: true, contextMenu: [] },
+          { id: 'dashboard4', label: '首页3', icon: 'fa fa-file', content: '/test/simple.html', type: 'iframe', active: false, closable: true, contextMenu: [] },
+          { id: 'dashboard5', label: '首页4', icon: 'fa fa-file', content: '/test/simple.html', type: 'iframe', active: false, closable: true, contextMenu: [] },
+          { id: 'dashboard6', label: '首页5', icon: 'fa fa-file', content: '/test/simple.html', type: 'iframe', active: false, closable: true, contextMenu: [] },
+          { id: 'dashboard7', label: '首页6', icon: 'Share', content: 'http://www.uieip.com/', type: 'iframe', active: false, closable: true, contextMenu: [] },
+          { id: 'dashboard8', label: '首页777', icon: 'fa fa-file', content: 'http://www.uieip.com/', type: 'iframe', active: false, closable: true, contextMenu: [] }
+        ])
+
+        // 本地URL输入值
+        const newUrlInput = ref('http://www.uieip.com/')
+
+        // 标签位置
+        const tabPosition = ref('top')
+
+        const tabPositionOptions = [
+          { label: '顶部', value: 'top' },
+          { label: '底部', value: 'bottom' },
+          { label: '左侧', value: 'left' },
+          { label: '右侧', value: 'right' }
+        ]
+
+        let count = 0
+
+        // 添加URL页签
+        const changeUrl = () => {
+          if (newUrlInput.value) {
+            // 使用URL的主机名作为标签标题
+            const url = new URL(newUrlInput.value)
+            const label = url.hostname
+
+            yqContentRef.value?.addTab({
+              label: `${label} ${++count}`,
+              icon: 'Share',
+              type: 'iframe',
+              content: newUrlInput.value,
+              isUrl: true,
+              closable: true,
+              contextMenu: [
+                { label: '关闭', icon: 'Share', action: 'close' },
+                { label: '关闭其他', icon: 'fa fa-file', action: 'closeOthers' },
+                { label: '关闭全部', icon: 'fa fa-file', action: 'closeAll' },
+                { label: '刷新', icon: 'Share', action: 'refresh' },
+                {},
+                { label: '测试', icon: 'Share', action: 'test' }
+              ]
+            })
+          } else {
+            ElMessage.warning('请输入新的url地址')
+          }
+        }
+
+        // 添加html页签
+        const addHtml = () => {
+          yqContentRef.value?.addTab({
+            label: `html blank ${++count}`,
+            icon: 'Share',
+            type: 'html',
+            content: '<h1>html blank</h1>',
+            closable: true,
+            contextMenu: [
+              { label: '关闭', action: 'close' },
+              { label: '关闭其他', icon: 'Share', action: 'closeOthers' },
+              { label: '关闭全部', icon: 'Share', action: 'closeAll' },
+              {},
+              { label: '测试', icon: 'Share', action: 'test' }
+            ]
+          })
+        }
+
+        // 添加vue页签
+        const addVue = () => {
+          yqContentRef.value?.addTab({
+            label: `vue blank ${++count}`,
+            icon: 'Share',
+            type: 'vue',
+            content: h('div', {}, [h('div', {}, 'Hello Vue 1'), h('div', {}, 'Hello Vue 2')]),
+            closable: true,
+            contextMenu: [
+              { label: '关闭', action: 'close' },
+              { label: '关闭其他', icon: 'Share', action: 'closeOthers' },
+              { label: '关闭全部', icon: 'Share', action: 'closeAll' },
+              {},
+              { label: '测试', icon: 'Share', action: 'test' }
+            ]
+          })
+        }
+
+        // 处理页签切换
+        const handleSwitchTab = (tabId) => {
+          ElMessage.info(`切换到标签页：${tabs.value.find(tab => tab.id === tabId)?.label}`)
+        }
+
+        // 处理添加页签
+        const handleAddTab = (newTab) => {
+          ElMessage.success(`已添加标签页：${newTab.label}`)
+        }
+
+        // 处理关闭页签
+        const handleCloseTab = (tabId) => {
+          const tab = tabs.value.find(tab => tab.id === tabId)
+          if (tab) {
+            ElMessage.success(`已关闭标签页：${tab.label}`)
+          }
+        }
+
+        // 处理右键菜单操作
+        const handleAction = (tab, action) => {
+          ElMessage.success(`标签页：${tab.label} 执行操作：${action}`)
+        }
+
+        const handleRefresh = (tabId) => {
+          ElMessage.success(`刷新标签页：${tabId}`)
+        }
+
+        return {
+          yqContentRef, tabs, newUrlInput, tabPosition, tabPositionOptions,
+          changeUrl, addHtml, addVue,
+          handleSwitchTab, handleAddTab, handleCloseTab, handleAction, handleRefresh
+        }
+      },
+      template: `
+        <div class="yq-content-toolbar">
+          <el-input class="yq-input" v-model="newUrlInput" placeholder="请输入新的url地址"></el-input>
+          <el-button type="primary" @click="changeUrl">添加</el-button>
+          <el-button type="primary" @click="addHtml">html</el-button>
+          <el-button type="primary" @click="addVue">vue</el-button>
+          <el-select class="yq-position" v-model="tabPosition" placeholder="选择标签位置">
+            <el-option v-for="option in tabPositionOptions" :key="option.value" :label="option.label" :value="option.value"></el-option>
+          </el-select>
+        </div>
+        <yq-content ref="yqContentRef" v-model:tabs="tabs" :position="tabPosition"
+          @switch-tab="handleSwitchTab" @add-tab="handleAddTab" @close-tab="handleCloseTab"
+          @action="handleAction" @refresh="handleRefresh"
+          style="height: calc(100vh - 53px);"></yq-content>
+      `
+    })
+
+    app.use(i18n)
+    app.use(ElementPlus)
+    app.mount('#app')
+  </script>
+</body>
+</html>

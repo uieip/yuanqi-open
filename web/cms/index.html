@@ -1,0 +1,83 @@
+<!doctype html>
+<uieip type="page" value="base"/>
+<uieip type="reg" value="console,cms"></uieip>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_inc.html"></uieip>
+    <uieip type="tmpl" value="cms.title"/>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+    <div class="banner">
+        <img src="/images/banner2.png" style="width: 100%; margin-bottom: 15px" />
+    </div>
+    <div class="container inner-info">
+        <div class="row">
+            <div class="col-md-4 col-sm-6">
+                <div class="card tone-blue">
+                    <div class="card-header">
+                        <span class="hd-icon"><i class="bi bi-collection-fill"></i></span>
+                        开发资源
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><a href="/jsvm/index.html"><i class="bi bi-filetype-js"></i> jsvm test</a></li>
+                        <li class="list-group-item"><a href="/login/index.html"><i class="bi bi-box-arrow-in-right"></i> login</a></li>
+                        <li class="list-group-item"><a href="/yqvue/" target="_blank"><i class="bi bi-window-stack"></i> yqwin new demo</a></li>
+                        <li class="list-group-item"><a href="/adp/" target="_blank"><i class="bi bi-layers"></i> adp</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6">
+                <div class="card tone-violet">
+                    <div class="card-header">
+                        <span class="hd-icon"><i class="bi bi-lightning-charge-fill"></i></span>
+                        平台特性
+                        <span class="hdr-sub">uieip.com</span>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill"></i> 支持服务端跨平台部署系统</li>
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill"></i> 支持主流数据库</li>
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill"></i> 可嵌入物联网设备</li>
+                        <li class="list-group-item"><i class="bi bi-check-circle-fill"></i> 自主、国产</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-4 offset-md-0 col-sm-6 offset-sm-3">
+                <div class="card tone-orange">
+                    <div class="card-header">
+                        <span class="hd-icon"><i class="bi bi-people-fill"></i></span>
+                        合作与生态
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><i class="bi bi-quote"></i> IT系统=生产系统</li>
+                        <li class="list-group-item"><i class="bi bi-quote"></i> 技术是最大的坑</li>
+                        <li class="list-group-item"><i class="bi bi-quote"></i> 构建内外部融合的IT团队</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+    <script>
+        function onresize() {
+            var innerEl = document.querySelector(".inner-info");
+            if (!innerEl) return;
+            innerEl.style.marginBottom = "0px";
+            var footEl = document.querySelector(".footer .container");
+            if (footEl) {
+                var h_ = parseInt(document.documentElement.scrollHeight - 25 - innerEl.getBoundingClientRect().top - innerEl.offsetHeight - footEl.offsetHeight);
+                if (h_ > 0) {
+                    innerEl.style.marginBottom = h_ + "px";
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            window.addEventListener('resize', onresize);
+            onresize();
+        });
+    </script>
+</body>
+
+</html>

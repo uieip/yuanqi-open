@@ -1,0 +1,17 @@
+<meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="/scripts/vue/vue.global.js"></script>
+    <script src="/scripts/vue/element-plus/index.full.js"></script>
+    <link rel="stylesheet" href="/scripts/vue/element-plus/index.css">
+    <!-- Element Plus 暗色变量：html.dark 由 src/theme.ts 按主题切换时挂载 -->
+    <link rel="stylesheet" href="/scripts/vue/element-plus/dark/css-vars.css">
+    <!-- 引入 font-awesome.min.css -->
+    <link rel="stylesheet" type="text/css" href="/scripts/yqwin/font-awesome.min.css">
+    <!-- 引入 highlight.js -->
+    <script src="/scripts/marked/highlight.min.js"></script>
+    <!-- 引入 yqwin-plus -->
+    <link rel="stylesheet" href="/scripts/yqwin/yqwin-plus.css">
+    <script src="/scripts/yqwin/yqwin-plus.umd.js"></script>
+    <!-- 主题引导：首屏绘制前同步应用 data-theme 与临界底色，防止主题闪烁 -->
+    <script src="/scripts/theme-boot.js"></script>

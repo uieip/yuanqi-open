@@ -1,0 +1,305 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqChartDbRel 数据库关系图组件测试</title>
+    <link rel="stylesheet" type="text/css" href="/font-awesome.min.css">
+    <style>
+        @font-face {
+            font-family: 'FontAwesome';
+            src: url('/fonts/fontawesome-webfont.woff2?v=4.7.0') format('woff2'),
+                url('/fonts/fontawesome-webfont.woff?v=4.7.0') format('woff');
+            font-display: swap;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #app {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .test-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px 20px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+            flex-shrink: 0;
+        }
+
+        .main-body {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chart-container {
+            flex: 6;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .preview-panel {
+            width: 40%;
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #e4e7ed;
+            overflow: hidden;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            background-color: #f5f7fa;
+            border-bottom: 1px solid #e4e7ed;
+            font-weight: bold;
+            font-size: 14px;
+            color: #303133;
+            flex-shrink: 0;
+        }
+
+        .preview-content {
+            flex: 1;
+            overflow: auto;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        .json-preview {
+            font-size: 13px;
+            color: #333;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .json-preview pre {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="test-header">
+            <h2>YqChartDbRel 数据库关系图组件</h2>
+            <el-switch v-model="isEdit" active-text="编辑模式" inactive-text="预览模式"></el-switch>
+            <el-switch v-model="mini" active-text="图标" inactive-text="文本+图标"></el-switch>
+            <el-button type="primary" @click="loadSampleData">加载示例数据</el-button>
+            <el-button type="success" @click="clearData">清空画布</el-button>
+        </div>
+        <div class="main-body">
+            <div class="chart-container">
+                <yq-chart-db-rel v-model="chartData" :is-edit="isEdit" :mini="mini" :on-save="onSave" :select-table="selectTable"
+                    @change="handleChange" />
+            </div>
+            <div class="preview-panel">
+                <div class="preview-header">
+                    <span>数据预览</span>
+                </div>
+                <div class="preview-content">
+                    <pre class="json-preview">{{ chartData }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, watch, onMounted } = Vue;
+        const { YqChartDbRel } = YqwinPlus;
+        const YqUiMaskEdit = YqwinPlus.YqUiMaskEdit;
+
+        const defaultSampleData = {
+            "title": {
+                "name": "测试数据库关系图",
+                "describe": "这是一个数据库关系图测试"
+            },
+            "nodes": [{
+                "key": "Record1",
+                "name": "Record1",
+                "isdata": true,
+                "loc": "-285 -58",
+                "fields": [{
+                    "name": "field1",
+                    "title": "",
+                    "type": 1
+                }, {
+                    "name": "field2",
+                    "title": "the second one",
+                    "type": 1
+                }, {
+                    "name": "fieldThree",
+                    "title": "3rd",
+                    "type": 2
+                }, {
+                    "name": "fieldThree2",
+                    "title": "time",
+                    "type": 3
+                }]
+            }, {
+                "key": "Record2",
+                "name": "Record2",
+                "isdata": false,
+                "loc": "73 36",
+                "fields": [{
+                    "name": "fieldA",
+                    "title": "",
+                    "type": 6
+                }, {
+                    "name": "fieldB",
+                    "title": "",
+                    "type": 7
+                }, {
+                    "name": "fieldC",
+                    "title": "",
+                    "type": 9
+                }, {
+                    "name": "fieldD",
+                    "title": "fourth"
+                }]
+            }, {
+                "key": "Record3",
+                "name": "Record3",
+                "isdata": true,
+                "loc": "-285 200",
+                "fields": [{
+                    "name": "id",
+                    "title": "主键",
+                    "type": 6
+                }, {
+                    "name": "name",
+                    "title": "名称",
+                    "type": 1
+                }, {
+                    "name": "amount",
+                    "title": "金额",
+                    "type": 2
+                }]
+            }, {
+                "key": "Record4",
+                "name": "维度表",
+                "isdata": false,
+                "loc": "100 220",
+                "fields": [{
+                    "name": "dim_id",
+                    "title": "维度ID",
+                    "type": 6
+                }, {
+                    "name": "dim_name",
+                    "title": "维度名称",
+                    "type": 7
+                }]
+            }],
+            "links": [{
+                "from": "Record1",
+                "fromPort": "field1",
+                "to": "Record2",
+                "toPort": "fieldA",
+                "join": 1
+            }, {
+                "from": "Record1",
+                "fromPort": "fieldThree",
+                "to": "Record2",
+                "toPort": "fieldB",
+                "join": 2
+            }, {
+                "from": "Record1",
+                "to": "Record2",
+                "fromPort": "field2",
+                "toPort": "fieldD",
+                "join": 3
+            }, {
+                "from": "Record3",
+                "fromPort": "id",
+                "to": "Record4",
+                "toPort": "dim_id",
+                "join": 2
+            }, {
+                "from": "Record3",
+                "fromPort": "name",
+                "to": "Record4",
+                "toPort": "dim_name",
+                "join": 1
+            }]
+        };
+
+        const app = createApp({
+            components: {
+                YqChartDbRel,
+                YqUiMaskEdit
+            },
+            setup() {
+                const isEdit = ref(true);
+                const mini = ref(false);
+                const chartData = ref(JSON.parse(JSON.stringify(defaultSampleData)));
+
+                const onSave = (event, data) => {
+                    console.log('save event:', event, 'data:', data);
+                };
+
+                const selectTable = async (event) => {
+                    console.log('selectTable event:', event);
+                    // 模拟添加表
+                    const newKey = 'NewTable_' + Date.now();
+                    const newNode = {
+                        key: newKey,
+                        name: newKey,
+                        isdata: true,
+                        loc: "0 0",
+                        fields: [
+                            { name: "id", title: "主键", type: 6 },
+                            { name: "name", title: "名称", type: 1 }
+                        ]
+                    };
+                    return newNode;
+                };
+
+                const handleChange = (data) => {
+                    console.log('chart changed:', data);
+                };
+
+                const loadSampleData = () => {
+                    chartData.value = JSON.parse(JSON.stringify(defaultSampleData));
+                };
+
+                const clearData = () => {
+                    chartData.value = {
+                        info: {},
+                        nodes: [],
+                        links: []
+                    };
+                };
+
+             
+                return {
+                    isEdit,
+                    mini,
+                    chartData,
+                    onSave,
+                    selectTable,
+                    handleChange,
+                    loadSampleData,
+                    clearData 
+                };
+            }
+        });
+
+        app.use(ElementPlus);
+        app.mount('#app');
+    </script>
+</body>
+
+</html>

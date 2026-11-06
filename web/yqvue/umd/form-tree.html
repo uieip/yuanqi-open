@@ -1,0 +1,591 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>tree base</title>
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        #app {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-switch v-model="isEdit" active-value="true" inactive-value="false" active-text="编辑"
+            inactive-text="查看"></el-switch> |
+        <el-switch v-model="defaultExpandAll" active-value="true" inactive-value="false" active-text="默认全部展开"
+            inactive-text="默认不展开"></el-switch> |
+        <label>冻结列数</label>
+        <el-input v-model="frozenNum" type="number" placeholder="冻结列数" min="0" max="titles.length" step="1"
+            style="width: 80px;"></el-input>|
+        <el-switch v-model="checkBoxCol" active-value="true" inactive-value="false" active-text="显示复选框"
+            inactive-text="隐藏复选框" v-show="!isEditBool"></el-switch>
+        <p>-------------------------------------</p>
+        titles <el-select v-model="changeTitle" placeholder="请选择" style="width: 120px;" @change="changeTitles">
+            <el-option v-for="item in titles_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+        </el-select> |
+        rows <el-select v-model="changeRow" placeholder="请选择" style="width: 120px;" @change="changeRows">
+            <el-option v-for="item in rows_all" :key="item.name" :label="item.name" :value="item.value"></el-option>
+        </el-select> |
+        <p>-------------------------------------</p>
+
+        <el-button type="primary" @click="handleAddRoot">添加根节点</el-button>
+        <el-button type="primary" @click="handleAdd">添加子节点</el-button>
+        <el-button type="primary" @click="handleUpp">修改</el-button>
+        <el-button type="primary" @click="handleDel">删除</el-button>
+        <el-button type="primary" @click="handleRemove">移除</el-button>
+        <el-button type="primary" @click="handleMove">排序</el-button> |
+        <el-button type="primary" @click="handleCopy">复制</el-button>
+        <el-button type="primary" @click="handleCut">剪切</el-button>
+        <el-button type="primary" @click="handleUnCut">取消剪切/复制</el-button>
+        <el-button type="primary" @click="handlePaste">粘贴</el-button>
+        <div style="height: 40vh;width: 100%;  overflow: auto;">
+            <yq-tree ref="treeRef" :is-demo="isDemo" :titles="titles" v-model:rows="rows" v-model:fkrows="fkrows"
+                :is-edit="isEditBool" :default-expand-all="defaultExpandAllBool" :frozen-num="frozenNumInt"
+                :check-box-col="checkBoxColBool" @row-click="handleRowClick"></yq-tree>
+        </div>
+        <p>-------------------------------------</p>
+        <div style="height: 20vh;width: 100%;  overflow: auto;">
+            {{ rows }}
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { initTheme, YqTree } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqTree
+            },
+            data() {
+                return {
+                    isDemo: true,
+
+                    key: -1,
+                    row: null,
+
+                    isEdit: 'true',
+                    defaultExpandAll: 'true',
+                    frozenNum: 1,
+                    checkBoxCol: 'true',
+                }
+            },
+            setup() {
+                const index = ref(-1)
+                const titles_1 = [
+                    {
+                        "name": "no",
+                        "ui_title": "No",
+                        "ui_type": 2,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readnnly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "name",
+                        "ui_title": "Name",
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readnnly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "date",
+                        "ui_title": "Date",
+                        "ui_type": 12,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readnnly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "foreignkey",
+                        "is_func": false,
+                        "ui_title": "ForeignKey",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 7,
+                        "ui_width": 180,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "dbName": "yqbase",
+                            "tbName": "sys.sys_table",
+                            "tempNo": -1,
+                            "displayType": 2,
+                            "valueMember": "sid",
+                            "displayMember": "textbox",
+                            "isPage": true,
+                            "pageSize": 10,
+                            "addWhere": "",
+                            "order": "textbox",
+                            "panelWidth": 400,
+                            "panelHeight": 360,
+                            "expandMember": null,
+                            "seekNo": -1,
+                            "seekModeW": 800,
+                            "seekModeH": 600,
+                            "mapping": [
+                                {
+                                    "from": "textbox",
+                                    "to": "foreignkeyVal"
+                                }]
+                        }
+                    },
+                    {
+                        "name": "treeselect1",
+                        "is_func": false,
+                        "ui_title": "TreeSelect1",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 110,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": [
+                                2,
+                                201,
+                                20101
+                            ],
+                            "blank": false,
+                            "level": 1,
+                            "subfield": "treeselect2",
+                            "trees": [
+                                {
+                                    "no": 1,
+                                    "name": "root1",
+                                    "extend": "扩展",
+                                    "default": true,
+                                    "subs": [
+                                        {
+                                            "no": 101,
+                                            "name": "sub101",
+                                            "subs": [
+                                                {
+                                                    "no": 10101,
+                                                    "name": "三级10101"
+                                                },
+                                                {
+                                                    "no": 10102,
+                                                    "name": "三级10102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 102,
+                                            "name": "sub102",
+                                            "subs": [
+                                                {
+                                                    "no": 10201,
+                                                    "name": "三级10201"
+                                                },
+                                                {
+                                                    "no": 10202,
+                                                    "name": "三级10202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "no": 2,
+                                    "name": "root2",
+                                    "subs": [
+                                        {
+                                            "no": 201,
+                                            "name": "Sub201",
+                                            "subs": [
+                                                {
+                                                    "no": 20101,
+                                                    "name": "三级20101"
+                                                },
+                                                {
+                                                    "no": 20102,
+                                                    "name": "三级20102"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "no": 202,
+                                            "name": "Sub202",
+                                            "subs": [
+                                                {
+                                                    "no": 20201,
+                                                    "name": "三级20201"
+                                                },
+                                                {
+                                                    "no": 20202,
+                                                    "name": "三级20202"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "group": "group3"
+                    },
+                    {
+                        "name": "treeselect2",
+                        "is_func": false,
+                        "ui_title": "TreeSelect2",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 110,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 2,
+                            "subfield": "treeselect3",
+                            "trees": []
+                        },
+                        "group": "group3"
+                    },
+                    {
+                        "name": "treeselect3",
+                        "is_func": false,
+                        "ui_title": "TreeSelect3",
+                        "fd_type": "int",
+                        "length": 16,
+                        "decimal": 0,
+                        "ui_type": 8,
+                        "ui_width": 110,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "blank": false,
+                            "level": 3,
+                            "subfield": "",
+                            "trees": []
+                        },
+                        "group": "group3"
+                    }
+
+                ]
+                const rows_1 = [
+                    {
+                        "no": 1,
+                        "name": "name1",
+                        "date": "2010-02-09",
+                        "treeselect1": 1,
+                        "treeselect2": 101,
+                        "treeselect3": 10101,
+                        "subs": [{
+                            "no": 101,
+                            "name": "name101",
+                            "date": "2010-02-09",
+                            "subs": [{
+                                "no": 10101,
+                                "name": "name10101",
+                                "date": "2010-02-09",
+                            }, {
+                                "no": 10102,
+                                "name": "name10102",
+                                "date": "2010-02-09"
+                            }, {
+                                "no": 10103,
+                                "name": "name10103",
+                                "date": "2010-02-09"
+                            }]
+                        }, {
+                            "no": 102,
+                            "name": "name102",
+                            "date": "2010-02-09",
+                            "subs": [{
+                                "no": 10201,
+                                "name": "name10201",
+                                "size": "56 KB",
+                                "date": "2010-02-09"
+                            }, {
+                                "no": 10202,
+                                "name": "name10202",
+                                "date": "2010-02-09"
+                            }, {
+                                "no": 10203,
+                                "name": "name10203",
+                                "date": "2010-02-09"
+                            }]
+                        }]
+                    },
+                    {
+                        "no": 2,
+                        "name": "name2",
+                        "date": "2010-02-09",
+                        "foreignkey": "sid-1",
+                        "treeselect1": 1,
+                        "treeselect2": 101,
+                        "treeselect3": 10101,
+                        "subs": [{
+                            "no": 201,
+                            "name": "name201",
+                            "date": "2010-02-09",
+                            "foreignkey": "sid-2",
+                            "treeselect1": 2,
+                            "treeselect2": 201,
+                            "treeselect3": 20101,
+                            "subs": [{
+                                "no": 20101,
+                                "name": "name20101",
+                                "date": "2010-02-09",
+                            }, {
+                                "no": 20102,
+                                "name": "name20102",
+                                "date": "2010-02-09"
+                            }, {
+                                "no": 20103,
+                                "name": "name20103",
+                                "date": "2010-02-09"
+                            }]
+                        }, {
+                            "no": 202,
+                            "name": "name202",
+                            "date": "2010-02-09",
+                            "subs": [{
+                                "no": 20201,
+                                "name": "name20201",
+                                "size": "56 KB",
+                                "date": "2010-02-09"
+                            }, {
+                                "no": 20202,
+                                "name": "name20202",
+                                "date": "2010-02-09"
+                            }, {
+                                "no": 20203,
+                                "name": "name20203",
+                                "date": "2010-02-09"
+                            }]
+                        }]
+                    }
+                ]
+                const titles_2 = [
+                    {
+                        "name": "no",
+                        "ui_title": "No",
+                        "ui_type": 2,
+                        "ui_width": 90,
+                        "ui_visible": true,
+                        "ui_readnnly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "name",
+                        "ui_title": "Name",
+                        "ui_type": 2,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readnnly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "date",
+                        "ui_title": "Date",
+                        "ui_type": 12,
+                        "ui_width": 150,
+                        "ui_visible": true,
+                        "ui_readnnly": false,
+                        "ui_mask": {}
+                    }, {
+                        "name": "foreignkey",
+                        "is_func": false,
+                        "ui_title": "ForeignKey",
+                        "fd_type": "nvarchar",
+                        "length": 36,
+                        "decimal": 0,
+                        "ui_type": 7,
+                        "ui_width": 180,
+                        "ui_visible": true,
+                        "ui_readonly": false,
+                        "ui_mask": {
+                            "default": null,
+                            "blank": true,
+                            "dbName": "yqbase",
+                            "tbName": "sys.sys_table",
+                            "tempNo": -1,
+                            "displayType": 1,
+                            "valueMember": "sid",
+                            "displayMember": "textbox",
+                            "isPage": true,
+                            "pageSize": 10,
+                            "addWhere": "",
+                            "order": "textbox",
+                            "panelWidth": 400,
+                            "panelHeight": 260,
+                            "expandMember": null,
+                            "seekNo": -1,
+                            "seekModeW": 800,
+                            "seekModeH": 600,
+                            "mapping": [
+                                {
+                                    "from": "textbox",
+                                    "to": "foreignkeyVal"
+                                }]
+                        }
+                    }]
+                const rows_2 = [
+                    {
+                        "no": 1,
+                        "name": "name-1",
+                        "date": "02/19/2010",
+                        "subs": [{
+                            "no": 101,
+                            "name": "name-101",
+                            "date": "03/20/2010",
+                            "subs": [{
+                                "no": 10101,
+                                "name": "name-10101",
+                                "date": "01/13/2010",
+                            } ]
+                        }, {
+                            "no": 102,
+                            "name": "name-102",
+                            "date": "01/20/2010",
+                        }]
+                    },
+                    {
+                        "no": 2,
+                        "name": "name-2",
+                        "date": "02/19/2010",
+                        "subs": [{
+                            "no": 201,
+                            "name": "name-201",
+                            "date": "03/20/2010",
+                        }]
+                    }
+                ]
+
+                const changeTitle = ref("titles_1");
+                const titles_all = computed(() => {
+                    return [
+                        { name: "titles_1", value: "titles_1", titles: titles_1 },
+                        { name: "titles_2", value: "titles_2", titles: titles_2 }]
+                });
+                function changeTitles() {
+                    titles.value = titles_all.value.find(item => item.value === changeTitle.value).titles;
+                }
+
+                const changeRow = ref("rows_1")
+                const rows_all = computed(() => {
+                    return [
+                        { name: "rows_1", value: "rows_1", rows: rows_1 },
+                        { name: "rows_2", value: "rows_2", rows: rows_2 }]
+                });
+                function changeRows() {
+                    console.log(rows_all.value, changeRow.value)
+                    const foundItem = rows_all.value.find(item => item.value === changeRow.value)
+                    if (foundItem) {
+                        rows.value = foundItem.rows
+                    } else {
+                        console.warn('未找到对应的 rows:', changeRow.value)
+                        // 可以设置默认值或保持当前值
+                    }
+                }
+
+                const titles = ref(titles_1);
+                const rows = ref(rows_1);
+
+                const fkrows = ref([])
+                watch(fkrows, (newValue, oldValue) => {
+                    console.log("fkrows", newValue)
+                }, { deep: true })
+
+                return {
+                    titles,
+                    rows,
+                    index,
+                    fkrows,
+                    changeTitle,
+                    titles_all,
+                    changeTitles,
+                    changeRow,
+                    rows_all,
+                    changeRows,
+                }
+            },
+            computed: {
+                isEditBool() {
+                    return this.isEdit === 'true'
+                },
+                defaultExpandAllBool() {
+                    return this.defaultExpandAll === 'true'
+                },
+                frozenNumInt() {
+                    return parseInt(this.frozenNum)
+                },
+                checkBoxColBool() {
+                    return this.checkBoxCol === 'true'
+                },
+            },
+            methods: {
+                handleRowClick({ row, key }) {
+                    this.key = key
+                    this.row = row
+                    console.log(`点击行索引: ${key}`)
+                    console.log(`点击行数据: ${JSON.stringify(row, null, 2)}`)
+                },
+                handleAddRoot() {
+                    this.$refs.treeRef.add({})
+                },
+                handleAdd() {
+                    if (!this.row) {
+                        return
+                    }
+                    this.$refs.treeRef.add({}, this.key)
+                },
+                handleUpp() {
+                    this.$refs.treeRef.upp(1)
+                },
+                handleDel() {
+                    if (!this.row) {
+                        return
+                    }
+                    if (this.row["_action"]) {
+                        return
+                    }
+                    this.$refs.treeRef.del(this.key)
+                },
+                handleRemove() {
+                    if (!this.row) {
+                        return
+                    }
+                    this.$refs.treeRef.remove(this.key)
+                },
+                handleMove() {
+                    this.$refs.treeRef.queue((rows) => {
+                        console.log("queue", rows)
+                        this.$refs.treeRef.setRows(rows)
+                    })
+                },
+                handleCopy() {
+                    this.$refs.treeRef.copy(this.key)
+                },
+                handleCut() {
+                    this.$refs.treeRef.cut(this.key)
+                },
+                handleUnCut() {
+                    this.$refs.treeRef.unCutCopy()
+                },
+                handlePaste() {
+                    this.$refs.treeRef.paste(this.key)
+                },
+            }
+        })
+        app.use(ElementPlus)
+        app.mount('#app')
+    </script>
+
+</body>
+
+</html>

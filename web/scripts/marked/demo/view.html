@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <title>Markdown预览工具</title>
+    <link rel="stylesheet" href="/scripts/yqwin/yqwin-plus.css">
+    <script src="/scripts/theme-boot.js"></script>
+    <script src="../marked.min.js"></script>
+    <script src="../highlight.min.js"></script>
+    <script src="../highlightjs-line-numbers.min.js"></script>
+    <script src="../markdown-view.js"></script>
+
+    <link href="../css/font.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../css/markdown-light.css" />
+    <style>
+        body {
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        .markdown-body {
+            background-color: transparent;
+            color: var(--yq-text);
+        }
+
+        .container {
+            padding: 50px;
+            width: 80%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="javascript:window.history.back();">返回</a>
+    <div class="container">
+        <div id="pretitle"></div>
+        <div id="preview"></div>
+    </div>
+
+
+    <script>
+
+
+        const markdownText = `
+# 单一组件
+## 1.lable
+\`\`\`json
+{
+	"default": null
+}
+\`\`\`
+|#|name|类型|默认值|说明|
+|-|----|---|------|----|
+|1|default|string|null|默认值|
+## 2.textbox
+\`\`\`json
+{
+   "default": null,
+   "blank": true,
+   "min": null,
+   "max": null,
+   "format": ""
+}
+\`\`\`
+|#|name|类型|默认值|说明|
+|-|----|---|------|----|
+|1|default|string|null|默认值|
+|2|blank|bool|true|是否运行为空，默认允许为空|
+|3|min|int|null|最小长度，默认不校验最小长度|
+|4|max|int|null|最大长度，默认不校验最大长度|
+|5|format|string|""|字符串校验掩码 长度按半角计算，数字、英文为1，中文为2。|
+
+
+# 标题1
+
+\`\`\`javascript
+function calculate() {
+    // 示例代码
+    const a = 1;
+    const b = 2;
+    return a + b;
+}
+
+function copyToClipboard(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                console.log('文本已成功拷贝到剪贴板: ' + text);
+            })
+            .catch((err) => {
+                console.error('无法拷贝文本: ', err);
+            });
+    } else {
+        console.error('当前浏览器不支持 navigator.clipboard');
+        // 使用兼容性方法
+        copyToClipboardFallback(text);
+    }
+}
+
+// 兼容性方法
+function copyToClipboardFallback(text) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        var successful = document.execCommand('copy');
+        var msg = successful ? '成功' : '失败';
+        console.log('拷贝文本 ' + msg);
+    } catch (err) {
+        console.error('无法拷贝文本: ', err);
+    }
+    document.body.removeChild(textarea);
+}
+
+// 使用示例
+copyToClipboard('你好，世界！');
+\`\`\`
+
+\`\`\`python
+def fibonacci(n):
+    if n <= 1:
+        return n
+    else:
+        return fibonacci(n-1) + fibonacci(n-2)
+\`\`\`
+`;
+
+        const markdownView = new MarkdownView({
+            container: '#preview',
+            title: '#pretitle'
+        });
+        markdownView.render(markdownText);
+    </script>
+</body>
+
+</html>

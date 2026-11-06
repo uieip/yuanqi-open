@@ -1,0 +1,238 @@
+{
+    "error": 0,
+    "info": "ok",
+    "titles": [
+        {
+            "name": "sid",
+            "is_func":false,
+            "ui_title": "sid",
+            "fd_type": "nvarchar",
+            "length": 36,
+            "decimal": 0,
+            "ui_type": 1,
+            "ui_width": 90,
+            "ui_visible": false,
+            "ui_readnnly": true,
+            "ui_mask": {}
+        },
+        {
+            "name": "name",
+            "ui_title": "字段名",
+            "fd_type": "nvarchar",
+            "length": 100,
+            "decimal": 0,
+            "ui_type": 2,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": "默认值",
+                "min": 0,
+                "max": 50,
+                "blank": false,
+                "format": null
+            }
+        },
+        {
+            "name": "ui_title",
+            "ui_title": "字段描述",
+            "fd_type": "nvarchar",
+            "length": 100,
+            "decimal": 0,
+            "ui_type": 2,
+            "ui_width": 130,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": "默认值",
+                "min": 0,
+                "max": 50,
+                "blank": false,
+                "format": null
+            }
+        },
+        {
+            "name": "fd_type",
+            "ui_title": "字段描述",
+            "fd_type": "nvarchar",
+            "length": 100,
+            "decimal": 0,
+            "ui_type": 2,
+            "ui_width": 130,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": "默认值",
+                "min": 0,
+                "max": 50,
+                "blank": false,
+                "format": null
+            }
+        },
+        {
+            "name": "length",
+            "is_func":false,
+            "ui_title": "长度",
+            "fd_type": "int",
+            "length": 15,
+            "decimal": 0,
+            "ui_type": 10,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {}
+        },
+        {
+            "name": "decimal",
+            "ui_title": "小数位",
+            "fd_type": "int",
+            "length": 10,
+            "decimal": 0,
+            "ui_type": 10,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {   }
+        },
+        {
+            "name": "ui_type",
+            "is_func":false,
+            "ui_title": "UI类型",
+            "fd_type": "int",
+            "length": 16,
+            "decimal": 0,
+            "ui_type": 6,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": 2,
+                "blank": false,
+                "lists": [
+                    {
+                        "no": 1,
+                        "name": "Lable"
+                    },
+                    {
+                        "no": 2,
+                        "name": "Textbox"
+                    },
+                    {
+                        "no": 3,
+                        "name": "Checkbox"
+                    },
+                    {
+                        "no": 4,
+                        "name": "Datetbox"
+                    },
+                    {
+                        "no": 5,
+                        "Richbox": "Richbox"
+                    },
+                    {
+                        "no": 6,
+                        "name": "Combobox"
+                    },
+                    {
+                        "no": 7,
+                        "name": "ForeignKey"
+                    },
+                    {
+                        "no": 8,
+                        "name": "TreeSelect"
+                    },
+                    {
+                        "no": 9,
+                        "name": "Numberbox"
+                    },
+                    {
+                        "no": 10,
+                        "name": "Numberspinner"
+                    },
+                    {
+                        "no": 11,
+                        "name": "TimeSpinner"
+                    },
+                    {
+                        "no": 12,
+                        "name": "DateTimebox"
+                    } 
+                ]
+            }
+        },
+        {
+            "name": "ui_width",
+            "ui_title": "宽度",
+            "fd_type": "int",
+            "length": 10,
+            "decimal": 0,
+            "ui_type": 10,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": "默认值",
+                "min": 0,
+                "max": 50,
+                "blank": false,
+                "format": "phone"
+            }
+        },
+        {
+            "name": "ui_visible",
+            "is_func":false,
+            "ui_title": "ui可见",
+            "fd_type": "boolean",
+            "length": 1,
+            "decimal": 0,
+            "ui_type": 3,
+            "ui_width": 30,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": true
+            }
+        },
+        {
+            "name": "ui_readnnly",
+            "is_func":false,
+            "ui_title": "只读",
+            "fd_type": "boolean",
+            "length": 1,
+            "decimal": 0,
+            "ui_type": 3,
+            "ui_width": 30,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": {
+                "default": false
+            }
+        },         
+        {
+            "name": "ui_mask",
+            "is_func":false,
+            "ui_title": "掩码",
+            "fd_type": "nvarchar",
+            "length": -1,
+            "decimal": 0,
+            "ui_type": 2,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": true,
+            "ui_mask": { }
+        },        
+        {
+            "name": "queue",
+            "is_func":false,
+            "ui_title": "排序",
+            "fd_type": "int",
+            "length": 16,
+            "decimal": 0,
+            "ui_type": 10,
+            "ui_width": 90,
+            "ui_visible": true,
+            "ui_readnnly": false,
+            "ui_mask": { }
+        }
+    ]
+}

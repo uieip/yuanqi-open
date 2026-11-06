@@ -1,0 +1,276 @@
+﻿<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>数据表格测试</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            padding: 0;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .divider {
+            margin: 0 10px;
+            color: #909399;
+        }
+
+        .yq-data-grid-container {
+            height: calc(100vh - 340px);
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .yq-data-grid .warning-row {
+            background-color: #fdf5e6;
+        }
+
+        .yq-data-grid .success-row {
+            background-color: #e6f5e9;
+        }
+
+        .data-log {
+            height: 200px;
+            overflow: auto;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .data-log pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .content-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .left-panel {
+            flex: 1;
+        }
+
+        .right-panel {
+            width: 400px;
+        }
+
+        .options-log {
+            height: calc(100vh - 340px);
+            overflow: auto;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: #f9f9f9;
+        }
+
+        .options-log pre {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #409eff;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #606266;
+        }
+    </style>
+</head>
+
+<body style="margin:0;overflow: hidden;">
+    <div id="app">
+        <h1>数据表格数据选择</h1>
+        <div class="control-panel">
+            <div class="control-group">
+                <el-switch v-model="rownumbers" active-text="显示行号" inactive-text="不显示行号"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="isPage" active-text="分页" inactive-text="不分页"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="seekSimple" active-text="显示简单查询" inactive-text="不显示简单查询"></el-switch>
+            </div>
+            <span class="divider">|</span>
+            <div class="control-group">
+                <el-switch v-model="isSeek" active-text="显示高级查询" inactive-text="不显示高级查询"></el-switch>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="control-group">
+                <label>选择数量 max</label>
+                <el-input-number v-model="selectMax" :min="0" :max="10" :step="1" :controls-position="right"></el-input-number>
+            </div>
+        </div>
+
+        <div class="content-container">
+            <div class="left-panel">
+                <div class="section-title">数据表格</div>
+                <div class="yq-data-grid-container">
+                    <yq-table-show ref="singleTable" :is-demo="isDemo" :ajax-url="ajaxUrl" :db-name="dbname"
+                        :tb-name="tbname" :temp-no="tempno" :add-where="addWhere" :order="order" :is-page="isPage"
+                        :page-size="pageSize" :rownumbers="rownumbers" :border="border" :seek-simple="seekSimple"
+                        :is-seek="isSeek"  :select-max="selectMax"
+                        v-model:options="options"></yq-table-show>
+                </div>
+            </div>
+            <div class="right-panel">
+                <div class="section-title">数据日志</div>
+                <div class="options-log">
+                    <pre>{{ (options.baseRows?options.baseRows:"无") }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, yqData, YqTableShow } = YqwinPlus;
+        initTheme();
+
+        let dbname = "yqbase"
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqTableShow
+                },
+                data() {
+                    return {
+                        isPage: true,
+                        rownumbers: true,
+                        border: false,
+
+                        selectMax: 1,
+
+                        seekSimple: true,
+                        isSeek: true,
+                    }
+                },
+                setup() {
+                    // 响应式数据
+                    const isDemo = ref(false)
+                    const ajaxUrl = ref("/_db.html")
+                    const tbname = ref("ab_test_m")
+                    const tempno = ref(1)
+                    const addWhere = ref("")
+                    const order = ref("createtime desc")
+
+                    const options = ref({
+                        titles: [],
+                        border: true,
+                        rownumbers: true,
+                        pageSize: 10,
+                        pageSizes: [10, 20, 30, 50],
+                    });
+
+                    // 方法
+                    const dataChange = (rows) => {
+                        console.log('数据改变:', rows)
+                        data.value.rows = rows
+                    }
+
+                    const rowClick = (row) => {
+                        console.log('点击行:', row)
+                    }
+
+                    return {
+                        // 响应式数据
+                        isDemo,
+                        ajaxUrl,
+                        dbname,
+                        tbname,
+                        tempno,
+                        addWhere,
+                        order,
+                        options,
+
+
+                        // 方法
+                        dataChange,
+                        rowClick,
+                    }
+                }
+            })
+
+            app.use(ElementPlus)
+            app.mount('#app')
+        }
+
+        // 初始化应用
+        window.onload = async function () {
+            try {
+                const res = await yqData.dbList()
+                if (res.error === 0 && res.rows && res.rows.length > 0) {
+                    dbname = res.rows[0].name
+                }
+            } catch (error) {
+                console.error('获取数据库列表失败:', error)
+            } finally {
+                initApp()
+            }
+        }
+    </script>
+</body>
+
+</html>

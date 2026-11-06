@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YQWIN-Plus 组件库测试导引页</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #eaeaea;
+    }
+
+    h1 {
+      color: #409eff;
+      margin: 0;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    .test-links {
+      display: grid;
+      gap: 20px;
+    }
+
+    .link-card {
+      background-color: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .link-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
+    }
+
+    .link-card h2 {
+      margin-top: 0;
+      color: #303133;
+      font-size: 1.3rem;
+    }
+
+    .link-card p {
+      color: #606266;
+      margin-bottom: 20px;
+    }
+
+    .test-link {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 5px 0;
+      background-color: #409eff;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+
+    .test-link:hover {
+      background-color: #66b1ff;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 2px solid #eaeaea;
+      color: #909399;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>YQWIN-Plus 组件库</h1>
+    <p class="subtitle">基于 Element Plus 扩展的组件库测试页面</p>
+  </header>
+
+  <div class="test-links">
+    <div class="link-card">
+      <h2>Public</h2>
+      <a href="javascript:toLinkUrl('global-test.html')" class="test-link">global-test</a>
+      <a href="javascript:toLinkUrl('icon.html')" class="test-link">icon</a>
+      <a href="javascript:toLinkUrl('menu.html')" class="test-link">menu</a>
+      <a href="/scripts/gojs/demo/index.html" target="_blank" class="test-link">diagram</a>
+      <a href="/scripts/marked/demo/index.html" target="_blank" class="test-link">markdown</a>
+      <a href="/scripts/d3js/demo/index.html" target="_blank" class="test-link">d3.js</a>
+      <a href="/scripts/echarts/demo/index.html" target="_blank" class="test-link">echarts</a>
+      <a href="/scripts/kanban/demo/index.html" target="_blank" class="test-link">kanban</a>
+      <a href="/scripts/gridster.js/demo/index.html" target="_blank" class="test-link">gridster.js</a>
+    </div>
+    <div class="link-card">
+      <h2>表单组件（Form Components）</h2>
+      <a href="javascript:toLinkUrl('form-code-editor.html')" class="test-link">5-Code Editor</a>
+      <a href="javascript:toLinkUrl('form-foreignkey.html')" class="test-link">7-Foreignkey 14-NForeignkey</a>
+      <a href="javascript:toLinkUrl('form-ncheckbox.html')" class="test-link">13-NCheckbox</a>
+      <a href="javascript:toLinkUrl('form-table-edit.html')" class="test-link">15-table</a>
+      <a href="javascript:toLinkUrl('form-tree-edit.html')" class="test-link">16-tree</a>
+      <a href="javascript:toLinkUrl('form-attr.html')" class="test-link">17-attr</a>
+      <a href="javascript:toLinkUrl('form-edit.html')" class="test-link">17-edit</a>
+      <a href="javascript:toLinkUrl('from-file.html')" class="test-link">18-file</a>
+      <a href="javascript:toLinkUrl('form-markdown-view.html')" class="test-link">markdown-view</a>
+      <a href="javascript:toLinkUrl('from-markdown.html')" class="test-link">19-markdown</a>
+      <a href="javascript:toLinkUrl('from-html.html')" class="test-link">19-html</a>
+      <a href="javascript:toLinkUrl('from-moments.html')" class="test-link">19-moments</a>
+      <a href="javascript:toLinkUrl('from-csv.html')" class="test-link">20-csv</a>
+      <a href="javascript:toLinkUrl('from-func.html')" class="test-link">21-func</a>
+      <a href="javascript:toLinkUrl('form-uimask.html')" class="test-link">900-uimask</a>
+      <a href="javascript:toLinkUrl('form-titles.html')" class="test-link">titles</a>
+      <a href="javascript:toLinkUrl('form-layoutui.html')" class="test-link">layoutui</a>
+      <a href="javascript:toLinkUrl('form-tmplhtml.html')" class="test-link">tmplhtml</a>
+      <a href="javascript:toLinkUrl('form-virtualddit.html')" class="test-link">virtualedit</a>
+      <a href="javascript:toLinkUrl('form-menu.html')" class="test-link">menu、seek</a>
+      <a href="javascript:toLinkUrl('form-table.html')" class="test-link">table base</a>
+      <a href="javascript:toLinkUrl('form-tree.html')" class="test-link">tree base</a>
+      <a href="javascript:toLinkUrl('form-queue.html')" class="test-link">form-queue</a>
+      <a href="javascript:toLinkUrl('form-gantt.html')" class="test-link">form-gantt</a>
+    </div>
+
+    <div class="link-card">
+      <h2>访问统计组件</h2>
+      <a href="javascript:toLinkUrl('tongji-api.html')" class="test-link">tongji-api</a>
+      <a href="javascript:toLinkUrl('tongji-com-edit.html')" class="test-link">tongji-com-edit</a>
+    </div> 
+    <div class="link-card">
+      <h2>窗体组件</h2>
+      <a href="javascript:toLinkUrl('window.html')" class="test-link">window</a>
+      <a href="javascript:toLinkUrl('window-body.html')" class="test-link">body</a>
+      <a href="javascript:toLinkUrl('window-dialog.html')" class="test-link">dialog</a>
+      <a href="javascript:toLinkUrl('window-drawer.html')" class="test-link">drawer</a>
+      <a href="javascript:toLinkUrl('window-message.html')" class="test-link">message</a>
+      <a href="javascript:toLinkUrl('window-dialog-umd.html')" class="test-link">dialog-umd</a>
+    </div>
+    <div class="link-card">
+      <h2>数据组件</h2>
+      <a href="javascript:toLinkUrl('data-api.html')" class="test-link">api test（local）</a>
+      <a href="javascript:toLinkUrl('data-datagrid-db.html')" class="test-link">datagrid(db)</a>
+      <a href="javascript:toLinkUrl('data-datagrid-file.html')" class="test-link">datagrid(file)</a>
+      <a href="javascript:toLinkUrl('data-datagrid-html.html')" class="test-link">datagrid(html)</a>
+      <a href="javascript:toLinkUrl('data-datagrid-move.html')" class="test-link">datagrid(move)</a>
+      <a href="javascript:toLinkUrl('data-datatree.html')" class="test-link">datatree</a>
+      <a href="javascript:toLinkUrl('data-combogrid.html')" class="test-link">combogrid</a>
+      <a href="javascript:toLinkUrl('data-tableshow.html')" class="test-link">tableshow</a>
+      <a href="javascript:toLinkUrl('data-file-edit.html')" class="test-link">fileEdit</a>
+      <a href="javascript:toLinkUrl('data-resource.html')" class="test-link">resource</a>
+    </div>
+    <div class="link-card">
+      <h2>MDI页面框架 Layout</h2>
+      <a href="javascript:toLinkUrl('layout.html')" class="test-link">开发</a>
+      <a href="javascript:toLinkUrl('layout-content.html')" class="test-link">内容页</a>
+      <a href="javascript:toLinkUrl('layout-sidebar.html')" class="test-link">侧边栏页</a>
+      <a href="javascript:toLinkUrl('layout-header.html')" class="test-link">头部页</a>
+      <a href="javascript:toLinkUrl('layout-footer.html')" class="test-link">脚部页</a>
+      <a href="javascript:toLinkUrl('layout-tabs.html')" class="test-link">tab页</a>
+      <a href="javascript:toLinkUrl('ai-chat.html')" class="test-link">ai-chat</a>
+      <a href="javascript:toLinkUrl('layout-container.html')" class="test-link">container</a>
+      <a href="javascript:toLinkUrl('password-test.html')" class="test-link">password-test</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>YQWIN-Plus 组件库测试导引页</p>
+  </footer>
+
+  <script>
+     const linkType = 'umd'
+     const toLinkUrl = (url) => {
+      window.open(`/yqvue/${linkType}/${url}`, '_blank');
+     }
+  </script>
+</body>
+
+</html>

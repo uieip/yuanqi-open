@@ -1,0 +1,2441 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>nsq admin</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        .el-container {
+            height: 100%;
+        }
+
+        .el-header {
+            height: 38px !important;
+            padding: 0 !important;
+
+            background-color: var(--yq-bg-sidebar);
+            color: var(--yq-text);
+            flex-direction: row;
+            align-items: baseline;
+        }
+
+        .el-header .line {
+            display: flex;
+            align-items: center;
+            padding: 5px 5px 2px 5px;
+        }
+
+        .el-switch {
+            margin: 0 10px 0 5px;
+        }
+
+
+        .el-switch__label--left {
+            margin-right: 4px;
+        }
+
+        .el-switch__label--right {
+            margin-left: 4px;
+        }
+
+        a {
+            color: var(--yq-primary-text);
+            text-decoration: none;
+        }
+
+        .yqtable {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid var(--yq-border);
+            font-size: 16px;
+            color: var(--yq-text);
+            background-color: var(--yq-bg);
+        }
+
+        .yqtable th,
+        .yqtable td {
+            border: 1px solid var(--yq-border);
+            padding: 8px 12px;
+        }
+
+        .yqtable th {
+            background-color: var(--yq-bg-sidebar);
+            color: var(--yq-text-strong);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0; height: 100%;">
+    <div id="app">
+        <yq-container style="height: 100vh;">
+            <yq-con-header style="padding: 0 20px;">
+                <div class="line">
+                    <template v-for="(item, index) in switchItems" :key="item.value">
+                        <span style="padding: 0 5px 0 5px;">{{ item.label }}</span>
+                        <el-switch v-model="item.checked" :active-value="true" :inactive-value="false" active-text="on"
+                            inactive-text="off" @change="item.change" :disabled="item.disabled()">
+                        </el-switch>
+                        <span v-if="index < switchItems.length - 1" style="padding: 0 5px 0 5px;">|</span>
+                    </template>
+                    <div style="margin-left: auto;display: flex;align-items: center;">
+                        <yq-button type="primary" @click="resetNsq" label="重置NSQ" :label-dict="{ 'zh-CN': '重置NSQ', 'en': 'Reset NSQ' }"></yq-button>
+                        <span style="margin: 0 0 0 20px;" v-cloak>当前状态:</span>
+                        <span
+                            :style="{margin: '0 5px', 'font-weight': 'bold', color: nsqStatus ? 'var(--yq-success)' : 'var(--yq-danger)' }"
+                            v-cloak>
+                            {{ nsqStatus? '运行中' : '已停止' }}</span>
+                    </div>
+                </div>
+            </yq-con-header>
+            <yq-con-main style="padding: 0;margin:0;overflow: hidden;">
+                <yq-tabs v-model="activeTab" :label-dict="tabLabelDict">
+                    <yq-tab-pane label="NSQ Admin" name="nsq">
+                        <yq-body type="vue" :content="nsqContent"></yq-body>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="邮箱测试" name="email">
+                        <yq-edit ref="emailRef" v-bind="emailEditProps"></yq-edit>
+                        <div style="margin: 10px 0 0 350px;">
+                            <yq-menu type="inline" :menu-items="emailMenus" :mini="false"></yq-menu>
+                        </div>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="短信测试" name="sms">
+                        <yq-edit ref="smsRef" v-bind="smsEditProps"></yq-edit>
+                        <div style="margin: 10px 0 0 350px;">
+                            <yq-menu type="inline" :menu-items="smsMenus" :mini="false"></yq-menu>
+                        </div>
+                    </yq-tab-pane>
+                    <yq-tab-pane label="访问统计" name="tongji">
+                        <yq-edit ref="tongjiRef" v-bind="tongjiEditProps"></yq-edit>
+                        <div style="margin: 10px 0 0 350px;">
+                            <yq-menu type="inline" :menu-items="tongjiMenus" :mini="false"></yq-menu>
+                        </div>
+                    </yq-tab-pane>
+                </yq-tabs>
+            </yq-con-main>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, createApp, computed, h } = Vue;
+        const { ElSwitch } = ElementPlus;
+        const { initTheme, YqMessage, YqMenu, yqData, YqEdit, YqBody, YqWindowApi, YqMessageBox, yqUiPub, YqTabs, YqTabPane, YqButton, YqContainer, YqConHeader, YqConMain  } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMenu,
+                YqEdit,
+                YqBody,
+                YqTabs,
+                YqTabPane,
+                YqButton,
+                YqContainer,
+                YqConHeader,
+                YqConMain
+            },
+            setup() {
+                const formatDuration = (timestamp) => {
+                    const now = Math.floor(Date.now() / 1000);
+                    const diff = now - parseInt(timestamp);
+
+                    if (diff < 0) return '0s';
+
+                    const hours = Math.floor(diff / 3600);
+                    const minutes = Math.floor((diff % 3600) / 60);
+                    const seconds = diff % 60;
+
+                    let result = '';
+                    if (hours > 0) result += hours + 'h';
+                    if (minutes > 0) result += minutes + 'm';
+                    if (seconds > 0 || result === '') result += seconds + 's';
+
+                    return result;
+                };
+
+                const status = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:ping");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq_status", res);
+                    if (res.error === 0) {
+                        nsqStatus.value = (res.status === "active");
+                        switchItems.value[0].checked = res.email;
+                        switchItems.value[1].checked = res.sms;
+                        switchItems.value[2].checked = res.tongji;
+                        if (nsqStatus.value) {
+                            await nsqInfo();
+                        }
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const nsqInfo = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:info");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq_info", res);
+                    if (res.error === 0) {
+                        nsqVersion.value = 'v' + res.version;
+                        nsqLookupHost.value = res.lookup_addr;
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        nsqVersion.value = '';
+                    }
+                }
+
+                // 创建主题
+                const create_topic = async (topic) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:create_topic");
+                    formData.append("topic", topic);
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("create_topic", res);
+                        if (res.error === 0) {
+                            YqMessage.success({
+                                message: "主题已创建",
+                                labelDict: {
+                                    "zh-CN": { message: "主题已创建" },
+                                    "en": { message: "Topic created" },
+                                },
+                            });
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+                }
+
+                // 删除主题
+                const delete_topic = async (topic, linkTarget) => {
+                    await YqMessageBox.confirm({
+                        message: '您确定要删除主题 ' + topic + ' ？',
+                        title: '确认操作',
+                        type: 'warning',
+                        el: linkTarget // divTarget 是直接的 DOM 元素，不需要 $el
+                    });
+
+                    var formData = new FormData();
+                    formData.append("action", "nsq:delete_topic");
+                    formData.append("topic", topic);
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("delete_topic", res);
+                        if (res.error === 0) {
+                            YqMessage.success({
+                                message: "主题已删除",
+                                labelDict: {
+                                    "zh-CN": { message: "主题已删除" },
+                                    "en": { message: "Topic deleted" },
+                                },
+                            });
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+
+                }
+
+                // 标记主题生产者为墓碑状态
+                // node: NSQd节点地址 <broadcast_address>:<http_port>
+                const tombstone_topic = async (topic, node, linkTarget) => {
+                    await YqMessageBox.confirm({
+                        message: '您确定要 tombstone ' + topic + ' ' + node + ' ？',
+                        title: '确认操作',
+                        type: 'warning',
+                        el: linkTarget // divTarget 是直接的 DOM 元素，不需要 $el
+                    })
+                    var formData = new FormData();
+                    formData.append("action", "nsq:tombstone_topic");
+                    formData.append("topic", topic);
+                    formData.append("node", node);
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("tombstone", res);
+                        if (res.error === 0) {
+                            YqMessage.success({
+                                message: "主题已设置为 tombstone",
+                                labelDict: {
+                                    "zh-CN": { message: "主题已设置为 tombstone" },
+                                    "en": { message: "Topic set to tombstone" },
+                                },
+                            });
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+                }
+
+                // 创建通道
+                const create_channel = async (topic, channel) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:create_channel");
+                    formData.append("topic", topic);
+                    formData.append("channel", channel);
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("create_channel", res);
+                        if (res.error === 0) {
+                            YqMessage.success(topic + "通道已创建");
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+                }
+
+                // 删除通道
+                const delete_channel = async (topic, channel) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:delete_channel");
+                    formData.append("topic", topic);
+                    formData.append("channel", channel);
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("delete_channel", res);
+                        if (res.error === 0) {
+                            YqMessage.success(topic + "通道已删除");
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+                }
+
+                const topic_action = async (broadcast_address, http_port, topic, action) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:topic_" + action);
+                    formData.append("broadcast_address", broadcast_address);
+                    formData.append("http_port", http_port);
+                    formData.append("topic", topic);
+
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("topic_empty", res);
+                        if (res.error === 0) {
+                            YqMessage.success(topic + " " + action);
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+                }
+
+                const channel_action = async (broadcast_address, http_port, topic, channel, action) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:channel_" + action);
+                    formData.append("broadcast_address", broadcast_address);
+                    formData.append("http_port", http_port);
+                    formData.append("topic", topic);
+                    formData.append("channel", channel);
+
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        if (res.error === 0) {
+                            YqMessage.success(channel + " " + action);
+                            return true;
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+                            return false;
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                        return false;
+                    }
+                }
+
+                // 服务操作函数
+                // state: start/stop
+                // name: email/sms/tongji
+                const stateService = async (state, name) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:" + state);
+                    formData.append("name", name);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq_status", res);
+                    if (res.error === 0) {
+                        YqMessage.success(name + "服务已" + (state === 'start' ? '启动' : '停止'));
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        switch (name) {
+                            case 'email':
+                                switchItems.value[0].checked = (state === 'start' ? false : true);
+                                break;
+                            case 'sms':
+                                switchItems.value[1].checked = (state === 'start' ? false : true);
+                                break;
+                            case 'tongji':
+                                switchItems.value[2].checked = (state === 'start' ? false : true);
+                                break;
+                        }
+
+                    }
+                }
+
+                // 发送邮件
+                const send_email = async (to, subject, body) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:sendemail");
+                    formData.append("to", JSON.stringify(to.split(",")));
+                    formData.append("subject", subject);
+                    formData.append("body", body);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq_status", res);
+                    if (res.error === 0) {
+                        YqMessage.success({
+                            message: "邮件已发送",
+                            labelDict: {
+                                "zh-CN": { message: "邮件已发送" },
+                                "en": { message: "Email sent" },
+                            },
+                        });
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                // 发送短信
+                const send_sms = async (provider, phone_to, template_code, template_param) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:sendsms");
+                    formData.append("provider", provider);
+                    formData.append("phone_numbers", JSON.stringify(phone_to.split(',')));
+                    formData.append("template_code", template_code);
+                    formData.append("template_param", template_param);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq_status", res);
+                    if (res.error === 0) {
+                        YqMessage.success({
+                            message: "短信已发送",
+                            labelDict: {
+                                "zh-CN": { message: "短信已发送" },
+                                "en": { message: "SMS sent" },
+                            },
+                        });
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                // 提交访问统计
+                const send_tongji = async (params) => {
+                    const res = await (await fetch("/_svradmin.html?action=nsq:tongji", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(params),
+                    })).json();
+                    console.log("send_tongji", res);
+                    if (res.error === 0) {
+                        YqMessage.success({
+                            message: "访问统计已提交",
+                            labelDict: {
+                                "zh-CN": { message: "访问统计已提交" },
+                                "en": { message: "Access stats submitted" },
+                            },
+                        });
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const restartService = async () => {
+                    const res = await yqData.post("/_svradmin.html", {
+                        action: "nsq:reload",
+                    });
+                    console.log("nsq_status", res);
+                    if (res.error === 0) {
+                        YqMessage.success({
+                            message: "服务已重启",
+                            labelDict: {
+                                "zh-CN": { message: "服务已重启" },
+                                "en": { message: "Service restarted" },
+                            },
+                        });
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const nsqStatus = ref(false);
+                const nsqVersion = ref('');
+                const nsqLookupHost = ref('');
+                const switchItems = ref([
+                    {
+                        value: 'email',
+                        label: 'Email',
+                        checked: false,
+                        disabled: () => {
+                            return !nsqStatus.value;
+                        },
+                        change: async (val) => {
+                            await stateService(val ? 'start' : 'stop', 'email');
+                        }
+                    }, {
+                        value: 'sms',
+                        label: 'SMS',
+                        checked: false,
+                        disabled: () => {
+                            return !nsqStatus.value;
+                        },
+                        change: async (val) => {
+                            await stateService(val ? 'start' : 'stop', 'sms');
+                        }
+                    }, {
+                        value: 'tongji',
+                        label: '访问统计',
+                        checked: false,
+                        disabled: () => {
+                            return !nsqStatus.value;
+                        },
+                        change: async (val) => {
+                            await stateService(val ? 'start' : 'stop', 'tongji');
+                        }
+                    }
+                ]);
+                const menuItems = ref([
+                    {
+                        name: "reload",
+                        label: "重启",
+                        toptip: "重启",
+                        icon: "fa fa-repeat",
+                        type: "primary",
+                        disabled: () => {
+                            return false;
+                        },
+                        click: async () => {
+                            await restartService();
+                        }
+                    }
+                ]);
+                const activeTab = ref('nsq');
+
+                const tabLabelDict = ref({
+                    "zh-CN": {
+                        "nsq": "NSQ Admin",
+                        "email": "邮箱测试",
+                        "sms": "短信测试",
+                        "tongji": "访问统计",
+                    },
+                    "en": {
+                        "nsq": "NSQ Admin",
+                        "email": "Email Test",
+                        "sms": "SMS Test",
+                        "tongji": "Visit Statistics",
+                    },
+                });
+
+                // Streams /Topic / Channel
+                // Nodes / Topics
+
+                const nsqContent_info = ref(h("div", null, ''));
+
+                const nsqErrorMsg = (msg) => {
+                    return h("div", {
+                        style: {
+                            color: "var(--el-color-danger)",
+                            backgroundColor: "var(--el-color-danger-light-9)",
+                            borderColor: "var(--el-color-danger-light-7)",
+                            padding: "15px",
+                            margin: "20px 15px",
+                            border: "1px solid transparent",
+                            borderRadius: "4px",
+                            fontSize: "16px",
+                            fontWeight: "bold",
+                        }
+                    }, [
+                        h("h2", {
+                            style: {
+                                fontSize: "20px",
+                                fontWeight: "bold",
+                            }
+                        }, "Notice"),
+                        h("br", null, ''),
+                        h("span", null, msg),
+                    ]);
+                }
+
+                /*
+                 查找所有主题 nsq:topics
+                */
+                const nsqStreams = async () => {
+                    let streams = [];
+                    var formData = new FormData();
+                    formData.append("action", "nsq:topics");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsqStreams", res);
+                    if (res.error !== 0) {
+                        nsqContent_info.value = [
+                            h("div", {
+                                style: {
+                                    margin: "15px 0 0 15px",
+                                    fontSize: "30px",
+                                    fontWeight: "bold",
+                                }
+                            }, "Topics"),
+                            nsqErrorMsg(res.info),
+                        ]
+                        return;
+                    }
+
+                    if (res.error == 0) {
+                        for (var i = 0; i < res.topics.length; i++) {
+                            var topic = res.topics[i].topic;
+                            streams.push(topic);
+                        }
+                    }
+
+                    nsqContent_info.value = [
+                        h("h1", {
+                            style: {
+                                fontSize: "25px",
+                                fontWeight: "bold",
+                                padding: "15px 0 0 10px",
+                            }
+                        }, "Topics"),
+                        h("ul", {
+                            style: {
+                                padding: "15px",
+                                display: "flow",
+                                alignItems: "center",
+                                gap: "10px",
+                                'list-style-type': 'none',
+                                fontSize: "16px",
+                            }
+                        }, [
+                            h("li", null, h("div", {
+                                style: {
+                                    fontSize: "16px",
+                                    fontWeight: "bold",
+                                    padding: "5px 0",
+                                }
+                            }, `Topics(${res.topics.length})`)),
+                            ...streams.map((stream) => h("li", null, h("a", {
+                                href: "javascript:void(0);",
+                                onClick: () => nsqLookup(stream)
+                            }, stream))),
+                        ])
+                    ]
+                }
+
+                /*
+                 查找主题的生产者 nsq:lookup   
+                */
+                const nsqLookup = async (topic) => {
+                    //YqMessage.success(topic + "已执行");
+
+                    var formData = new FormData();
+                    formData.append("action", "nsq:lookup");
+                    formData.append("topic", topic);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq:lookup", res);
+
+                    let producers = [];
+                    let producerTotal = {
+                        depth: 0,
+                        messages: 0,
+                        channels: 0,
+                        memory: 0,
+                        disk: 0,
+                    };
+                    let channels = [];
+
+                    const title_h = [h("div", {
+                        style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            backgroundColor: "var(--yq-bg-hover)",
+                            marginTop: "15px",
+                            padding: "8px 13px",
+                        }
+                    }, [
+                        h("a", {
+                            href: "javascript:void(0);",
+                            onClick: () => nsqStreams()
+                        }, "Streams"),
+                        h("span", null, "/"),
+                        h("span", null, topic)]),
+                    h("div", {
+                        style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "10px 20px",
+                            margin: "15px 0 20px",
+                            fontSize: "17.5px",
+                            borderLeft: "5px solid var(--yq-border)",
+                        }
+                    },
+                        h("span", {
+                            fontSize: "16px",
+                        }, "Topic:"),
+                        h("span", {
+                            style: {
+                                fontSize: "16px",
+                                fontWeight: "bold",
+                            }
+                        }, topic))];
+
+                    if (res.error === 0 && res.producers.length > 0) {
+                        for (let i = 0; i < res.producers.length; i++) {
+                            let producer = res.producers[i];
+
+                            producers.push({
+                                host: producer.hostname + ":" + producer.http_port,
+                                ip: producer.broadcast_address + ":" + producer.http_port,
+                                depth: producer.depth,
+                                memory: (producer.e2e_processing_latency.percentiles ? producer.e2e_processing_latency.percentiles : 0),
+                                disk: producer.e2e_processing_latency.count,
+                                messages: producer.message_count,
+                                channels: producer.channels.length,
+                                broadcast_address: producer.broadcast_address,
+                                http_port: producer.http_port,
+                            });
+                            producerTotal.depth += producer.depth;
+                            producerTotal.messages += producer.message_count;
+                            producerTotal.channels += producer.channels.length;
+                            producerTotal.memory += (producer.e2e_processing_latency.percentiles ? producer.e2e_processing_latency.percentiles : 0);
+                            producerTotal.disk += producer.e2e_processing_latency.count;
+
+                            for (let j = 0; j < producer.channels.length; j++) {
+                                let channel = producer.channels[j];
+                                channels.push({
+                                    channel: channel.channel_name,
+                                    depth: channel.depth,
+                                    memory: (channel.e2e_processing_latency.percentiles ? channel.e2e_processing_latency.percentiles : 0),
+                                    disk: channel.e2e_processing_latency.count,
+                                    in_flight: channel.in_flight_count,
+                                    deferred: channel.deferred_count,
+                                    requeued: channel.requeue_count,
+                                    timeout: channel.timeout_count,
+                                    messages: channel.message_count,
+                                    connections: channel.client_count,
+                                });
+                            }
+                        }
+                    } else {
+                        let errorMsg = res.info + '[' + res.error + ']';
+                        if (res.error > 0) {
+                            errorMsg = res.info + '[' + res.error + ']';
+                        } else {
+                            errorMsg = 'UPSTREAM_ERROR: failed to query any nsqd:';
+                        }
+
+                        nsqContent_info.value = [
+                            title_h,
+                            nsqErrorMsg(errorMsg),
+                            h("div", {
+                                style: {
+                                    margin: "15px 0 0 15px",
+                                }
+                            }, [
+                                h(YqButton, {
+                                    type: "danger",
+                                    label: "Delete Topic",
+                                    labelDict: {
+                                        "zh-CN": "删除主题",
+                                        "en": "Delete Topic",
+                                    },
+                                    onClick: async (event) => {
+                                        await delete_topic(topic, event.target);
+                                        await nsqStreams();
+                                    },
+                                }),
+                            ]),
+                        ];
+
+                        return;
+                    }
+
+                    const paused = res.producers[0].paused;
+                    const broadcast_address = res.producers[0].broadcast_address;
+                    const http_port = res.producers[0].http_port;
+
+                    nsqContent_info.value = [
+                        title_h,
+                        h("div", null, [
+                            h("div", null, [
+                                h(YqButton, {
+                                    type: "warning",
+                                    label: "Empty Queue",
+                                    labelDict: {
+                                        "zh-CN": "清空队列",
+                                        "en": "Empty Queue",
+                                    },
+                                    onClick: async () => {
+                                        await topic_action(broadcast_address, http_port, topic, 'empty');
+                                        await nsqLookup(topic);
+                                    },
+                                }),
+                                h(YqButton, {
+                                    type: "danger",
+                                    label: "Delete Topic",
+                                    labelDict: {
+                                        "zh-CN": "删除主题",
+                                        "en": "Delete Topic",
+                                    },
+                                    onClick: async (event) => {
+                                        await delete_topic(topic, event.target);
+                                        await nsqStreams();
+                                    },
+                                }),
+                                h(YqButton, {
+                                    type: paused ? "success" : "primary",
+                                    label: (paused ? "Resume" : "Pause") + " Topic",
+                                    labelDict: {
+                                        "zh-CN": (paused ? "恢复" : "暂停") + "主题",
+                                        "en": (paused ? "Resume" : "Pause") + " Topic",
+                                    },
+                                    onClick: async () => {
+                                        if (paused) {
+                                            await topic_action(broadcast_address, http_port, topic, 'unpause');
+                                        } else {
+                                            await topic_action(broadcast_address, http_port, topic, 'pause');
+                                        }
+                                        await nsqLookup(topic);
+                                    },
+                                }),
+                            ]),
+
+                            h("div", {
+                                style: {
+                                    fontSize: "18px",
+                                    fontWeight: "bold",
+                                    margin: "10px 0",
+                                }
+                            }, 'Topic Message Queue'),
+                            h('table', {
+                                class: "yqtable",
+                            },
+                                h('tbody', null,
+                                    [
+                                        h('tr', null, [
+                                            h('th', null, 'NSQd Host'),
+                                            h('th', null, 'Depth'),
+                                            h('th', null, 'Memory + Disk'),
+                                            h('th', null, 'Messages'),
+                                            h('th', null, 'Channels'),
+                                        ]),
+                                        h('tr', null, producers.map((item, index) => [
+                                            h('td', null, [
+                                                h("a", {
+                                                    title: "tombstone " + item.broadcast_address + ":" + item.http_port,
+                                                    style: {
+                                                        color: "var(--yq-danger)",
+                                                        padding: "0 5px",
+                                                    },
+                                                    href: "javascript:void(0);",
+                                                    onClick: async (event) => {
+                                                        if (await tombstone_topic(item.topic_nametopic, item.broadcast_address + ":" + item.http_port, event.target)) {
+                                                            await nsqStreams();
+                                                        }
+                                                    },
+                                                }, "✘"),
+                                                item.host,
+                                                '(',
+                                                h("a", {
+                                                    href: "javascript:void(0);",
+                                                    onClick: () => {
+                                                        nsqStats(item.broadcast_address, item.http_port);
+                                                    },
+                                                }, item.ip),
+                                                ')',
+                                            ]),
+                                            h('td', null, item.depth),
+                                            h('td', null,
+                                                item.memory
+                                                + ' + ' +
+                                                + item.disk),
+                                            h('td', null, item.messages),
+                                            h('td', null, item.channels),
+                                        ])),
+                                        h('tr', {
+                                            style: {
+                                                backgroundColor: "var(--el-color-primary-light-9)",
+                                            }
+                                        }, [
+                                            h('td', null, 'Total:'),
+                                            h('td', null, producerTotal.depth),
+                                            h('td', null,
+                                                producerTotal.memory
+                                                + ' + ' +
+                                                + producerTotal.disk),
+                                            h('td', null, producerTotal.messages),
+                                            h('td', null, producerTotal.channels),
+                                        ]),
+                                    ]
+                                )
+                            )
+                        ]),
+                        h("div", null, [
+                            h("div", {
+                                style: {
+                                    fontSize: "18px",
+                                    fontWeight: "bold",
+                                    margin: "20px 0 10px 0",
+                                }
+                            }, 'Channel Message Queues'),
+                            h('table', {
+                                class: "yqtable",
+                            },
+                                h('tbody', null,
+                                    [
+                                        h('tr', null, [
+                                            h('th', null, 'Channel'),
+                                            h('th', null, 'Depth'),
+                                            h('th', null, 'Memory + Disk'),
+                                            h('th', null, 'In-Flight'),
+                                            h('th', null, 'Deferred'),
+                                            h('th', null, 'Requeued'),
+                                            h('th', null, 'Timed Out'),
+                                            h('th', null, 'Messages'),
+                                            h('th', null, 'Connections'),
+                                        ]),
+                                        h('tr', null, channels.map((item, index) => [
+                                            h('td', null, h("a",
+                                                {
+                                                    href: "javascript:void(0);",
+                                                    onClick: () => {
+                                                        channelInfo(topic, item.channel);
+                                                    },
+                                                },
+                                                item.channel
+                                            )),
+                                            h('td', null, item.depth),
+                                            h('td', null,
+                                                item.memory
+                                                + ' + ' +
+                                                + item.disk),
+                                            h('td', null, item.in_flight),
+                                            h('td', null, item.deferred),
+                                            h('td', null, item.requeued),
+                                            h('td', null, item.timeout),
+                                            h('td', null, item.messages),
+                                            h('td', null, item.connections),
+                                        ])),
+                                    ]
+                                )
+                            )
+                        ])
+                    ]
+                }
+
+                /*
+                 查找主题消费者
+                */
+                const channelInfo = async (topic, channel) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:lookup");
+                    formData.append("topic", topic);
+                    formData.append("channel", channel);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("channelInfo", res);
+
+                    const title_h = [h("div", {
+                        style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            backgroundColor: "var(--yq-bg-hover)",
+                            borderRadius: "4px",
+                            padding: "8px 13px",
+                            margin: "15px 0 20px 0",
+                            fontSize: "14px",
+                            fontWeight: "bold",
+                            listStyle: "none",
+                        }
+                    },
+                        h("a", {
+                            href: "javascript:void(0);",
+                            onClick: () => nsqStreams()
+                        }, "Streams"),
+                        h("span", {}, "/"),
+                        h("a", {
+                            style: {
+                            },
+                            href: "javascript:void(0);",
+                            onClick: () => nsqLookup(topic)
+                        }, topic),
+                        h("span", {}, "/"),
+                        h("span", {
+                            style: {
+                            }
+                        }, channel)
+                    ),
+                    h("div", {
+                        style: {
+                            display: "grid",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "10px 20px",
+                            margin: "15px 0 20px",
+                            fontSize: "17.5px",
+                            borderLeft: "5px solid var(--yq-border)",
+                        }
+                    }, [
+                        h("div", null, [
+                            h("span", null, "Topic: "),
+                            h("span", {
+                                style: {
+                                    fontWeight: "bold",
+                                }
+                            }, topic),
+                        ]),
+                        h("div", null, [
+                            h("span", null, "Channel:"),
+                            h("span", {
+                                style: {
+                                    fontWeight: "bold",
+                                }
+                            }, channel),
+                        ]),
+                    ])];
+
+                    let channels = [];
+                    let channelsTotal = {
+                        depth: 0,
+                        in_flight: 0,
+                        memory: 0,
+                        disk: 0,
+                        deferred: 0,
+                        requeued: 0,
+                        timeout: 0,
+                        messages: 0,
+                        connections: 0,
+                    };
+                    let paused = false;
+                    let broadcast_address = res.producers[0].broadcast_address;
+                    let http_port = res.producers[0].http_port;
+
+                    if (res.error === 0) {
+                        for (let i = 0; i < res.producers.length; i++) {
+                            let producer = res.producers[i];
+
+                            for (let j = 0; j < producer.channels.length; j++) {
+                                let channel = producer.channels[j];
+                                channels.push({
+                                    host: producer.hostname + ":" + producer.http_port,
+                                    broadcast_address: producer.broadcast_address,
+                                    http_port: producer.http_port,
+                                    depth: channel.depth,
+                                    memory_disk: ((channel.e2e_processing_latency.percentiles ? channel.e2e_processing_latency.percentiles : 0) + ' + ' + channel.e2e_processing_latency.count),
+                                    in_flight: channel.in_flight_count,
+                                    deferred: channel.deferred_count,
+                                    requeued: channel.requeue_count,
+                                    timeout: channel.timeout_count,
+                                    messages: channel.message_count,
+                                    connections: channel.client_count,
+                                });
+
+                                channelsTotal.depth += channel.depth;
+                                channelsTotal.in_flight += channel.in_flight_count;
+                                channelsTotal.memory += (channel.e2e_processing_latency.percentiles ? channel.e2e_processing_latency.percentiles : 0);
+                                channelsTotal.disk += channel.e2e_processing_latency.count;
+                                channelsTotal.deferred += channel.deferred_count;
+                                channelsTotal.requeued += channel.requeue_count;
+                                channelsTotal.timeout += channel.timeout_count;
+                                channelsTotal.messages += channel.message_count;
+                                channelsTotal.connections += channel.client_count;
+                            }
+                        }
+                        if (res.producers.length > 0) {
+                            broadcast_address = res.producers[0].broadcast_address;
+                            http_port = res.producers[0].http_port;
+                            if (res.producers[0].channels.length > 0) {
+                                paused = res.producers[0].channels[0].paused;
+                            }
+                        }
+                    }
+
+                    nsqContent_info.value = [
+                        title_h,
+
+                        h("div", {
+                            style: {
+                                marginBottom: "20px",
+                            }
+                        }, [
+                            h(YqButton, {
+                                type: "warning",
+                                label: "Empty Queue",
+                                labelDict: {
+                                    "zh-CN": "清空队列",
+                                    "en": "Empty Queue",
+                                },
+                                onClick: async () => {
+                                    await channel_action(broadcast_address, http_port, topic, channel, 'empty');
+                                    await channelInfo(topic, channel);
+                                },
+                            }),
+                            h(YqButton, {
+                                type: "danger",
+                                label: "Delete Topic",
+                                labelDict: {
+                                    "zh-CN": "删除主题",
+                                    "en": "Delete Topic",
+                                },
+                                onClick: async (event) => {
+                                    await delete_channel(topic, channel, event.target);
+                                    await channelInfo(topic, channel);
+                                },
+                            }),
+                            h(YqButton, {
+                                type: paused ? "success" : "primary",
+                                label: (paused ? "Resume" : "Pause") + " Topic",
+                                labelDict: {
+                                    "zh-CN": (paused ? "恢复" : "暂停") + "主题",
+                                    "en": (paused ? "Resume" : "Pause") + " Topic",
+                                },
+                                onClick: async () => {
+                                    if (paused) {
+                                        await channel_action(broadcast_address, http_port, topic, channel, 'unpause');
+                                    } else {
+                                        await channel_action(broadcast_address, http_port, topic, channel, 'pause');
+                                    }
+                                    await channelInfo(topic, channel);
+                                },
+                            }),
+                        ]),
+                        [
+                            h("span", {
+                                style: {
+                                    fontSize: "16px",
+                                    fontWeight: "bold",
+                                }
+                            }, 'Channel'),
+                            h('table', {
+                                class: "yqtable",
+                            },
+                                h('tbody', null,
+                                    [
+                                        h('tr', null, [
+                                            h('th', null, ''),
+                                            h('th', {
+                                                colspan: 4,
+                                            }, 'Message Queues'),
+                                            h('th', {
+                                                colspan: 4,
+                                            }, 'Statistics'),
+                                        ]),
+                                        h('tr', null, [
+                                            h('th', null, 'NSQd Host'),
+                                            h('th', null, 'Depth'),
+                                            h('th', null, 'In-Flight'),
+                                            h('th', null, 'Memory + Disk'),
+                                            h('th', null, 'Deferred'),
+                                            h('th', null, 'Requeued'),
+                                            h('th', null, 'Timed Out'),
+                                            h('th', null, 'Messages'),
+                                            h('th', null, 'Connections'),
+                                        ]),
+                                        h('tr', null, channels.map((item, index) => [
+                                            h('td', null, [
+                                                item.host,
+                                                '(',
+                                                h("a", {
+                                                    href: "javascript:void(0);",
+                                                    onClick: () => {
+                                                        nsqStats(item.broadcast_address, item.http_port);
+                                                    },
+                                                }, item.broadcast_address + ':' + item.http_port),
+                                                ')',
+                                            ]),
+                                            h('td', null, item.depth),
+                                            h('td', null, item.in_flight),
+                                            h('td', null, item.memory_disk),
+                                            h('td', null, item.deferred),
+                                            h('td', null, item.requeued),
+                                            h('td', null, item.timeout),
+                                            h('td', null, item.messages),
+                                            h('td', null, item.connections),
+                                        ])),
+                                        h('tr', null, [
+                                            h('td', null, 'Total:'),
+                                            h('td', null, channelsTotal.depth),
+                                            h('td', null, channelsTotal.in_flight),
+                                            h('td', null, channelsTotal.memory + ' + ' + channelsTotal.disk),
+                                            h('td', null, channelsTotal.deferred),
+                                            h('td', null, channelsTotal.requeued),
+                                            h('td', null, channelsTotal.timeout),
+                                            h('td', null, channelsTotal.messages),
+                                            h('td', null, channelsTotal.connections),
+                                        ]),
+                                    ]
+                                )
+                            )
+                        ],
+                        [
+                            h("div", {
+                                style: {
+                                    padding: "10px",
+                                    marginTop: "10px",
+                                    fontSize: "16px",
+                                    fontWeight: "bold",
+                                }
+                            }, 'Client Connections'),
+                            h("div", {
+                                style: {
+                                    display: "grid",
+                                    alignItems: "center",
+                                    gap: "10px",
+                                    padding: "15px",
+                                    marginBottom: "20px",
+                                    color: "var(--el-color-warning)",
+                                    backgroundColor: "var(--el-color-warning-light-9)",
+                                    borderColor: "var(--el-color-warning-light-7)",
+                                    border: "1px solid transparent",
+                                    borderRadius: "4px",
+                                }
+                            },
+                                [
+                                    h("span", {
+                                        style: {
+                                            fontSize: "16px",
+                                            fontWeight: "bold",
+                                        }
+                                    }, "Notice"),
+                                    h("span", {
+                                        style: {
+                                            fontSize: "12px",
+                                        }
+                                    },
+                                        "No clients connected to this channel."
+                                    ),
+                                ]
+                            )
+
+                        ]
+
+                    ]
+                }
+
+                /*
+                 获取节点统计信息 nsq:stats
+                */
+                const nsqStats = async (broadcast_address, http_port) => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:stats");
+                    formData.append("broadcast_address", broadcast_address);
+                    formData.append("http_port", http_port);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsqInfo", res);
+
+                    const title_h = h("ol", {
+                        style: {
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "8px 13px",
+                            margin: "15px 0 20px 0",
+                            fontSize: "14px",
+                            fontWeight: "bold",
+                            listStyle: "none",
+                            backgroundColor: "var(--yq-bg-hover)",
+                            borderRadius: "4px",
+                        }
+                    }, [
+                        h("li", null, h("a", {
+                            href: "javascript:void(0);",
+                            onClick: () => nsqNodes()
+                        }, "Nodes")),
+                        h("li", {
+                            style: {
+                                color: "var(--yq-text-faint)",
+                            }
+                        }, "/"),
+                        h("li", {
+                            style: {
+                                color: "var(--yq-text-muted)",
+                            }
+                        }, broadcast_address + ":" + http_port),
+                    ]);
+
+                    if (res.error != 0 || res.topics.length == 0) {
+                        let errMsg = res.error != 0 ? res.info : 'No topics found';
+                        nsqContent_info.value = [title_h, nsqErrorMsg(errMsg)];
+                        return;
+                    }
+
+                    let messageCount = 0;
+                    let clientCount = 0;
+                    res.topics.forEach((topic) => {
+                        messageCount += topic.message_count;
+                        topic.channels.forEach((channel) => {
+                            clientCount += channel.clients.length;
+                        });
+                    });
+
+                    nsqContent_info.value = [
+                        title_h,
+
+                        h("table", {
+                            class: "yqtable",
+                        }, h('tbody', null,
+                            [
+                                h('tr', null, [
+                                    h('td', {
+                                        colspan: 8,
+                                    }, "Topics"),
+                                    h('td', null, [h('span', { style: { fontWeight: 'bold', padding: '5px' }, messageCount }, messageCount), 'Messages']),
+                                    h('td', null, [h('span', { style: { fontWeight: 'bold', padding: '5px' }, clientCount }, clientCount), 'Clients']),
+                                ]),
+
+                                res.topics.map((item, index1) => [
+                                    h('tr', null, [
+                                        h('th', {
+                                            colspan: 2,
+                                        }, 'Topic'),
+                                        h('th', null, 'Depth'),
+                                        h('th', {
+                                            colspan: 5,
+                                        }, ''),
+                                        h('th', null, '	Messages'),
+                                        h('th', null, 'Channels'),
+                                    ]),
+                                    h('tr', {
+                                        style: {
+                                            backgroundColor: "var(--el-color-primary-light-9)",
+                                        }
+                                    }, [
+                                        h('td', {
+                                            colspan: 2,
+                                        }, [
+                                            h('a', {
+                                                style: {
+                                                    color: "var(--yq-danger)",
+                                                    padding: "5px",
+                                                },
+                                                title: "tombstone " + broadcast_address + ":" + http_port,
+                                                href: "javascript:void(0);",
+                                                onClick: async (event) => {
+                                                    if (await tombstone_topic(item.topic_name, broadcast_address + ":" + http_port, event.target)) {
+                                                        await nsqStreams();
+                                                    }
+                                                },
+                                                // (item.topic_name);
+                                            }, '✘')
+                                            , h('a', {
+                                                href: "javascript:void(0);",
+                                                onClick: () => nsqStats(item.broadcast_address, item.http_port)
+                                            }, item.topic_name),
+                                            (item.paused ? h('span', {
+                                                style: {
+                                                    marginLeft: "5px",
+                                                    backgroundColor: "var(--yq-primary)",
+                                                    fontSize: "12px",
+                                                    color: "#fff",
+                                                    padding: "1px 5px",
+                                                    borderRadius: "3px",
+                                                },
+                                            }, 'paused') : '')
+                                        ]),
+                                        h('td', null, item.depth),
+                                        h('td', {
+                                            colspan: 5,
+                                        }, ''),
+                                        h('td', null, item.message_count),
+                                        h('td', null, item.channels.length),
+                                    ]),
+                                    h('tr', null, [
+                                        h('th', {
+                                            colspan: 2,
+                                        }, '	Channel'),
+                                        h('th', null, 'Depth'),
+                                        h('th', null, 'Memory + Disk'),
+                                        h('th', null, 'In-Flight'),
+                                        h('th', null, 'Deferred'),
+                                        h('th', null, 'Requeued'),
+                                        h('th', null, 'Timed Out'),
+                                        h('th', null, '	Messages'),
+                                        h('th', null, 'Connections'),
+                                    ]),
+
+                                    item.channels.map((channel, index2) => [
+                                        h('tr', {
+                                            style: {
+                                                backgroundColor: "var(--el-color-warning-light-9)",
+                                            }
+                                        }, [
+                                            h('td', {
+                                                colspan: 2,
+                                            }, channel.channel_name),
+                                            h('td', null, channel.depth),
+                                            h('td', null, (channel.e2e_processing_latency.percentiles ? channel.e2e_processing_latency.percentiles : 0) + ' + ' + channel.e2e_processing_latency.count),
+                                            h('td', null, channel.in_flight_count),
+                                            h('td', null, channel.deferred_count),
+                                            h('td', null, channel.requeue_count),
+                                            h('td', null, channel.timeout_count),
+                                            h('td', null, channel.message_count),
+                                            h('td', null, channel.client_count),
+                                        ]),
+
+                                        channel.client_count > 0 ?
+                                            [
+                                                h('tr', {
+                                                    style: {
+                                                        border: "0px",
+                                                    }
+                                                }, [
+                                                    h('th', null, 'Client Host'),
+                                                    h('th', {
+                                                        colspan: 2,
+                                                    }, 'User-Agent'),
+                                                    h('th', null, 'Attributes'),
+                                                    h('th', null, 'In-Flight'),
+                                                    h('th', null, 'Ready Count'),
+                                                    h('th', null, 'Requeued'),
+                                                    h('th', null, 'Finished'),
+                                                    h('th', null, 'Messages'),
+                                                    h('th', null, 'Connected')]
+                                                ),
+                                                channel.clients.map((client, index3) => [
+                                                    h('tr', {
+                                                        style: {
+                                                            border: "0px",
+                                                        }
+                                                    }, [
+                                                        h('td', null, client.client_id),
+                                                        h('td', {
+                                                            colspan: 2,
+                                                        }, client.user_agent),
+                                                        h('td', null, ''),
+                                                        h('td', null, client.in_flight_count),
+                                                        h('td', null, client.ready_count),
+                                                        h('td', null, client.requeue_count),
+                                                        h('td', null, client.finish_count),
+                                                        h('td', null, client.message_count),
+                                                        h('td', null, formatDuration(client.connect_ts))
+                                                    ])
+                                                ])
+                                            ] : (
+                                                h('tr', {
+                                                    style: {
+                                                        border: "0px",
+                                                    }
+                                                }, [
+                                                    h('td', {
+                                                        colspan: 10,
+                                                        style: {
+                                                            border: "0px",
+                                                        }
+                                                    },
+                                                        h("div", {
+                                                            style: {
+                                                                padding: "10px",
+                                                                backgroundColor: "var(--el-color-warning-light-9)",
+                                                            }
+                                                        },
+                                                            [
+                                                                h('p', {
+                                                                    style: {
+                                                                        fontWeight: "bold",
+                                                                        fontSize: "16px",
+                                                                    }
+                                                                }, `Notice`),
+                                                                h('p', {
+                                                                    style: {
+                                                                        fontSize: "13px",
+                                                                    }
+                                                                }, `No clients connected to this channel.`)
+                                                            ]
+                                                        )
+                                                    )
+                                                ]
+                                                )
+                                            )
+                                    ]),
+                                ]),
+                            ])
+                        )
+                    ]
+                }
+
+                /*
+                获取所有节点 nsq:nodes
+                */
+                const nsqNodes = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:nodes");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsqNodes", res);
+
+                    if (res.error != 0) {
+                        nsqContent_info.value = nsError(res.info);
+                        return;
+                    }
+
+                    nsqContent_info.value = [
+                        h("h1", {
+                            style: {
+                                margin: "20px 0 10px 0",
+                                padding: "5px 0",
+                                fontSize: "24px",
+                                fontWeight: "bold",
+                            }
+                        }, `NSQd Nodes(${res.producers.length})`),
+                        h("table", {
+                            class: "yqtable",
+                        }, h('tbody', null,
+                            [
+                                h('tr', null, [
+                                    h('th', null, 'Hostname'),
+                                    h('th', null, 'Broadcast Address'),
+                                    h('th', null, 'TCP Port'),
+                                    h('th', null, 'HTTP Port'),
+                                    h('th', null, 'Version'),
+                                    h('th', null, 'Lookupd Conns.'),
+                                    h('th', null, 'Topics'),
+                                ]),
+                                h('tr', null, res.producers.map((item, index) => [
+                                    h('td', null, item.hostname),
+                                    h('td', null, h("a", {
+                                        href: "javascript:void(0);",
+                                        onClick: () => {
+                                            nsqStats(item.broadcast_address, item.http_port);
+                                        },
+                                    }, item.broadcast_address)),
+                                    h('td', null, item.tcp_port),
+                                    h('td', null, item.http_port),
+                                    h('td', null, item.version),
+                                    h('td', null, h('span', {
+                                        style: {
+                                            display: "inline-block",
+                                            minWidth: "10px",
+                                            padding: "3px 7px",
+                                            fontSize: "12px",
+                                            fontWeight: "700",
+                                            lineHeight: "1",
+                                            color: "#fff",
+                                            textAlign: "center",
+                                            whiteSpace: "nowrap",
+                                            verticalAlign: "baseline",
+                                            backgroundColor: "var(--el-color-info)",
+                                            borderRadius: "10px",
+                                        }
+                                    }, item.lookupd.length)),
+                                    h('td', null, [
+                                        item.topics.length > 0 ?
+                                            h('span', {
+                                                style: {
+                                                    display: "inline-block",
+                                                    minWidth: "10px",
+                                                    padding: "3px 7px",
+                                                    fontSize: "12px",
+                                                    fontWeight: "700",
+                                                    lineHeight: "1",
+                                                    color: "#fff",
+                                                    textAlign: "center",
+                                                    whiteSpace: "nowrap",
+                                                    verticalAlign: "baseline",
+                                                    backgroundColor: "var(--el-color-info)",
+                                                    borderRadius: "10px",
+                                                }
+                                            }, item.topics.length) : '',
+
+                                        item.topics.map((topic, index) => [
+                                            h("a", {
+                                                href: "javascript:void(0);",
+                                                onClick: () => nsqLookup(topic),
+                                                style: {
+                                                    padding: "0px 10px 3px 10px",
+                                                    margin: "2px",
+                                                    cursor: "pointer",
+                                                    backgroundColor: "var(--yq-primary)",
+                                                    color: "#fff",
+                                                    borderRadius: "0.25em",
+                                                }
+                                            }, topic)
+                                        ])]),
+                                ])),
+                            ])
+                        ),
+                    ]
+                }
+
+                //nsq counter
+                const nsqCounter = async () => {
+                    let counter = 0;
+
+                    var formData = new FormData();
+                    formData.append("action", "nsq:nodes");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    //console.log("nsqNodes", res);
+
+                    if (res.error != 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    } else {
+                        for (let item of res.producers) {
+                            const broadcast_address = item.broadcast_address;
+                            const http_port = item.http_port;
+
+                            formData = new FormData();
+                            formData.append("action", "nsq:stats");
+                            formData.append("broadcast_address", broadcast_address);
+                            formData.append("http_port", http_port);
+                            const res = await yqData.post("/_svradmin.html", formData);
+                            //console.log("nsq:lookup", res);
+                            if (res.error == 0) {
+                                res.topics.forEach((topic) => {
+                                    counter += topic.message_count;
+                                });
+                            }
+                        }
+                    }
+
+                    nsqContent_info.value = h("div", {
+                        style: {
+                            textAlign: "center",
+                            marginTop: "100px",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                        }
+
+                    }, [
+                        h("h1", {
+                            style: {
+                                fontSize: "42px",
+                                fontWeight: "bold",
+                                color: "var(--wb-indicator)",
+                                backgroundColor: "var(--wb-activity)",
+                                padding: "0px 10px",
+                                borderRadius: "5px",
+                                width: "fit-content",
+                            }
+                        }, `${counter}`),
+                        h("p", {
+                            style: {
+                                fontSize: "22px",
+                                fontWeight: "bold",
+                                marginTop: "30px",
+                                padding: "0px 10px",
+                                width: "fit-content",
+                            }
+                        }, "Messages Processed"),
+                    ])
+                    console.log(counter);
+                }
+
+                // nsq admin
+                const nsqAdmin = async () => {
+                    let counter = 0;
+
+                    let streams = [];
+                    var formData = new FormData();
+                    formData.append("action", "nsq:topics");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("nsq:topics", res);
+
+                    if (res.error != 0) {
+                        res.topics = [];
+                    }
+
+                    const refLookup = ref(null);
+                    let editRow = {};
+
+                    nsqContent_info.value = [h("h1", {
+                        style: {
+                            fontSize: "25px",
+                            fontWeight: "bold",
+                            padding: "15px 0 0 10px",
+                        }
+                    }, "Lookup"), h('ul', {
+                        style: {
+                            fontSize: "16px",
+                            display: "grid",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "10px 15px",
+                            listStyleType: 'none',
+                        }
+                    }, [
+                        h('li', null, h('div', {
+                            style: {
+                                fontWeight: "bold",
+                            }
+                        }, `nsqlookupd Host`)),
+                        h('li', null, h('div', {
+                            style: {
+                            }
+                        }, `${nsqLookupHost.value}`)),
+                    ]),
+                    res.topics.length > 0 ? "" :
+                        h("div", {
+                            style: {
+                                padding: "10px 15px",
+                                color: "var(--el-color-warning)",
+                                backgroundColor: "var(--el-color-warning-light-9)",
+                                borderColor: "var(--el-color-warning-light-7)",
+                                marginBottom: "20px",
+                                border: "1px solid transparent",
+                                borderRadius: "4px",
+                            }
+                        }, [
+                            h("h2", {
+                                style: {
+                                    fontSize: "20px",
+                                }
+                            }, `Notice`),
+                            h("p", {
+                                style: {
+                                    fontSize: "16px",
+                                }
+                            }, `No inactive Topics`),
+                        ]),
+                    h("div", {
+                        style: {
+                            padding: "10px 15px",
+                        }
+                    }, [
+                        h("h2", {
+                            style: {
+                                display: "block",
+                                width: "100%",
+                                padding: "0",
+                                marginBottom: "20px",
+                                fontSize: "21px",
+                                lineHeight: "1",
+                                color: "var(--yq-text-strong)",
+                                border: "0px",
+                                borderBottom: "1px solid var(--yq-border)",
+                            }
+                        }, `Create Topic/Channel`),
+                        h("div", {
+                            style: {
+                                color: "var(--el-color-primary)",
+                                backgroundColor: "var(--el-color-primary-light-9)",
+                                borderColor: "var(--el-color-primary-light-7)",
+                                padding: "15px",
+                                marginBottom: "20px",
+                                border: "1px solid transparent",
+                                borderRadius: "4px",
+                            }
+                        }, [
+                            h("p", {
+                                style: {
+                                    fontSize: "16px",
+                                }
+                            }, `This provides a way to setup a stream hierarchy before services are deployed to production.`),
+                            h("p", {
+                                style: {
+                                    fontSize: "16px",
+                                }
+                            }, `If Channel Name is empty, just the topic is created.`),
+                        ]),
+                    ]),
+
+                    h(YqBody, {
+                        type: 'param',
+                        content: {
+                            h: 'YqEdit',
+                            ref: 'refLookup',
+                            props: {
+                                titles: [{
+                                    name: 'topic',
+                                    ui_title: 'Topic Name',
+                                    ui_type: 2,
+                                    ui_visible: true,
+                                    ui_readonly: false,
+                                    ui_mask: {
+                                        blank: false,
+                                        placeholder: true,
+                                    }
+                                }, {
+                                    name: 'channel',
+                                    ui_title: 'Channel Name',
+                                    ui_type: 2,
+                                    ui_visible: true,
+                                    ui_readonly: false,
+                                    ui_mask: {
+                                        placeholder: true,
+                                    }
+                                }],
+                                model: `
+            <table>
+                <tbody>    
+                    <tr>
+                        <td><input id="txt_topic" type="text" style="width: 180px;" />
+                    </tr>
+                    <tr>
+                        <td><input id="txt_channel" type="text" style="width: 180px;" /></td>
+                    </tr>
+                </tbody>
+            </table>
+                                `,
+                                row: editRow,
+                                isEdit: true,
+                                'onUpdate:row': (val) => {
+                                    editRow = val;
+                                }
+                            }
+                        }
+                    }, null),
+                    h(YqButton, {
+                        style: {
+                            width: "80px",
+                        },
+                        label: "Create",
+                        labelDict: {
+                            "zh-CN": "创建",
+                            "en": "Create",
+                        },
+                        onClick: async () => {
+                            console.log(editRow);
+                            if (!editRow.topic || editRow.topic == "") {
+                                YqMessage.error({
+                                    message: "Topic Name is required!",
+                                    labelDict: {
+                                        "zh-CN": { message: "主题名称不能为空！" },
+                                        "en": { message: "Topic Name is required!" },
+                                    },
+                                });
+                                return;
+                            }
+                            if ((editRow.channel && editRow.channel != "") && editRow.channel == editRow.topic) {
+                                YqMessage.error({
+                                    message: "Channel Name cannot be the same as Topic Name!",
+                                    labelDict: {
+                                        "zh-CN": { message: "通道名称不能与主题名称相同！" },
+                                        "en": { message: "Channel Name cannot be the same as Topic Name!" },
+                                    },
+                                });
+                                return;
+                            }
+                            // create topic/channel
+                            if (! await create_topic(editRow.topic)) {
+                                YqMessage.success({
+                                    message: "Topic/Channel created successfully!",
+                                    labelDict: {
+                                        "zh-CN": { message: "主题/通道创建成功！" },
+                                        "en": { message: "Topic/Channel created successfully!" },
+                                    },
+                                });
+                            }
+
+                            if ((editRow.channel && editRow.channel != "")) {
+                                await create_channel(editRow.topic, editRow.channel);
+                            }
+                        }
+                    })
+                    ];
+                    console.log(counter);
+                }
+
+                const nsqContent = computed(() => {
+                    if (!nsqStatus.value) {
+                        return h("div", null, 'NSQ is not running!');
+                    }
+
+                    return h("div", null,
+                        [
+                            h("div", {
+                                style: {
+                                    display: "flex",
+                                    backgroundColor: "var(--wb-titlebar)"
+                                }
+                            },
+                                [
+                                    h("ul", {
+                                        style: {
+                                            padding: "10px 15px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "20px",
+                                            'list-style-type': 'none',
+                                            fontSize: "16px",
+                                        }
+                                    }, [
+                                        h("li", null, h("div", {
+                                            style: {
+                                                fontSize: "22px",
+                                                fontWeight: "bold",
+                                                color: "var(--yq-text-strong)",
+                                            }
+                                        }, "NSQ")),
+
+                                        h("li", null, h("a", {
+                                            style: {
+                                                color: "var(--yq-text-muted)",
+                                            },
+                                            href: "javascript:void(0);",
+                                            onClick: () => nsqStreams()
+                                        }, "Streams")),
+                                        h("li", null, h("a", {
+                                            style: {
+                                                color: "var(--yq-text-muted)",
+                                            },
+                                            href: "javascript:void(0);",
+                                            onClick: () => nsqNodes()
+                                        }, "Nodes")),
+                                        h("li", null, h("a", {
+                                            style: {
+                                                color: "var(--yq-text-muted)",
+                                            },
+                                            href: "javascript:void(0);",
+                                            onClick: () => nsqCounter()
+                                        }, "Counter")),
+                                        h("li", null, h("a", {
+                                            style: {
+                                                color: "var(--yq-text-muted)",
+                                            },
+                                            href: "javascript:void(0);",
+                                            onClick: () => nsqAdmin()
+                                        }, "Lookup")),
+
+                                    ]),
+                                    h("div", {
+                                        style: {
+                                            display: "flex",
+                                            alignItems: "center",
+                                            marginLeft: "auto",
+                                            marginRight: "20px",
+                                        }
+                                    }, h("span", {
+                                        style: {
+                                            color: "#fff",
+                                            backgroundColor: "var(--el-color-success)",
+                                            padding: "1px 10px",
+                                            borderRadius: "4px",
+                                        },
+                                    }, nsqVersion.value)),
+                                ]
+                            ),
+
+                            nsqContent_info.value,
+                        ]);
+                });
+
+                const emailRef = ref(null);
+                let emailRow = {
+                    to: '',
+                    subject: '测试邮件',
+                    body: '这是一封测试邮件',
+                };
+                let tmp = localStorage.getItem('nsq:email_test');
+                if (tmp) {
+                    emailRow = JSON.parse(tmp) || emailRow;
+                }
+                const emailEditProps = computed(() => ({
+                    isEdit: true,
+                    titles: [{
+                        name: 'to',
+                        ui_title: '接收人',
+                        ui_type: 2,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false,
+                            format: (val) => {
+                                const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+                                const vals = val.split(',');
+                                for (let i = 0; i < vals.length; i++) {
+                                    if (!emailRegex.test(vals[i])) {
+                                        return "邮箱格式错误";
+                                    }
+                                }
+                                return '';
+                            },
+                        }
+                    }, {
+                        name: 'subject',
+                        ui_title: '主题',
+                        ui_type: 5,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false,
+                            types: ['text'],
+                        }
+                    }, {
+                        name: 'body',
+                        ui_title: '内容',
+                        ui_type: 5,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false,
+                            types: ['txt'],
+                        }
+                    }],
+                    model: `
+            <table>
+                <tbody>    
+                    <tr>
+                        <td><label id="lbl_to">接收人</label></td>
+                        <td><input id="txt_to" type="text" style="width: 400px;" /></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>*多个邮箱用逗号(,)隔开</td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_subject">主题</label></td>
+                        <td><textarea id="txt_subject" textbox="false" style="width: 400px;height: 60px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_body">内容</label></td>
+                        <td><textarea id="txt_body" textbox="false" style="width: 400px;height: 200px;" /></td>
+                    </tr>
+                </tbody>
+            </table>`,
+                    row: emailRow,
+                    "onUpdate:row": (val) => {
+                        emailRow = val;
+                    }
+                }));
+                const emailMenus = ref([
+                    {
+                        name: "sendemail",
+                        label: "发送邮件",
+                        toptip: "发送邮件",
+                        icon: "fa fa-envelope",
+                        type: "primary",
+                        disabled: () => {
+                            return !switchItems.value[0].checked;
+                        },
+                        click: async () => {
+                            if (emailRef.value.error()) {
+                                YqMessage.error({
+                                    message: "请填写完整信息",
+                                    labelDict: {
+                                        "zh-CN": { message: "请填写完整信息" },
+                                        "en": { message: "请填写完整信息" },
+                                    },
+                                });
+                                return;
+                            }
+
+                            localStorage.setItem('nsq:email_test', JSON.stringify(emailRow));
+                            await send_email(emailRow.to, emailRow.subject, emailRow.body);
+                        }
+                    }
+                ]);
+
+                const smsRef = ref(null);
+                let smsRow = {
+                    provider: 'aliyun',
+                    phone_to: '',
+                    template_code: 'SMS_126315172',
+                    template_param: '{"code":"123456"}',
+                };
+                tmp = localStorage.getItem('nsq:sms_test');
+                if (tmp) {
+                    smsRow = JSON.parse(tmp) || smsRow;
+                }
+                const smsEditProps = computed(() => ({
+                    isEdit: true,
+                    titles: [{
+                        name: 'provider',
+                        ui_title: '短信服务',
+                        ui_type: 2,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false
+                        }
+                    }, {
+                        name: 'phone_to',
+                        ui_title: '接收人',
+                        ui_type: 2,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false
+                        }
+                    }, {
+                        name: 'template_code',
+                        ui_title: '模板code',
+                        ui_type: 2,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false,
+                        }
+                    }, {
+                        name: 'template_param',
+                        ui_title: '模板参数',
+                        ui_type: 5,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false,
+                            types: ['txt'],
+                        }
+                    }],
+                    model: `
+            <table>
+                <tbody>    
+                    <tr>
+                        <td><label id="lbl_provider">短信服务</label></td>
+                        <td><input id="txt_provider" type="text" style="width: 400px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_phone_to">接收人</label></td>
+                        <td><input id="txt_phone_to" type="text" style="width: 400px;" /></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>*多个手机号用逗号(,)隔开</td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_template_code">模板code</label></td>
+                        <td><input id="txt_template_code" type="text" style="width: 400px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_template_param">模板参数</label></td>
+                        <td><textarea id="txt_template_param" textbox="false" style="width: 400px;height: 200px;" /></td>
+                    </tr>
+                </tbody>
+            </table>`,
+                    row: smsRow,
+                    "onUpdate:row": (val) => {
+                        smsRow = val;
+                    }
+                }));
+                const smsMenus = ref([
+                    {
+                        name: "sendsms",
+                        label: "发送短信",
+                        toptip: "发送短信",
+                        icon: "fa fa-phone",
+                        type: "primary",
+                        disabled: () => {
+                            return !switchItems.value[1].checked;
+                        },
+                        click: async () => {
+                            if (smsRef.value.error()) {
+                                YqMessage.error({
+                                    message: "请填写完整信息",
+                                    labelDict: {
+                                        "zh-CN": { message: "请填写完整信息" },
+                                        "en": { message: "请填写完整信息" },
+                                    },
+                                });
+                                return;
+                            }
+
+                            localStorage.setItem('nsq:sms_test', JSON.stringify(smsRow));
+                            await send_sms(smsRow.provider, smsRow.phone_to, smsRow.template_code, smsRow.template_param);
+                        }
+                    }
+                ]);
+
+                const tongjiRef = ref(null);
+                let tongjiRow = {
+                    action: 'view',
+                    name: '',
+                    url: '/',
+                    dbname: 'yqbase',
+                    tbname: 'cms_news',
+                    tid: '1234567890',
+                    title: '测试标题',
+                    userid: '1234567890',
+                    username: 'admin',
+                };
+                tmp = localStorage.getItem('nsq:tongji_test');
+                if (tmp) {
+                    tongjiRow = JSON.parse(tmp) || tongjiRow;
+                }
+                const tongjiEditProps = computed(() => ({
+                    isEdit: true,
+                    titles: [{
+                        name: 'action',
+                        ui_title: '操作',
+                        ui_type: 6,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            type: "string",
+                            default: "view",
+                            blank: false,
+                            lists: [
+                                {
+                                    no: "view",
+                                    label: "查看",
+                                }, {
+                                    no: "like",
+                                    label: "点赞",
+                                }, {
+                                    no: "unlike",
+                                    label: "取消点赞",
+                                }, {
+                                    no: "fav",
+                                    label: "收藏",
+                                }, {
+                                    no: "unfav",
+                                    label: "取消收藏",
+                                }, {
+                                    no: "comment",
+                                    label: "评论",
+                                }, {
+                                    no: "uncomment",
+                                    label: "取消评论",
+                                },
+                            ],
+                            textbox: true
+                        }
+                    }, {
+                        name: 'name',
+                        ui_title: '名称',
+                        ui_type: 2,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: true
+                        }
+                    }, {
+                        name: 'url',
+                        ui_title: 'URL',
+                        ui_type: 2,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false
+                        }
+                    }, {
+                        name: 'dbname',
+                        ui_title: '数据库名称',
+                        ui_type: 2,
+                        ui_width: 100,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: true
+                        }
+                    }, {
+                        name: 'tbname',
+                        ui_title: '表名',
+                        ui_type: 2,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: true
+                        }
+                    }, {
+                        name: 'tid',
+                        ui_title: 'tid',
+                        ui_type: 2,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: true,
+                        }
+                    }, {
+                        name: 'title',
+                        ui_title: '标题',
+                        ui_type: 5,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: false,
+                            types: ['txt'],
+                        }
+                    }, {
+                        name: 'userid',
+                        ui_title: '用户ID',
+                        ui_type: 2,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: true,
+                        }
+                    }, {
+                        name: 'username',
+                        ui_title: '用户名',
+                        ui_type: 2,
+                        ui_visible: true,
+                        ui_readonly: false,
+                        ui_mask: {
+                            blank: true,
+                        }
+                    }],
+                    model: `
+            <table>
+                <tbody>
+                    <tr>
+                        <td><label id="lbl_action">操作</label></td>
+                        <td><select id="txt_action" style="width: 150px;"> </select></td>
+                         <td><label id="lbl_name">名称</label></td>
+                        <td><input id="txt_name" type="text" style="width: 150px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_url">URL</label></td>
+                        <td colspan="3"><input id="txt_url" type="text" style="width: 400px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_dbname">数据库名称</label></td>
+                        <td><input id="txt_dbname" type="text" style="width: 150px;" /></td>
+                        <td><label id="lbl_tbname">表名</label></td>
+                        <td><input id="txt_tbname" type="text" style="width: 150px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_tid">tid</label></td>
+                        <td colspan="3"><input id="txt_tid" type="text" style="width: 400px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_title">标题</label></td>
+                        <td colspan="3"><textarea id="txt_title" textbox="false" style="width: 400px;height: 50px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_userid">用户ID</label></td>
+                        <td><input id="txt_userid" type="text" style="width: 150px;" /></td>
+                        <td><label id="lbl_username">用户名</label></td>
+                        <td><input id="txt_username" type="text" style="width: 150px;" /></td>
+                    </tr>
+                </tbody>
+            </table>`,
+                    row: tongjiRow,
+                    "onUpdate:row": (val) => {
+                        tongjiRow = val;
+                    }
+                }));
+                const tongjiMenus = ref([
+                    {
+                        name: "sendtongji",
+                        label: "提交访问统计",
+                        toptip: "提交访问统计",
+                        icon: "fa fa-bell",
+                        type: "primary",
+                        disabled: () => {
+                            return !switchItems.value[2].checked;
+                        },
+                        click: async () => {
+                            if (tongjiRef.value.error()) {
+                                YqMessage.error({
+                                    message: "请填写完整信息",
+                                    labelDict: {
+                                        "zh-CN": { message: "请填写完整信息" },
+                                        "en": { message: "请填写完整信息" },
+                                    },
+                                });
+                                return;
+                            }
+
+                            localStorage.setItem('nsq:tongji_test', JSON.stringify(tongjiRow));
+                            let row = { ...tongjiRow, "action": tongjiRow.action };
+                            await send_tongji(row);
+                        }
+                    }
+                ]);
+
+                const onLoad = async () => {
+                    await status();
+                    await nsqStreams();
+                }
+                const resetNsq = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "nsq:reset");
+                    try {
+                        const res = await yqData.post("/_svradmin.html", formData);
+                        console.log("resetNsq", res);
+                        if (res.error === 0) {
+                            await onLoad();
+                            YqMessage.success({
+                                message: "重置NSQ成功",
+                                labelDict: {
+                                    "zh-CN": { message: "重置NSQ成功" },
+                                    "en": { message: "重置NSQ成功" },
+                                },
+                            });
+                        } else {
+                            YqMessage.error(res.info + '[' + res.error + ']');
+
+                        }
+                    } catch (error) {
+                        YqMessage.error(error.message);
+                    }
+                }
+                onMounted(async () => {
+                    await onLoad();
+                })
+
+                return {
+                    resetNsq,
+                    nsqStatus,
+                    menuItems,
+                    switchItems,
+                    activeTab,
+                    tabLabelDict,
+
+                    nsqContent,
+
+                    emailRef,
+                    emailEditProps,
+                    emailMenus,
+
+                    smsRef,
+                    smsEditProps,
+                    smsMenus,
+
+                    tongjiRef,
+                    tongjiEditProps,
+                    tongjiMenus,
+                };
+            }
+        })
+        app.use(ElementPlus);
+        app.mount('#app');
+
+        window.app = app;
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        };
+    </script>
+
+    <style>
+        .el-tabs__header {
+            margin: 0 0 5px;
+        }
+    </style>
+
+</body>
+
+</html>

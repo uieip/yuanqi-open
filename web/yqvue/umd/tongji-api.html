@@ -1,0 +1,459 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>访问统计 API 测试</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+
+        #app {
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 6px 0;
+            color: #1a1a2e;
+        }
+
+        .page-header p {
+            margin: 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+            padding: 20px;
+            transition: box-shadow 0.25s ease, transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .card-header .card-badge {
+            font-size: 11px;
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+
+        .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        .card-body .result-area {
+            flex-shrink: 0;
+        }
+
+        .card-footer {
+            margin-top: 12px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            padding-top: 8px;
+        }
+
+        .layout-row {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+        }
+
+        .card-col {
+            flex: 1;
+            min-width: 380px;
+            max-width: 460px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="page-header">
+            <h1>访问统计 API 测试</h1>
+            <p>访问统计接口功能测试面板 — 提交、批量提交与登录状态检查</p>
+        </div>
+
+        <div class="layout-row">
+            <div class="card card-col">
+                <div class="card-header">
+                    <h3>登录状态</h3>
+                    <span class="card-badge">GET</span>
+                </div>
+                <div class="card-body">
+                    <el-input type="textarea" :rows="6" :model-value="JSON.stringify(loginState, null, 2)" readonly
+                        class="result-area" />
+                    <div class="card-footer">
+                        <el-button type="primary" @click="getLoginState">获取登录状态</el-button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-col">
+                <div class="card-header">
+                    <h3>提交访问统计</h3>
+                    <span class="card-badge">YqTongjiPub.submit</span>
+                </div>
+                <div class="card-body">
+                    <yq-edit ref="tongjiRef" v-bind="tongjiEditProps"></yq-edit>
+                    <yq-menu type="inline" :mini="false" :menu-items="tongjiMenus"></yq-menu>
+                    <el-input type="textarea" :rows="6" :model-value="JSON.stringify(tongjiResult, null, 2)" readonly
+                        class="result-area" />
+                </div>
+            </div>
+
+            <div class="card card-col">
+                <div class="card-header">
+                    <h3>批量提交统计</h3>
+                    <span class="card-badge">YqTongjiPub.infos</span>
+                </div>
+                <div class="card-body">
+                    <yq-table-edit ref="tongjiInfosRef" v-bind="tongjiInfosEditProps"></yq-table-edit>
+                    <yq-menu type="inline" :mini="false" :menu-items="tongjiInfosMenus"></yq-menu>
+                    <el-input type="textarea" :rows="6" :model-value="JSON.stringify(tongjiInfosResult, null, 2)" readonly
+                        class="result-area" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme, YqWindowApi, YqDataGrid, YqEdit, YqTableEdit, YqMenu, YqTongjiPub } = YqwinPlus;
+        const { ElMessage } = ElementPlus;
+        initTheme();
+
+        let mainParams = {
+
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid,
+                    YqEdit,
+                    YqTableEdit,
+                    YqMenu,
+                },
+                setup() {
+                    const loginState = ref({});
+
+                    const getLoginState = async () => {
+                        loginState.value = await YqWindowApi.loginStateGet();
+                    };
+
+                    const tongjiRef = ref(null);
+                    const tongjiResult = ref({});
+                    let tongjiRow = {
+                        action: 'view',
+                        url: '/',
+                        tbtag: '',
+                        tid: '1234567890',
+                        title: '测试标题',
+                    };
+                    if (localStorage.getItem('account:tongji_test')) {
+                        tongjiRow = JSON.parse(localStorage.getItem('account:tongji_test'));
+                    }
+                    const tongjiEditProps = computed(() => ({
+                        isEdit: true,
+                        titles: [{
+                            name: 'action',
+                            ui_title: '操作',
+                            ui_type: 6,
+                            ui_width: 100,
+                            ui_visible: true,
+                            ui_readonly: false,
+                            ui_mask: {
+                                type: "string",
+                                default: "view",
+                                blank: false,
+                                lists: [
+                                    {
+                                        no: "view",
+                                        name: "查看",
+                                    }, {
+                                        no: "like",
+                                        name: "点赞",
+                                    }, {
+                                        no: "unlike",
+                                        name: "取消点赞",
+                                    }, {
+                                        no: "fav",
+                                        name: "收藏",
+                                    }, {
+                                        no: "unfav",
+                                        name: "取消收藏",
+                                    }, {
+                                        no: "comment",
+                                        name: "评论",
+                                    }, {
+                                        no: "uncomment",
+                                        name: "取消评论",
+                                    },
+                                ],
+                                textbox: true
+                            }
+                        }, {
+                            name: 'url',
+                            ui_title: 'URL',
+                            ui_type: 2,
+                            ui_width: 100,
+                            ui_visible: true,
+                            ui_readonly: false,
+                            ui_mask: {
+                                blank: false
+                            }
+                        }, {
+                            name: 'title',
+                            ui_title: '标题',
+                            ui_type: 5,
+                            ui_visible: true,
+                            ui_readonly: false,
+                            ui_mask: {
+                                blank: false,
+                                types: ['txt'],
+                            }
+                        }, {
+                            name: 'tbtag',
+                            ui_title: '表标签',
+                            ui_type: 2,
+                            ui_width: 100,
+                            ui_visible: true,
+                            ui_readonly: false,
+                            ui_mask: {
+                                blank: true
+                            }
+                        }, {
+                            name: 'tid',
+                            ui_title: 'tid',
+                            ui_type: 2,
+                            ui_visible: true,
+                            ui_readonly: false,
+                            ui_mask: {
+                                blank: true,
+                            }
+                        }],
+                        model: `
+            <table>
+                <tbody>
+                    <tr>
+                        <td><label id="lbl_action">操作</label></td>
+                        <td colspan="3"><select id="txt_action" style="width: 140px;"> </select></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_url">URL</label></td>
+                        <td colspan="3"><input id="txt_url" type="text" style="width: 330px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_title">标题</label></td>
+                        <td colspan="3"><textarea id="txt_title" textbox="false" style="width: 330px;height: 50px;" /></td>
+                    </tr>
+                    <tr>
+                        <td><label id="lbl_tbtag">表标签</label></td>
+                        <td><input id="txt_tbtag" type="text" style="width: 140px;" /></td>
+                        <td><label id="lbl_tid">tid</label></td>
+                        <td><input id="txt_tid" type="text" style="width: 140px;" /></td>
+                    </tr>
+                </tbody>
+            </table>`,
+                        row: tongjiRow,
+                        "onUpdate:row": (val) => {
+                            tongjiRow = val;
+                        }
+                    }));
+                    const tongjiMenus = ref([
+                        {
+                            name: "sendtongji",
+                            label: "提交访问统计",
+                            toptip: "提交访问统计",
+                            icon: "fa fa-bell",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: async () => {
+                                if (tongjiRef.value.error()) {
+                                    ElMessage.error("请填写完整信息");
+                                    return;
+                                }
+
+                                localStorage.setItem('account:tongji_test', JSON.stringify(tongjiRow));
+                                let row = { ...tongjiRow, "action": tongjiRow.action };
+                                tongjiResult.value = await YqTongjiPub.submit(row);
+                                if (tongjiResult.value.error != 0) {
+                                    ElMessage.error(tongjiResult.value.info);
+                                    return;
+                                }
+                                ElMessage.success("提交成功");
+                            }
+                        }
+                    ]);
+
+                    const tongjiInfosRef = ref(null);
+                    const tongjiInfosResult = ref({});
+                    let tongjiInfosRows = [{
+                        "action": "view",
+                        "url": "/",
+                    }];
+                    if (localStorage.getItem('account:tongjiinfos_test')) {
+                        tongjiInfosRows = JSON.parse(localStorage.getItem('account:tongjiinfos_test'));
+                    }
+                    const tongjiInfosEditProps = computed(() => ({
+                        isEdit: true,
+                        titles: [{
+                            "name": "url",
+                            "ui_title": "URL",
+                            "fd_type": "nvarchar",
+                            "length": 50,
+                            "decimal": 0,
+                            "ui_type": 2,
+                            "ui_width": 120,
+                            "ui_visible": true,
+                            "ui_readonly": false,
+                            "ui_mask": {
+                                "default": "/",
+                                "min": 0,
+                                "max": 50,
+                                "blank": false,
+                                "format": ""
+                            }
+                        }, {
+                            name: 'action',
+                            ui_title: '操作',
+                            ui_type: 13,
+                            ui_width: 120,
+                            ui_visible: true,
+                            ui_readonly: false,
+                            ui_mask: {
+                                type: "string",
+                                default: "view",
+                                blank: false,
+                                lists: [
+                                    {
+                                        no: "view",
+                                        name: "查看",
+                                    }, {
+                                        no: "like",
+                                        name: "点赞",
+                                    }, {
+                                        no: "fav",
+                                        name: "收藏",
+                                    }, {
+                                        no: "comment",
+                                        name: "评论",
+                                    }
+                                ],
+                                textbox: true,
+                                editModeW: 200,
+                                editModeH: 80,
+                            }
+                        }],
+                        rows: tongjiInfosRows,
+                        loadDefault: true,
+                        height: 300,
+                    }));
+                    const tongjiInfosMenus = ref([
+                        {
+                            name: "sendtongji",
+                            label: "提交访问统计",
+                            toptip: "提交访问统计",
+                            icon: "fa fa-bell",
+                            type: "primary",
+                            disabled: () => {
+                                return false;
+                            },
+                            click: async () => {
+                                let rows = tongjiInfosRef.value.rows()
+                                if (rows.length == 0) {
+                                    ElMessage.error("请填写完整信息");
+                                    return;
+                                }
+
+                                localStorage.setItem('account:tongjiinfos_test', JSON.stringify(rows));
+                                console.log(rows);
+                                tongjiInfosResult.value = await YqTongjiPub.infos(rows, "");
+                                if (tongjiInfosResult.value.error != 0) {
+                                    ElMessage.error(tongjiInfosResult.value.info);
+                                    return;
+                                }
+                                ElMessage.success("提交成功");
+                            }
+                        }
+                    ]);
+
+                    onMounted(async () => {
+                    });
+
+                    return {
+                        loginState,
+                        getLoginState,
+                        tongjiRef,
+                        tongjiResult,
+                        tongjiEditProps,
+                        tongjiMenus,
+
+                        tongjiInfosRef,
+                        tongjiInfosResult,
+                        tongjiInfosEditProps,
+                        tongjiInfosMenus,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+    </script>
+</body>
+
+</html>

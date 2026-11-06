@@ -1,0 +1,414 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
+  <link rel="stylesheet" href="/test-ui.css">
+    <title>YqMarkdownView 组件测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            background-color: var(--yq-bg);
+            color: var(--yq-text);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        h1 {
+            color: #409eff;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .controls-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+        }
+        .controls-group {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e4e7ed;
+        }
+        .controls-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .compact-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e4e7ed;
+        }
+        .compact-controls h3 {
+            margin-right: 15px;
+            margin-bottom: 0;
+        }
+        .compact-controls .control-item {
+            margin-bottom: 0;
+        }
+        .compact-controls .control-item label {
+            min-width: auto;
+            margin-right: 5px;
+        }
+        .compact-controls .button-group {
+            margin-top: 0;
+        }
+        .control-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .control-item label {
+            min-width: 120px;
+            margin-right: 10px;
+            color: #606266;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .button-group button {
+            background-color: #409eff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .button-group button:hover {
+            background-color: #66b1ff;
+        }
+        .button-group button.warning {
+            background-color: #e6a23c;
+        }
+        .button-group button.warning:hover {
+            background-color: #f5c789;
+        }
+        .button-group button.success {
+            background-color: #67c23a;
+        }
+        .button-group button.success:hover {
+            background-color: #85ce61;
+        }
+        .demo-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            min-height: 600px;
+        }
+        .demo-title {
+            color: #303133;
+            margin-bottom: 20px;
+            font-size: 18px;
+            border-bottom: 1px solid #e4e7ed;
+            padding-bottom: 10px;
+        }
+        .markdown-view-container {
+            border: 1px solid #e4e7ed;
+            border-radius: 8px;
+            overflow: hidden;
+            height: calc(100vh - 500px);
+        }
+        .example-content {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            border: 1px solid #e4e7ed;
+        }
+        .example-content h4 {
+            margin-top: 0;
+            color: #303133;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <h1>YqMarkdownView 组件测试</h1>
+        
+        <div class="controls-section">
+            <div class="controls-group">
+                <div class="button-group">
+                    <button @click="loadExample('simple')">加载简单示例</button>
+                    <button @click="loadExample('complex')">加载复杂示例</button>
+                    <button @click="loadExample('code')">加载代码示例</button>
+                    <button class="warning" @click="clearContent">清空内容</button>
+                </div>
+            </div>
+            
+            <div class="controls-group compact-controls">
+                <h3>显示设置</h3>
+                <div class="control-item">
+                    <label>显示目录:</label>
+                    <el-switch v-model="showToc" :active-value="true" :inactive-value="false" active-text="是" inactive-text="否"></el-switch>
+                </div>
+                <div class="control-item">
+                    <label>模式:</label>
+                    <el-select v-model="mode" placeholder="请选择" style="width: 120px;">
+                        <el-option label="编辑模式" value="edit"></el-option>
+                        <el-option label="预览模式" value="web"></el-option>
+                    </el-select>
+                </div>
+                <div class="control-item">
+                    <label>目录位置:</label>
+                    <el-select v-model="tocPosition" placeholder="请选择" style="width: 120px;">
+                        <el-option label="左侧" value="left"></el-option>
+                        <el-option label="右侧" value="right"></el-option>
+                    </el-select>
+                </div>
+                <div class="control-item">
+                    <label>安全过滤:</label>
+                    <el-switch v-model="sanitize" :active-value="true" :inactive-value="false" active-text="开启" inactive-text="关闭"></el-switch>
+                </div>
+                <div class="control-item">
+                    <label>保留换行符:</label>
+                    <el-switch v-model="breaks" :active-value="true" :inactive-value="false" active-text="是" inactive-text="否"></el-switch>
+                </div>
+                <div class="control-item">
+                    <label>GFM 模式:</label>
+                    <el-switch v-model="gfm" :active-value="true" :inactive-value="false" active-text="开启" inactive-text="关闭"></el-switch>
+                </div>
+            </div>
+            
+            <div class="controls-group compact-controls">
+                <h3>测试操作</h3>
+                <div class="button-group">
+                    <button @click="updateContentTest">更新内容测试</button>
+                    <button class="success" @click="toggleTocTest">切换目录显示</button>
+                    <button class="warning" @click="togglePositionTest">切换目录位置</button>
+                    <button @click="getHeadingsTest">获取标题列表</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <div class="demo-title">Markdown 预览效果</div>
+            <div class="markdown-view-container">
+                <yq-markdown-view 
+                    :content="markdownContent" 
+                    :show-toc="showToc" 
+                    :toc-position="tocPosition"
+                    :sanitize="sanitize"
+                    :breaks="breaks"
+                    :gfm="gfm"
+                    :mode="edit"
+                ></yq-markdown-view>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const { createApp, ref } = Vue;
+        const { initTheme, YqMarkdownView } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMarkdownView
+            },
+            setup() {
+                // 示例内容
+                const examples = {
+                    simple: `# YqMarkdownView 组件测试
+                    
+这是一个简单的 Markdown 预览组件测试页面。
+
+## 功能特性
+- 使用 marked.js 解析 Markdown
+- 自动提取标题生成文档导航
+- 支持左侧或右侧目录
+- 安全的 HTML 过滤
+- 响应式设计
+
+## 使用说明
+1. 传入 Markdown 内容
+2. 配置显示选项
+3. 自动生成预览和导航`,
+                    
+                    complex: `# 深入理解 YqMarkdownView
+                    
+## 章节一：组件架构
+
+YqMarkdownView 是一个基于 Vue 3 和 marked.js 的 Markdown 预览组件。
+
+### 核心功能
+- **标题提取**: 自动提取 h1-h6 标题
+- **层级导航**: 生成层级结构导航
+- **平滑滚动**: 点击导航平滑滚动到对应标题
+- **安全过滤**: 防止 XSS 攻击
+
+#### 技术细节
+组件使用 DOM 操作提取标题，并通过 CSS 样式进行美化。
+
+## 章节二：API 设计
+
+### Props 参数
+- \`content\`: Markdown 内容
+- \`showToc\`: 是否显示目录
+- \`tocPosition\`: 目录位置 (left/right)
+
+### 标题层级示例
+#### 四级标题
+##### 五级标题
+###### 六级标题
+
+## 章节三：样式设计
+
+组件提供丰富的 CSS 样式，包括：
+- 响应式布局
+- 主题色配置
+- 代码高亮
+- 表格样式`,
+                    
+                    code: `# 代码示例展示
+
+## JavaScript 示例
+\`\`\`javascript
+// YqMarkdownView 组件示例
+import { YqMarkdownView } from '/src'
+
+export default {
+  components: {
+    YqMarkdownView
+  },
+  setup() {
+    const markdownContent = ref('# Hello World\\n\\n这是一段示例 Markdown 内容。')
+    
+    return {
+      markdownContent
+    }
+  }
+}
+\`\`\`
+
+## TypeScript 接口
+\`\`\`typescript
+export interface Heading {
+  id: string
+  text: string
+  level: number
+  children: Heading[]
+}
+
+export interface YqMarkdownViewProps {
+  content?: string
+  showToc?: boolean
+  tocPosition?: 'left' | 'right'
+  sanitize?: boolean
+  breaks?: boolean
+  gfm?: boolean
+}
+\`\`\`
+
+## HTML 结构
+\`\`\`html
+<div class="yq-markdown-view">
+  <div v-if="showToc" :class="['toc-wrapper', \`toc-\${tocPosition}\`]">
+    <!-- 目录导航 -->
+  </div>
+  <div class="markdown-content" v-html="htmlContent"></div>
+</div>
+\`\`\`
+
+## 表格示例
+| 属性名 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| content | string | '' | Markdown 内容 |
+| showToc | boolean | true | 是否显示目录 |
+| tocPosition | 'left' \\| 'right' | 'left' | 目录位置 |
+| sanitize | boolean | true | 安全过滤 |
+| breaks | boolean | true | 保留换行符 |
+| gfm | boolean | true | GFM 模式 |
+
+## 注意事项
+> 注意：开启安全过滤会移除 script、iframe 等危险元素，确保内容安全。`
+                }
+
+                // 响应式数据
+                const markdownContent = ref(examples.code)
+                const showToc = ref(true)
+                const tocPosition = ref('left')
+                const sanitize = ref(true)
+                const breaks = ref(true)
+                const gfm = ref(true)
+                const mode = ref('web')
+
+                // 加载示例内容
+                const loadExample = (type) => {
+                    markdownContent.value = examples[type] || examples.simple
+                }
+
+                // 清空内容
+                const clearContent = () => {
+                    markdownContent.value = ''
+                }
+
+                // 更新内容测试
+                const updateContentTest = () => {
+                    markdownContent.value = `# 更新测试 ${new Date().toLocaleTimeString()}
+                    
+## 动态内容
+这是动态更新的 Markdown 内容，用于测试组件响应性。
+
+### 测试点
+1. 组件是否能响应内容变化
+2. 标题提取是否正常
+3. 导航更新是否及时
+
+## 结论
+组件应该能够正确处理动态内容更新。`
+                }
+
+                // 切换目录显示
+                const toggleTocTest = () => {
+                    showToc.value = !showToc.value
+                }
+
+                // 切换目录位置
+                const togglePositionTest = () => {
+                    tocPosition.value = tocPosition.value === 'left' ? 'right' : 'left'
+                }
+
+                // 获取标题列表（在实际组件中可能需要通过 ref 访问）
+                const getHeadingsTest = () => {
+                    alert('在实际使用中，可以通过组件 ref 获取 headings 数据。\n当前内容包含多层标题结构。')
+                }
+
+                return {
+                    markdownContent,
+                    showToc,
+                    tocPosition,
+                    sanitize,
+                    breaks,
+                    gfm,
+                    mode,
+                    loadExample,
+                    clearContent,
+                    updateContentTest,
+                    toggleTocTest,
+                    togglePositionTest,
+                    getHeadingsTest
+                }
+            }
+        })
+            .use(ElementPlus)
+            .mount('#app')
+    </script>
+</body>
+</html>

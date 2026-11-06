@@ -1,0 +1,110 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding: 1px 0 0 0;">
+        <yq-data-grid ref="mRef" v-bind="mProps"></yq-data-grid>
+        <yq-data-grid ref="dRef" v-bind="dProps" style="margin-top: 10px;"></yq-data-grid>
+    </div>
+     <script>
+        const { createApp, onMounted, ref, computed } = Vue;
+        const { initTheme, YqWindowApi, YqDataGrid } = YqwinPlus;
+
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+                let mainParams = {
+            m_tb: _m,
+            d_tb: _d,
+        };
+
+        console.log("mainParams",JSON.stringify(mainParams, null, 2));
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const mRef = ref(null);
+                    const dRef = ref(null);
+                    let selectedId = null;
+                    const mProps = computed(() => ({
+                        ...mainParams.m_tb,
+                        loadTitles: false,
+                        loadData: true,
+                        height: '60vh',
+
+                        checkBlank: false,
+                        editTitle: "编辑",
+                        editMode: 4,
+                        editModeW: "900px",
+                        editModeH: "500px",
+                        editPlacement: "right",
+                        editModeNo: 2,
+                        editUrl: "/adp/test_model/ab_test_m-edit-wf.html?appno=" + mainParams.m_tb._appno + "&menuno=" + mainParams.m_tb._menuno,
+                        editClose: false,
+
+                        afterSetTitles: async () => {
+                            await dRef.value.initTitles();
+                        },
+                        onRowClick: ({ row }) => {
+                            const newId = row ? row.sid : null;
+                            // 重复点击同一行时不刷新从表
+                            if (newId === selectedId) {
+                                return;
+                            }
+                            selectedId = newId;
+                            dProps.value.bindingValue = selectedId;
+                            dRef.value.loadData();
+                        }
+                    }));
+                    const dProps = ref({
+                        ...mainParams.d_tb,
+                        loadTitles: false,
+                        loadData: false,
+                        height: '35vh',
+                    });
+
+                    onMounted(async () => {
+                        await mRef.value.initTitles();
+                    });
+
+                    return {
+                        mRef,
+                        dRef,
+                        mProps,
+                        dProps,
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,118 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <uieip type="tmpl" value="model.title"></uieip>
+    <style>
+        #app {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body style="margin: 0; padding: 0; overflow: hidden;display: block;">
+    <div id="app" style="padding: 1px 0 0 0;">
+        <yq-data-grid ref="tbRef" v-bind="tbProps"></yq-data-grid>
+    </div>
+    <script>
+        const { createApp, onMounted, ref, computed, h } = Vue;
+        const { ElMessage } = ElementPlus;
+        const { initTheme, YqWindowApi, yqWf, YqDataGrid, YqDataPub } = YqwinPlus;
+
+        initTheme();
+
+        <uieip type="tmpl" value="model.params"></uieip>
+
+        let mainParams = {
+            tb: _tb,
+        };
+
+        window.onload = function () {
+            initApp();
+        }
+
+        const initApp = () => {
+            const app = createApp({
+                components: {
+                    YqDataGrid
+                },
+                setup() {
+                    const tbRef = ref(null);
+
+                    const topicFunc = (row, value) => {
+                        return h("a", {
+                            href: "javascript:void(0);",
+                            onClick: () => {
+
+                                yqWf.wfInfo(row["pid"], (res) => {
+                                    if (res.error != 0) {
+                                        ElMessage({
+                                            message: res.info + "[" + res.error + "]",
+                                            type: 'error'
+                                        });
+                                        return;
+                                    }
+                                    const props = {
+                                        type: 2,
+                                        afterBindingTitle: () => { },
+                                        beforeSubmit: (res, callback) => {
+                                            callback(true, res);
+                                        },
+                                        afterSubmit: (res) => {
+                                            tbRef.value.initTitles();
+                                        }
+                                    };
+                                    YqDataPub.showWfView(res.row, props);
+                                });
+                            }
+                        }, value);
+                    };
+
+                    const tbProps = computed(() => ({
+                        ...mainParams.tb,
+                        menuType: 3,
+                        add: false,
+                        del: false,
+
+                        loadTitles: false,
+                        loadData: true,
+
+                        beforeSetTitles: async (titles) => {
+                            for (let title of titles) {
+                                if (title.name === "topic") {
+                                    title.is_func = true;
+                                    title.func = (row, value) => {
+                                        return topicFunc(row, value);
+                                    };
+                                }
+                            }
+                            return titles;
+                        },
+                    }));
+
+                    onMounted(async () => {
+                        await tbRef.value.initTitles();
+                    });
+
+                    return {
+                        tbRef,
+                        tbProps
+                    }
+                }
+            })
+            app.use(ElementPlus);
+            app.mount('#app');
+        }
+
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        }
+    </script>
+</body>
+
+</html>

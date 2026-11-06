@@ -1,0 +1,11 @@
+  is_func: title.is_func || false,
+                name: title.name,
+                ui_title: title.ui_title || title.name,
+                ui_type: title.ui_type,
+                ui_width: title.ui_width||120,
+                ui_visible: title.ui_visible || true,
+                ui_readonly: title.ui_readonly || false,
+                ui_mask: title.ui_mask || {},
+                func: title.func || "",
+                model: [],
+                children: []

@@ -1,0 +1,98 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!doctype html>
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/jsvm/inc/head.html"></uieip>
+    <title>登录</title>
+</head>
+
+<body>
+    <uieip type="file" value="exec" src="/jsvm/inc/title_exec.html"></uieip>
+    <div class="container">
+        <div class="row" style="margin-top:100px">
+            <div class="col-md-offset-4 col-md-4 col-sm-offset-3 col-sm-6" style="padding: 30px;">
+                <div class="panel panel-default">
+                    <div class="panel-heading">修改密码</div>
+                    <div class="panel-body">
+                        <label for="txt_passwd1">新密码</label>
+                        <input type="password" class="form-control" id="txt_passwd1" placeholder="新密码">
+                        <label for="txt_passwd2">再次输入密码</label>
+                        <input type="password" class="form-control" id="txt_passwd2" placeholder="再次输入密码">
+                        <p></p>
+                        <button id="btn_upppw" type="button" class="btn btn-primary">修改密码</button>
+                        <button id="btn_loginout" type="button" class="btn btn-primary pull-right">退出登录</button>
+                        <p></p>
+                        <uieip>link_weixin</uieip>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/jsvm/inc/foot.html"></uieip>
+    <script src="js/login.js"></script>
+    <script runat="server">
+        var link_weixin = "";
+        var res = login.third_linkinfo("weixin");
+        if (res.error == 0) {
+            link_weixin = "<span>" + res.row.nickname + "</span>";
+            link_weixin += "<img src=\"" + res.row.image_url + "\"  style=\"width: 30px;height: 30px;\"></img>";
+            link_weixin += "<a href=\"javascript:third_unlink('weixin');\" class=\"glyphicon glyphicon-remove\"></a>";
+        } else if (res.error == 1) {
+            link_weixin = "<a href=\"javascript:third_link('weixin');\">微信登录关联</a>";
+        } else {
+            link_weixin = res.info + "[" + res.info + "]"
+        }
+    </script>
+    <script>
+        $("#btn_upppw").on("click", function () {
+            var opts = {
+                passwd: $("#txt_passwd1").val()
+            };
+
+            $.upppw(opts, function (res) {
+                if (res.error == 0) {
+                    if (confirm("密码修改成功，点击确定返回主页")) {
+                        window.top.location.href =  backurl_get();
+                    }
+                }
+                else {
+                    alert(res.info)
+                }
+            })
+        })
+
+        $("#btn_loginout").on("click", function () {
+            //var backurl = window.document.location.href;
+            var backurl = window.location.protocol + '//' + window.location.host;
+            window.top.location = "/login/logout.html?backurl=" + encodeURIComponent(backurl);
+
+            // $.logout(function (res) {
+            //     if (res.error == 0) {
+            //         var backurl = window.document.location.href;
+            //         window.location.href = "/login/login.html?backurl=" + encodeURIComponent(backurl);
+            //     }
+            //     else {
+            //         alert(res.info)
+            //     }
+            // })
+        })
+
+        function third_link(link_type) {
+            var backurl = "/login/index.html";
+            window.location.href = "/login/login_link.html?type=" + link_type + "&backurl=" + encodeURIComponent(backurl);
+        }
+
+        function third_unlink(link_type) {
+            var backurl = "/login/index.html";
+            window.location.href = "/login/login_unlink.html?type=" + link_type + "&backurl=" + encodeURIComponent(backurl);
+        }
+
+        function backurl_get() {
+            return $.urlRequest("backurl") || "/index.html";
+        }
+    </script>
+</body>
+
+</html>

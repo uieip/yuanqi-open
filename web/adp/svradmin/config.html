@@ -1,0 +1,1080 @@
+<uieip type="page" value="login"></uieip>
+<uieip type="reg" value="console,login,session"></uieip>
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt" cache="true" minute="1440"></uieip>
+    <title>dns配置</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #app {
+            height: 100%;
+            width: 100%;
+        }
+
+        .el-container {
+            height: 100%;
+        }
+
+        .el-header {
+            height: 38px !important;
+            padding: 0 !important;
+
+            flex-direction: row;
+            align-items: baseline;
+        }
+
+        .el-header .line {
+            display: flex;
+            align-items: center;
+            padding: 4px 4px 2px 5px;
+        }
+
+        .el-switch {
+            margin: 0 5px 0 5px;
+        }
+
+
+        .el-switch__label--left {
+            margin-right: 4px;
+        }
+
+        .el-switch__label--right {
+            margin-left: 4px;
+        }
+
+        .config-test {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+            font-size: 13px;
+            border-radius: 6px;
+            background: var(--el-bg-color);
+            border: 1px solid var(--el-border-color-lighter, #e4e7ed);
+        }
+
+        .config-test-head {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--el-border-color-lighter, #e4e7ed);
+            background: var(--el-fill-color-lighter, #fafafa);
+        }
+
+        .config-test-title {
+            font-weight: 600;
+            white-space: nowrap;
+            padding-left: 8px;
+            border-left: 3px solid var(--el-color-primary, #409eff);
+            letter-spacing: 0.5px;
+        }
+
+        .config-test-file {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--el-text-color-secondary, #909399);
+            font-size: 12px;
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        .config-test-head .config-test-all {
+            margin-left: auto;
+        }
+
+        .config-test-groups {
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--el-border-color-lighter, #e4e7ed);
+            background: var(--el-fill-color-blank, transparent);
+        }
+
+        .config-test-groups .config-test-all {
+            margin-right: 16px;
+            font-weight: 600;
+        }
+
+        .config-test-groups .el-checkbox {
+            margin-right: 14px;
+            height: 26px;
+        }
+
+        .config-test-summary {
+            display: flex;
+            gap: 10px;
+            padding: 8px 14px;
+            border-bottom: 1px solid var(--el-border-color-lighter, #e4e7ed);
+            font-size: 12px;
+            background: var(--el-fill-color-lighter, #fafafa);
+        }
+
+        .config-test-summary .sum {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .config-test-summary .sum::before {
+            content: '';
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+        }
+
+        .config-test-summary .sum.pass {
+            color: var(--el-color-success, #67c23a);
+            background: rgba(103, 194, 58, 0.12);
+            background: color-mix(in srgb, var(--el-color-success, #67c23a) 12%, transparent);
+        }
+
+        .config-test-summary .sum.pass::before {
+            background: var(--el-color-success, #67c23a);
+        }
+
+        .config-test-summary .sum.fail {
+            color: var(--el-color-danger, #f56c6c);
+            background: rgba(245, 108, 108, 0.12);
+            background: color-mix(in srgb, var(--el-color-danger, #f56c6c) 12%, transparent);
+        }
+
+        .config-test-summary .sum.fail::before {
+            background: var(--el-color-danger, #f56c6c);
+        }
+
+        .config-test-summary .sum.warn {
+            color: var(--el-color-warning, #e6a23c);
+            background: rgba(230, 162, 60, 0.12);
+            background: color-mix(in srgb, var(--el-color-warning, #e6a23c) 12%, transparent);
+        }
+
+        .config-test-summary .sum.warn::before {
+            background: var(--el-color-warning, #e6a23c);
+        }
+
+        .config-test-summary .sum.skip {
+            color: var(--el-text-color-secondary, #909399);
+            background: rgba(144, 147, 153, 0.12);
+            background: color-mix(in srgb, var(--el-text-color-secondary, #909399) 12%, transparent);
+        }
+
+        .config-test-summary .sum.skip::before {
+            background: var(--el-text-color-secondary, #909399);
+        }
+
+        .config-test-log {
+            flex: 1;
+            overflow-y: auto;
+            padding: 6px 14px;
+            background: var(--el-fill-color-lighter, #fafafa);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .config-test-log .line {
+            position: relative;
+            white-space: pre-wrap;
+            word-break: break-all;
+            color: var(--el-text-color-regular, #606266);
+            padding: 2px 0 2px 10px;
+            border-left: 2px solid transparent;
+            border-radius: 2px;
+            transition: background 0.15s ease;
+        }
+
+        .config-test-log .line:hover {
+            background: var(--el-fill-color-light, #f5f7fa);
+        }
+
+        .config-test-log .line.pass {
+            color: var(--el-color-success, #67c23a);
+            border-left-color: var(--el-color-success, #67c23a);
+        }
+
+        .config-test-log .line.fail {
+            color: var(--el-color-danger, #f56c6c);
+            border-left-color: var(--el-color-danger, #f56c6c);
+            font-weight: 500;
+        }
+
+        .config-test-log .line.warn {
+            color: var(--el-color-warning, #e6a23c);
+            border-left-color: var(--el-color-warning, #e6a23c);
+        }
+
+        .config-test-log .line.skip {
+            color: var(--el-text-color-secondary, #909399);
+            border-left-color: var(--el-text-color-placeholder, #c0c4cc);
+        }
+
+        .config-test-log .line.info {
+            color: var(--el-text-color-secondary, #909399);
+        }
+    </style>
+</head>
+
+<body style="display: block; margin: 0; padding: 0; height: 100%;">
+    <div id="app">
+        <yq-container aside-position="right" aside-width="40%">
+            <yq-con-main style="height: 100%;">
+                <yq-container :resizable="false" style="height: 100%;padding: 1px 0 0 0;">
+                    <yq-con-header style="padding: 0 20px;">
+                        <div class="line">
+                            <span style="padding: 0 5px 0 0;" v-cloak>配置文件</span>
+                            <el-select v-model="selectedConfig" placeholder="请选择配置文件" @change="configChange"
+                                style="width: 250px;">
+                                <el-option v-for="item in configItems" :key="item.value" :label="item.label"
+                                    :value="item.value"></el-option>
+                            </el-select>
+                            <yq-menu type="inline" :menu-items="menuEdits" :mini="true"></yq-menu>
+                            <div style="margin-left: auto;display: flex;align-items: center;">
+                                <yq-menu type="inline" :menu-items="menuItems" :mini="false"></yq-menu>
+                                <template v-for="(item, index) in switchItems" :key="item.value">
+                                    <span style="padding: 0 5px 0 5px;">{{ item.label }}</span>
+                                    <el-switch v-model="item.checked" :active-value="true" :inactive-value="false"
+                                        active-text="on" inactive-text="off" @change="item.change"
+                                        :disabled="item.disabled()">
+                                    </el-switch>
+                                </template>
+                            </div>
+                        </div>
+                    </yq-con-header>
+                    <yq-con-main style="padding: 0;margin: 2px 0 0 0;overflow: hidden;">
+                        <yq-code-edit v-bind="codeProps"></yq-code-edit>
+                    </yq-con-main>
+                </yq-container>
+            </yq-con-main>
+            <yq-con-aside>
+                <div class="config-test">
+                    <div class="config-test-head">
+                        <span class="config-test-title">配置测试</span>
+                        <span class="config-test-file" v-if="testFile">{{ testFile }}</span>
+                        
+                        <el-checkbox class="config-test-all" :model-value="allSelected" :indeterminate="isIndeterminate"
+                            :disabled="testing" @change="toggleAllGroups">全选</el-checkbox>
+                        <el-button size="small" type="primary" :loading="testing" :disabled="!selectedConfig"
+                            @click="runConfigTest">{{ testing ? '测试中…' : '开始测试' }}</el-button>
+                    </div>
+                    <div class="config-test-groups">
+                        <el-checkbox-group v-model="testGroups" :disabled="testing" size="small">
+                            <el-checkbox v-for="item in testGroupOptions" :key="item.value" :value="item.value"
+                                :label="item.label"></el-checkbox>
+                        </el-checkbox-group>
+                    </div>
+                    <div class="config-test-summary" v-if="testSummary">
+                        <span class="sum pass">通过 {{ testSummary.pass }}</span>
+                        <span class="sum fail">失败 {{ testSummary.fail }}</span>
+                        <span class="sum warn">警告 {{ testSummary.warn }}</span>
+                        <span class="sum skip">跳过 {{ testSummary.skip }}</span>
+                    </div>
+                    <div class="config-test-log" ref="testLogRef"></div>
+                </div>
+            </yq-con-aside>
+        </yq-container>
+    </div>
+    <script>
+        const { ref, onMounted, onUnmounted, createApp, computed } = Vue;
+        const { ElSwitch, ElInputNumber } = ElementPlus;
+        const { initTheme,
+            YqContainer,
+            YqConAside,
+            YqConMain,
+            YqConHeader,
+            YqConFooter,
+            YqMessage, YqMenu, yqData, YqCodeEdit, YqWindowApi, YqMessageBox, yqUiPub } = YqwinPlus;
+        initTheme();
+
+        const app = createApp({
+            components: {
+                YqMenu,
+                ElSwitch,
+                YqCodeEdit,
+                YqContainer,
+                YqConHeader,
+                YqConMain,
+                YqConAside
+            },
+            setup() {
+                const ldap_status = async (status) => {
+                    var formData = new FormData();
+                    if (status === undefined) {
+                        formData.append("action", "ldap:status");
+                    } else {
+                        formData.append("action", "ldap:" + status);
+                    }
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    console.log("ldap_status", res);
+                    if (res.error === 0) {
+                        switchItems.value[0].checked = res.status;
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                // 重启加载配置文件
+                const restartService = async () => {
+                    var formData = new FormData();
+                    formData.append("action", 'config:reload');
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    // console.log("serviceOperation", res);
+                    if (res.error === 0) {
+                        YqMessage.success({
+                            message: "配置文件已重新加载",
+                            labelDict: {
+                                "zh-CN": { message: "配置文件已重新加载" },
+                                "en": { message: "Config file reloaded" },
+                            },
+                        });
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    await status();
+                }
+
+                const getConfFiles = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "config:files");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    // console.log(res);
+                    if (res.error === 0) {
+                        return res.files.map(item => ({
+                            label: item,
+                            value: item
+                        }));
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        return [];
+                    }
+                }
+
+                const getConfFileInfo = async (filename) => {
+                    var formData = new FormData();
+                    formData.append("action", "config:file:get");
+                    formData.append("file", filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    //console.log(res);
+
+                    if (res.error === 0) {
+                        return res.content;
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                        return '';
+                    }
+                }
+
+                const saveConfFile = async (filename, content) => {
+                    if (content == "") {
+                        YqMessage.error({
+                            message: "内容不能为空。",
+                            labelDict: {
+                                "zh-CN": { message: "内容不能为空。" },
+                                "en": { message: "Content cannot be empty." },
+                            },
+                        });
+                        return false;
+                    }
+
+                    var json_con = {};
+                    try {
+                        // 检查内容是否为有效的JSON格式
+                        if (typeof content === 'string') {
+                            json_con = JSON.parse(content);
+                        } else {
+                            throw new Error("Content is not a string");
+                        }
+                    } catch (error) {
+                        YqMessage.error("JSON格式错误: " + error.message);
+                        return false;
+                    }
+
+                    // 额外验证：确保解析后的JSON是对象或数组格式
+                    if (typeof json_con !== 'object' || json_con === null) {
+                        YqMessage.error({
+                            message: "JSON必须是对象或数组格式",
+                            labelDict: {
+                                "zh-CN": { message: "JSON必须是对象或数组格式" },
+                                "en": { message: "JSON must be an object or array format" },
+                            },
+                        });
+                        return false;
+                    }
+
+                    // 进一步验证JSON内容是否包含非法字符或结构
+                    try {
+                        content = JSON.stringify(json_con, null, 4);
+                    } catch (error) {
+                        YqMessage.error("JSON序列化失败: " + error.message);
+                        return false;
+                    }
+
+                    //保持到服务器
+                    var formData = new FormData();
+                    formData.append("action", "config:file:set");
+                    formData.append("file", filename);
+                    formData.append("content", content);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    //console.log(res);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+
+                    return res.error === 0;
+                }
+
+                const addConfFile = async (filename) => {
+                    var formData = new FormData();
+                    formData.append("action", "config:file:add");
+                    formData.append("file", filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    //console.log(res);
+                    if (res.error != 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    return res.error === 0;
+                }
+
+                // 显示添加配置文件对话框
+                const addConfFile_show = async (el) => {
+                    let filename = await YqMessageBox.input({
+                        el: el,
+                        title: '添加配置文件',
+                        icon: 'fa fa-file-text',
+                        describe: '请输入配置文件名',
+                        width: 400,
+                        height: 180,
+                        check: async (value) => {
+                            if (!value.match(/^[a-zA-Z0-9_]+$/)) {
+                                YqMessage.error({
+                                    message: "文件名只能包含字母、数字和下划线",
+                                    labelDict: {
+                                        "zh-CN": { message: "文件名只能包含字母、数字和下划线" },
+                                        "en": { message: "Filename can only contain letters, digits, and underscores" },
+                                    },
+                                });
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
+
+                    filename = filename + (filename.endsWith('.') || filename.endsWith('\\') ? '' : '.json');
+
+                    //console.log(filename);
+                    const success = await addConfFile(filename);
+                    if (success) {
+                        YqMessage.success({
+                            message: "添加成功",
+                            labelDict: {
+                                "zh-CN": { message: "添加成功" },
+                                "en": { message: "Add succeeded" },
+                            },
+                        });
+                        await initFiles();
+                        selectedConfig.value = filename;
+                        code.value = "";
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const uploadConfFile = async (old_filename, new_filename) => {
+                    var formData = new FormData();
+                    formData.append("action", "config:file:upp");
+                    formData.append("file", old_filename);
+                    formData.append("tofile", new_filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    //console.log(res);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    return res.error === 0;
+                }
+
+                // 显示添加配置文件对话框
+                const uploadConfFile_show = async (el) => {
+                    const old_filename = selectedConfig.value.substring(0, selectedConfig.value.indexOf('.json'));
+                    let filename = await YqMessageBox.input({
+                        el: el,
+                        title: '修改配置文件名',
+                        icon: 'fa fa-file-text',
+                        describe: '请输入配置文件名',
+                        default: old_filename,
+                        width: 400,
+                        height: 180,
+                        check: async (value) => {
+                            if (value === old_filename) {
+                                YqMessage.error({
+                                    message: "文件名不能与旧文件相同",
+                                    labelDict: {
+                                        "zh-CN": { message: "文件名不能与旧文件相同" },
+                                        "en": { message: "Filename cannot be the same as the old file" },
+                                    },
+                                });
+                                return false;
+                            }
+                            if (!value.match(/^[a-zA-Z0-9_]+$/)) {
+                                YqMessage.error({
+                                    message: "文件名只能包含字母、数字和下划线",
+                                    labelDict: {
+                                        "zh-CN": { message: "文件名只能包含字母、数字和下划线" },
+                                        "en": { message: "Filename can only contain letters, digits, and underscores" },
+                                    },
+                                });
+                                return false;
+                            }
+                            return true;
+                        }
+                    });
+
+                    filename = filename + (filename.endsWith('.') || filename.endsWith('\\') ? '' : '.json');
+
+                    //console.log(filename);
+                    const success = await uploadConfFile(selectedConfig.value, filename);
+                    if (success) {
+                        YqMessage.success({
+                            message: "修改成功",
+                            labelDict: {
+                                "zh-CN": { message: "修改成功" },
+                                "en": { message: "Update succeeded" },
+                            },
+                        });
+                        await initFiles();
+                        selectedConfig.value = filename;
+                        code.value = await getConfFileInfo(filename);
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                }
+
+                const delConfFile = async (filename) => {
+                    if (filename === null || filename === undefined || filename == '') {
+                        YqMessage.error({
+                            message: "请选择配置文件",
+                            labelDict: {
+                                "zh-CN": { message: "请选择配置文件" },
+                                "en": { message: "Please select a config file" },
+                            },
+                        });
+                        return;
+                    }
+
+                    var formData = new FormData();
+                    formData.append("action", "config:file:del");
+                    formData.append("file", filename);
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    //console.log(res);
+                    if (res.error !== 0) {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                    return res.error === 0;
+                }
+
+                const copyConfFile = async () => {
+                    const filename = selectedConfig.value;
+                    var copy_filename = filename.replace(/\.json$/, '') + "-copy.json";
+
+                    let success = await addConfFile(copy_filename);
+                    if (!success) {
+                        return;
+                    }
+
+                    const files = await getConfFiles();
+                    await initFiles();
+                    selectedConfig.value = copy_filename;
+                    const content = await getConfFileInfo(filename);
+                    code.value = content;
+                    success = await saveConfFile(copy_filename, content);
+                    if (success) {
+                        YqMessage.success({
+                            message: "复制成功",
+                            labelDict: {
+                                "zh-CN": { message: "复制成功" },
+                                "en": { message: "Copy succeeded" },
+                            },
+                        });
+                    }
+                }
+
+                const initFiles = async () => {
+                    const files = await getConfFiles();
+                    configItems.value = [
+                        {
+                            label: '-- 请选择配置 --',
+                            value: ''
+                        }, ...files];
+                }
+
+                const switchItems = ref([{
+                    value: 'ldap',
+                    label: 'LDAP',
+                    checked: false,
+                    disabled: () => {
+                        return false;
+                    },
+                    change: async (val) => {
+                        // 启动/停止服务
+                        await ldap_status(val ? 'start' : 'stop');
+                    }
+                }]);
+                const menuItems = ref([
+                    {
+                        name: "reload",
+                        label: "重启",
+                        toptip: "重启",
+                        icon: "fa fa-repeat",
+                        type: "primary",
+                        disabled: () => {
+                            return false;
+                        },
+                        click: async () => {
+                            await restartService();
+                        }
+                    }
+                ]);
+
+                const selectedConfig = ref('');
+                const configItems = ref([
+                    {
+                        label: '-- 请选择配置 --',
+                        value: ''
+                    }
+                ]);
+
+                const menuEdits = ref([{
+                    name: "add",
+                    label: "新建配置文件",
+                    toptip: "新建配置文件",
+                    icon: "fa fa-plus",
+                    type: "primary",
+                    disabled: () => {
+                        return false;
+                    },
+                    click: async (obj) => {
+                        //console.log(obj);
+                        addConfFile_show(obj.target);
+                    }
+                }, {
+                    name: "copy",
+                    label: "拷贝配置文件",
+                    toptip: "拷贝配置文件",
+                    icon: "fa fa-copy",
+                    type: "primary",
+                    disabled: () => {
+                        return (selectedConfig.value === '');
+                    },
+                    click: async () => {
+                        await copyConfFile();
+                    }
+                },
+                {
+                    name: "del",
+                    label: "删除配置文件",
+                    toptip: "删除配置文件",
+                    icon: "fa fa-trash",
+                    type: "primary",
+                    disabled: () => {
+                        if (selectedConfig.value === 'config.json') {
+                            return true;
+                        }
+                        return (selectedConfig.value === '');
+                    },
+                    click: async (obj) => {
+                        YqMessageBox.confirm({
+                            el: obj.target,
+                            message: '您确定要执行此操作吗？',
+                            title: '确认操作',
+                            type: 'warning'
+                        }).then(async () => {
+                            const success = await delConfFile(selectedConfig.value);
+                            if (success) {
+                                YqMessage.success({
+                                    message: "删除成功",
+                                    labelDict: {
+                                        "zh-CN": { message: "删除成功" },
+                                        "en": { message: "Delete succeeded" },
+                                    },
+                                });
+                                selectedConfig.value = '';
+                                code.value = '';
+                                const files = await getConfFiles();
+                                await initFiles();
+                            }
+                        });
+                    }
+                }, {
+                    divided: true
+                },
+                {
+                    name: "save",
+                    label: "保存配置文件",
+                    toptip: "保存配置文件",
+                    icon: "fa fa-save",
+                    type: "primary",
+                    disabled: () => {
+                        return (selectedConfig.value === '');
+                    },
+                    click: async () => {
+                        const success = await saveConfFile(selectedConfig.value, code.value);
+                        if (success) {
+                            YqMessage.success({
+                                message: "保存成功",
+                                labelDict: {
+                                    "zh-CN": { message: "保存成功" },
+                                    "en": { message: "Save succeeded" },
+                                },
+                            });
+                        }
+                    }
+                },
+                {
+                    name: "rename",
+                    label: "修改配置文件名称",
+                    toptip: "修改配置文件名称",
+                    icon: "fa fa-edit",
+                    type: "primary",
+                    disabled: () => {
+                        if (selectedConfig.value === 'config.json') {
+                            return true;
+                        }
+                        return (selectedConfig.value === '');
+                    },
+                    click: async (obj) => {
+                        await uploadConfFile_show(obj.target);
+                    }
+                }
+                ]);
+
+                const code = ref('');
+                const codeProps = computed(() => ({
+                    code: code.value,
+                    lineNumbers: true,
+                    isEdit: true,
+                    mode: 'json',
+                    types: ['json'],
+                    indentSize: 2,
+                    autoCompletion: true,
+                    autoFold: true,
+                    highlightActiveLine: true,
+                    tabSize: 2,
+                    wordWrap: true,
+
+                    setting: false,
+                    clear: false,
+                    'onUpdate:code': (value) => {
+                        code.value = value;
+                    }
+                }));
+
+                // ---- 配置测试（SSE 流式结果，逐行追加到右侧日志区） ----
+                const testing = ref(false);
+                const testSummary = ref(null);
+                const testFile = ref('');
+                const testLogRef = ref(null);
+                // 检测项目由服务端 config:groups 提供，避免前后端分组定义不一致
+                const testGroupOptions = ref([]);
+                const testGroups = ref([]);
+                const allSelected = computed(() =>
+                    testGroupOptions.value.length > 0 &&
+                    testGroups.value.length === testGroupOptions.value.length);
+                const isIndeterminate = computed(() =>
+                    testGroups.value.length > 0 && testGroups.value.length < testGroupOptions.value.length);
+                const toggleAllGroups = (checked) => {
+                    testGroups.value = checked
+                        ? testGroupOptions.value.map(item => item.value)
+                        : [];
+                };
+
+                const getTestGroups = async () => {
+                    var formData = new FormData();
+                    formData.append("action", "config:groups");
+                    const res = await yqData.post("/_svradmin.html", formData);
+                    if (res.error === 0 && Array.isArray(res.groups)) {
+                        testGroupOptions.value = res.groups.map(item => ({
+                            label: item.label,
+                            value: item.key
+                        }));
+                        testGroups.value = testGroupOptions.value.map(item => item.value);
+                    } else {
+                        YqMessage.error(res.info + '[' + res.error + ']');
+                    }
+                };
+                let testAbort = null;
+                let testCounts = { pass: 0, fail: 0, warn: 0, skip: 0 };
+
+                const statusText = (status) => {
+                    switch (status) {
+                        case 'pass': return '通过';
+                        case 'fail': return '失败';
+                        case 'warn': return '警告';
+                        case 'skip': return '跳过';
+                        default: return status || '信息';
+                    }
+                };
+
+                // 非阻塞输出：每行结果立即追加到日志区
+                const printTestLine = (text, status) => {
+                    const el = testLogRef.value;
+                    if (!el) return;
+                    const nearBottom = el.scrollTop >= (el.scrollHeight - el.clientHeight - 20);
+                    const line = document.createElement('div');
+                    line.className = 'line ' + (status || 'info');
+                    line.textContent = text;
+                    el.appendChild(line);
+                    if (nearBottom) {
+                        el.scrollTop = el.scrollHeight - el.clientHeight;
+                    }
+                };
+
+                const nowTime = () => {
+                    const d = new Date();
+                    const pad = (n) => (n < 10 ? '0' + n : '' + n);
+                    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+                };
+
+                // 从响应文本中提取错误信息（兼容项目约定的 {"error":x,"info":"..."} 结构）
+                const extractInfo = (text) => {
+                    if (!text) return "";
+                    const value = text.trim();
+                    try {
+                        const result = JSON.parse(value);
+                        return result.info || value;
+                    } catch (e) {
+                        return value;
+                    }
+                };
+
+                const resetTest = () => {
+                    testSummary.value = null;
+                    testFile.value = '';
+                    testCounts = { pass: 0, fail: 0, warn: 0, skip: 0 };
+                    if (testLogRef.value) {
+                        testLogRef.value.innerHTML = '';
+                    }
+                };
+
+                const handleTestEvent = (evt) => {
+                    if (!evt || typeof evt !== 'object') return;
+                    if (evt.kind === 'start') {
+                        testFile.value = evt.file || evt.source || '';
+                        let text = nowTime() + ' 开始检测 ' + testFile.value;
+                        if (evt.source && evt.source !== evt.file) {
+                            text += '（来源 ' + evt.source + '）';
+                        }
+                        printTestLine(text, 'info');
+                    } else if (evt.kind === 'item') {
+                        if (testCounts[evt.status] !== undefined) {
+                            testCounts[evt.status]++;
+                            testSummary.value = { ...testCounts };
+                        }
+                        let text = nowTime() + ' [' + statusText(evt.status) + ']';
+                        if (evt.category) text += ' [' + evt.category + ']';
+                        text += ' ' + (evt.name || '');
+                        if (evt.target) text += ' → ' + evt.target;
+                        if (evt.message) text += ' — ' + evt.message;
+                        if (evt.duration_ms !== undefined) text += ' (' + evt.duration_ms + ' ms)';
+                        printTestLine(text, evt.status);
+                    } else if (evt.kind === 'done') {
+                        const summary = { ...testCounts };
+                        printTestLine(nowTime() + ' 检测完成：通过 ' + summary.pass + '，失败 ' + summary.fail +
+                            '，警告 ' + summary.warn + '，跳过 ' + summary.skip, 'info');
+
+                        let message, status;
+                        if (summary.fail > 0) {
+                            status = 'fail';
+                            message = `配置测试完成：${summary.fail} 项失败，${summary.warn} 项警告`;
+                        } else if (summary.warn > 0) {
+                            status = 'warn';
+                            message = `配置测试完成：${summary.warn} 项警告`;
+                        } else {
+                            status = 'pass';
+                            message = "配置测试全部通过";
+                        }
+                        printTestLine(nowTime() + ' ' + message, status);
+                    }
+                };
+
+                const runConfigTest = async () => {
+                    if (!selectedConfig.value) {
+                        YqMessage.error("请选择配置文件");
+                        return;
+                    }
+                    if (testGroupOptions.value.length === 0) {
+                        await getTestGroups();
+                    }
+                    if (testGroups.value.length === 0) {
+                        YqMessage.error("请至少选择一项测试内容");
+                        return;
+                    }
+
+                    resetTest();
+                    testing.value = true;
+                    testAbort = new AbortController();
+
+                    try {
+                        const formData = new FormData();
+                        formData.append("action", "config:test");
+                        formData.append("file", selectedConfig.value);
+                        formData.append("groups", testGroups.value.join(","));
+
+                        const resp = await fetch("/_svradmin.html", {
+                            method: "POST",
+                            body: formData,
+                            credentials: "include",
+                            signal: testAbort.signal
+                        });
+
+                        if (!resp.ok && !resp.body) {
+                            throw new Error(extractInfo(await resp.text()) || ("HTTP " + resp.status));
+                        }
+
+                        // 部分代理/中间层可能改写 Content-Type，这里不依赖响应头判断，
+                        // 只要响应体是 data: 事件流就按 SSE 逐块解析
+                        const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+                        if (contentType.indexOf("text/event-stream") < 0) {
+                            console.warn("配置测试响应 Content-Type:", contentType || "(空)");
+                        }
+
+                        const decoder = new TextDecoder("utf-8");
+                        let buffer = "";
+                        let rawText = "";
+                        let eventCount = 0;
+
+                        const dispatch = (block) => {
+                            block.split("\n").forEach(line => {
+                                if (line.indexOf("data:") !== 0) return;
+                                const payload = line.slice(5).trim();
+                                if (!payload) return;
+                                try {
+                                    handleTestEvent(JSON.parse(payload));
+                                    eventCount++;
+                                } catch (e) {
+                                    console.warn("配置测试事件解析失败", e, payload);
+                                }
+                            });
+                        };
+
+                        const parseBuffer = (final) => {
+                            let index;
+                            while ((index = buffer.indexOf("\n\n")) >= 0) {
+                                const block = buffer.slice(0, index);
+                                buffer = buffer.slice(index + 2);
+                                dispatch(block);
+                            }
+                            // 末尾可能没有空行分隔，最后一次读取时补处理
+                            if (final && buffer.trim()) {
+                                const block = buffer;
+                                buffer = "";
+                                dispatch(block);
+                            }
+                        };
+
+                        if (!resp.body) {
+                            const text = await resp.text();
+                            rawText += text;
+                            buffer += text;
+                            parseBuffer(true);
+                        } else {
+                            const reader = resp.body.getReader();
+                            while (true) {
+                                const chunk = await reader.read();
+                                if (chunk.done) break;
+                                const text = decoder.decode(chunk.value, { stream: true });
+                                rawText += text;
+                                buffer += text;
+                                parseBuffer(false);
+                            }
+                            const tail = decoder.decode();
+                            rawText += tail;
+                            buffer += tail;
+                            parseBuffer(true);
+                        }
+
+                        // 没有收到任何 SSE 事件：按项目约定的 JSON 错误信息处理
+                        if (eventCount === 0) {
+                            throw new Error(extractInfo(rawText) || "配置测试未返回结果");
+                        }
+                    } catch (err) {
+                        if (err && err.name === "AbortError") return;
+                        YqMessage.error("配置测试失败: " + (err && err.message ? err.message : err));
+                    } finally {
+                        testing.value = false;
+                        testAbort = null;
+                    }
+                };
+
+                const configChange = async (val) => {
+                    if (testAbort) {
+                        testAbort.abort();
+                        testAbort = null;
+                        testing.value = false;
+                    }
+                    resetTest();
+
+                    if (val === '') {
+                        code.value = '';
+                        return;
+                    }
+                    code.value = await getConfFileInfo(val);
+                    //console.log(code.value);
+                }
+
+                onMounted(async () => {
+                    await ldap_status();
+                    await getTestGroups();
+                    await initFiles();
+                })
+
+                onUnmounted(() => {
+                    if (testAbort) {
+                        testAbort.abort();
+                        testAbort = null;
+                    }
+                })
+
+                return {
+                    menuItems,
+                    switchItems,
+                    selectedConfig,
+                    configItems,
+                    configChange,
+                    menuEdits,
+                    codeProps,
+                    testing,
+                    testSummary,
+                    testFile,
+                    testGroups,
+                    testGroupOptions,
+                    allSelected,
+                    isIndeterminate,
+                    toggleAllGroups,
+                    testLogRef,
+                    runConfigTest,
+                };
+            }
+        })
+        app.use(ElementPlus);
+        app.mount('#app');
+
+        window.app = app;
+        window.YqwinPlus = {
+            YqWindowApi: YqWindowApi,
+        };
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,51 @@
+{
+  "addr": 53,
+  "data": [
+    {
+      "domain": "uieip.com",
+      "sub": [
+        {
+          "dnstype": "A",
+          "name": "yq",
+          "value": [
+            "115.190.25.126"
+          ]
+        },
+        {
+          "dnstype": "A",
+          "name": "a",
+          "value": [
+            "115.190.25.126"
+          ]
+        },
+        {
+          "dnstype": "A",
+          "name": "b",
+          "value": [
+            "115.190.25.126"
+          ]
+        }
+      ]
+    },
+    {
+      "domain": "yqeip.com",
+      "sub": [
+        {
+          "dnstype": "A",
+          "name": "yq",
+          "value": [
+            "115.190.25.126"
+          ]
+        },
+        {
+          "dnstype": "MX",
+          "name": "mx.yq",
+          "value": [
+            "10 mail.baidu.com.",
+            "20 backup-mail.baidu.com."
+          ]
+        }
+      ]
+    }
+  ]
+}
