@@ -6,7 +6,7 @@
 >
 > 本发布包：**Windows + SQLite 免费开源版**，解压即用，无需安装数据库和运行时。
 
-English(readme-en.md) | [中文]
+[English](readme-en.md) | 中文
 
 ---
 
