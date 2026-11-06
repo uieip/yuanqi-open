@@ -1,4 +1,4 @@
-# Yuanqi Low-Code Development Platform (UIEIP)
+﻿# Yuanqi Low-Code Development Platform (UIEIP)
 
 > Model-driven · Low-code · Integrated enterprise application platform
 >
@@ -16,7 +16,7 @@ UIEIP (Yuanqi Low-Code Development Platform) is a free open-source low-code plat
 
 The server is written in **Golang** and shipped as a single binary. Pages and business logic use a **server-side JavaScript (ECMAScript 5.1)** template engine, while the front-end component library **YQWIN-Plus** is built on **Vue 3 + TypeScript + Element Plus**. The platform is not a wrapper around a third-party low-code framework; its core engines are self-developed and controllable.
 
-This release includes a **Windows x64 executable + SQLite database + initial data + front-end assets**, so you can experience the full administration and development capabilities out of the box. The official edition supports multiple databases and any operating system. See [Open-Source Edition vs Official Edition](#14-open-source-edition-vs-official-edition).
+This release includes a **Windows x64 executable + SQLite database + initial data + front-end assets**, so you can experience the full administration and development capabilities out of the box. The official edition supports multiple databases and any operating system. See [Open-Source Edition vs Official Edition](#13-open-source-edition-vs-official-edition).
 
 ---
 
@@ -124,7 +124,7 @@ This release includes a **Windows x64 executable + SQLite database + initial dat
 ### 4.3 Stopping the Service
 
 - Running in the foreground: press `Ctrl + C` in the console
-- Running in the background or as a Windows service: stop the corresponding Windows service (see [Deployment and Operations](#9-deployment-and-operations))
+- Running in the background or as a Windows service: stop the corresponding Windows service (see [Deployment and Operations](#8-deployment-and-operations))
 
 ---
 
@@ -301,52 +301,9 @@ Requesting `/api/hello.json` returns the JSON response.
 
 ---
 
-## 8. Data Model and Storage
+## 8. Deployment and Operations
 
-### 8.1 Built-in System Tables
-
-| Table | Description |
-| --- | --- |
-| `sys_tb` | Table/entity definitions (folder, table, tree, sort, view, stored procedure) |
-| `sys_tb_field` | Field definitions (type, length, decimal places, UI component, read-only, masking, function) |
-| `sys_tb_fk` | Table foreign keys and delete validation |
-| `sys_tb_ui` | Grids, HTML forms, and code templates |
-| `sys_tb_diagram` | Database relationship diagrams (nodes, lines, relationship types) |
-| `sys_tb_proc` | Database script programs |
-| `sys_files` / `sys_files_rel` | In-table/out-of-table files and business associations |
-| `sys_menu_app` / `sys_menu` | System applications and menus |
-| `sys_menu_mark` / `sys_menu_var` / `sys_menu_ui` | Operation marks, UI parameters, and data bindings |
-| `hr_user` / `hr_org` / `hr_post` / `hr_org_user_rel` | Users, departments, positions, and employment relationships |
-| `hr_user_login` / `hr_user_third_link` | Local accounts and third-party account bindings |
-| `sys_roles` and `sys_roles_*_rel` | Roles and grants for menus, users, positions, departments, and knowledge bases |
-| `sys_wfmain` / `sys_wfver` | Workflow definitions and versions |
-| `wf_info` / `wf_json` / `wf_todo` / `wf_comp` | Workflow instances, workflow data, To-Do, and Done |
-| `bi_kbs` | Knowledge base/query definitions |
-| `sys_cms` / `cms_news` | Portal sites and content |
-| `sys_param` / `sys_trans` | System parameters and translations |
-| `tj_*` | View, like, favorite, and comment statistics |
-
-Business tables automatically include audit fields: `c_userid`, `c_username`, `createtime`, `m_userid`, `m_username`, and `modifytime`. Optional fields include `queue` (sort order), `isdel` (cancellation flag), and `state` (status).
-
-### 8.2 Data and File Backup
-
-Back up the following:
-
-```text
-data\yqbase.sqlite          # System database
-data\yqbase.sqlite-wal      # SQLite WAL log (present while running)
-files\filedb.sqlite         # File metadata
-files\YYYY\...              # Uploaded files
-config.json                 # Configuration
-```
-
-Stop the service before backing up the `data` and `files` directories as a whole, to avoid inconsistency caused by copying during SQLite WAL writes.
-
----
-
-## 9. Deployment and Operations
-
-### 9.1 Run as a Windows Service
+### 8.1 Run as a Windows Service
 
 NSSM is recommended:
 
@@ -366,7 +323,7 @@ nssm restart uieip
 nssm remove uieip confirm
 ```
 
-### 9.2 Nginx Reverse Proxy
+### 8.2 Nginx Reverse Proxy
 
 In production, put Nginx in front of UIEIP to handle domains, HTTPS, upload size limits, and real client IP forwarding:
 
@@ -397,14 +354,14 @@ server {
 }
 ```
 
-### 9.3 Logging and Monitoring
+### 8.3 Logging and Monitoring
 
 - Log directory: `log.path` (default `D:\Spring\logfile`)
 - Log levels: DEBUG < INFO < WARNING < ERROR < CRITICAL; WARNING and above are recorded by default
 - Admin console: **Service Management → System Monitoring / Cache Management / Statistics**
 - `console.log()` in page scripts is written to the server log
 
-### 9.4 Ports and Firewall
+### 8.4 Ports and Firewall
 
 - Default port: `8011`
 - For LAN access, allow the corresponding TCP port in Windows Firewall inbound rules
@@ -412,7 +369,7 @@ server {
 
 ---
 
-## 10. Workflow
+## 9. Workflow
 
 The workflow uses a "node + edge" state-machine model:
 
@@ -438,9 +395,9 @@ Workflow runtime data is stored in `wf_info`, `wf_json`, `wf_todo`, and `wf_comp
 
 ---
 
-## 11. Single Sign-On and Security
+## 10. Single Sign-On and Security
 
-### 11.1 Supported Authentication Methods
+### 10.1 Supported Authentication Methods
 
 - Local username/password login
 - Graphic captcha
@@ -450,7 +407,7 @@ Workflow runtime data is stored in `wf_info`, `wf_json`, `wf_todo`, and `wf_comp
 - LDAP (Bind/Search)
 - Yuanqi SSO compatible protocol
 
-### 11.2 Password Storage
+### 10.2 Password Storage
 
 OpenLDAP-compatible salted hash format:
 
@@ -460,7 +417,7 @@ OpenLDAP-compatible salted hash format:
 
 Supports `SHA1`, `SHA256`, `SHA512`, and `YUANQI` compatibility modes. The client can hash the password before transmission, combined with a one-time client salt to prevent replay attacks.
 
-### 11.3 Security Recommendations
+### 10.3 Security Recommendations
 
 1. Change the password of the default account `spring`, or create a new administrator and disable the default account
 2. Enable HTTPS to prevent passwords and tokens from being transmitted in plaintext
@@ -472,7 +429,7 @@ Supports `SHA1`, `SHA256`, `SHA512`, and `YUANQI` compatibility modes. The clien
 
 ---
 
-## 12. AI and Knowledge Base
+## 11. AI and Knowledge Base
 
 The platform includes an AI integration layer that combines LLMs with business data and knowledge bases:
 
@@ -488,7 +445,7 @@ The platform includes an AI integration layer that combines LLMs with business d
 
 ---
 
-## 13. Feature Entry Quick Reference
+## 12. Feature Entry Quick Reference
 
 | Feature | Path |
 | --- | --- |
@@ -514,7 +471,7 @@ The platform includes an AI integration layer that combines LLMs with business d
 
 ---
 
-## 14. Open-Source Edition vs Official Edition
+## 13. Open-Source Edition vs Official Edition
 
 | Item | Free open-source edition (this release) | Official edition |
 | --- | --- | --- |
@@ -535,7 +492,7 @@ Platform goals:
 
 ---
 
-## 15. Documentation Index
+## 14. Documentation Index
 
 Product and development documentation is located in `web/document/`:
 
@@ -564,7 +521,7 @@ Product and development documentation is located in `web/document/`:
 
 ---
 
-## 16. FAQ
+## 15. FAQ
 
 **Q1: The browser cannot access the service after startup.**
 
@@ -619,7 +576,7 @@ Stop the service, then back up `data\`, `files\`, and `config.json`. To restore,
 
 ---
 
-## 17. Version History
+## 16. Version History
 
 | Date | Changes |
 | --- | --- |
@@ -643,15 +600,15 @@ Stop the service, then back up `data\`, `files\`, and `config.json`. To restore,
 
 ---
 
-## 18. Open Source and Acknowledgements
+## 17. Open Source and Acknowledgements
 
 UIEIP is a free open-source project dedicated to building an independently controllable low-code and enterprise management support platform. Contributions through issues, documentation improvements, templates, and components are welcome.
 
-> Read and comply with the license terms in the project release notes before use. Third-party components (Vue, Element Plus, ECharts, D3.js, GoJS, TinyMCE, Marked, etc.) are governed by their respective licenses. See the [Disclaimer](#19-disclaimer).
+> Read and comply with the license terms in the project release notes before use. Third-party components (Vue, Element Plus, ECharts, D3.js, GoJS, TinyMCE, Marked, etc.) are governed by their respective licenses. See the [Disclaimer](#18-disclaimer).
 
 ---
 
-## 19. Disclaimer
+## 18. Disclaimer
 
 1. **The software is provided "as is".** The project makes no express or implied warranties regarding the completeness, accuracy, reliability, fitness for a particular purpose, or uninterrupted operation of the software. The project authors and contributors shall not be liable for any direct or indirect loss arising from the use of or inability to use the software.
 
