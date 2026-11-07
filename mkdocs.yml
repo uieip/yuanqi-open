@@ -1,0 +1,71 @@
+site_name: 远齐低代码开发平台 UIEIP
+site_description: Go 单文件、模型驱动的企业级低代码平台：数据建模、表单、权限、流程、单点登录、门户与 AI 知识库
+repo_url: https://github.com/uieip/yuanqi-open
+repo_name: uieip/yuanqi-open
+docs_dir: docs
+copyright: Copyright &copy; 2026 远齐科技 · MIT License
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: 切换到深色
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: 切换到浅色
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/uieip/yuanqi-open
+      name: GitHub
+    - icon: fontawesome/solid/code-branch
+      link: https://gitee.com/uieip/yuanqi-open
+      name: Gitee 镜像
+
+nav:
+  - 首页: index.md
+  - 快速开始: getting-started.md
+  - 架构: architecture.md
+  - 场景教程:
+      - 审批流程: scenarios/approval-workflow.md
+      - 客户管理应用: scenarios/customer-app.md
+      - 知识库问答: scenarios/knowledge-base-qa.md
+  - 迁移与对比: migration.md
+  - 部署与运维: deploy.md
+  - 常见问题: faq.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds:
+          case: lower
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
