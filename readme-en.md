@@ -135,21 +135,6 @@ yuanqi-open/
    └─ document/           # Product and development docs (Markdown)
 ```
 
-## Feature entry points
-
-| Feature | Path |
-| --- | --- |
-| Admin console | `/adp/` |
-| Data management / field models | `/adp/data.html`, `/adp/fields.html` |
-| Menus / permissions | `/adp/menu.html`, `/adp/roles.html` |
-| Workflow designer | `/adp/wfedit.html` |
-| My workflows / To-Do / Done | `/adp/wf_my.html`, `/adp/wf_todo.html`, `/adp/wf_comp.html` |
-| Departments / positions / users | `/adp/hr_org.html`, `/adp/hr_post.html`, `/adp/hr_user.html` |
-| Portal / files / parameters | `/adp/cms.html`, `/adp/file.html`, `/adp/param.html` |
-| Knowledge base / AI chat | `/adp/bikbs.html`, `/adp/ai-chat.html` |
-| Service management | `/adp/svradmin/` (cache, monitoring, statistics, DNS, Nginx, NSQ) |
-| Components / script tests / API example | `/yqvue/`, `/jsvm/`, `/api/hello.json` |
-
 ## Open-source vs official edition
 
 | Item | Free open-source edition (this release) | Official edition |

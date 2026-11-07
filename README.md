@@ -134,21 +134,6 @@ yuanqi-open/
    └─ document/           # 产品与开发文档（Markdown）
 ```
 
-## 功能入口速查
-
-| 功能 | 路径 |
-| --- | --- |
-| 管理后台 | `/adp/` |
-| 数据管理 / 字段模型 | `/adp/data.html`、`/adp/fields.html` |
-| 菜单 / 权限 | `/adp/menu.html`、`/adp/roles.html` |
-| 流程管理 | `/adp/wfedit.html` |
-| 我的流程 / 待办 / 已办 | `/adp/wf_my.html`、`/adp/wf_todo.html`、`/adp/wf_comp.html` |
-| 组织 / 岗位 / 人员 | `/adp/hr_org.html`、`/adp/hr_post.html`、`/adp/hr_user.html` |
-| 门户 / 文件 / 参数 | `/adp/cms.html`、`/adp/file.html`、`/adp/param.html` |
-| 知识库 / AI 聊天 | `/adp/bikbs.html`、`/adp/ai-chat.html` |
-| 服务管理 | `/adp/svradmin/`（缓存、监控、统计、DNS、Nginx、NSQ） |
-| 组件库 / 脚本测试 / API 示例 | `/yqvue/`、`/jsvm/`、`/api/hello.json` |
-
 ## 开源版与正式版
 
 | 对比项 | 开源免费版（本发布包） | 正式版 |
