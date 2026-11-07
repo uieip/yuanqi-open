@@ -1,11 +1,12 @@
 ﻿<uieip type="page" value="base"></uieip>
+<script src="/yqvue/test-theme-switch.js" defer></script>
 <uieip type="reg" value="console,login,session"></uieip>
 <!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>YqMenu 测试页面</title>
     <style>
         body {
@@ -19,14 +20,13 @@
 
         .menu-container {
             padding: 20px;
-            border: 1px solid #e4e7ed;
+            border: 1px solid var(--el-border-color-light, #e4e7ed);
             border-radius: 4px;
-            background-color: white;
             height: 400px;
             width: 300px;
             overflow: auto;
             min-height: 200px;
-            background-color: #f9f9f9;
+            background-color: var(--el-fill-color-light, #f9f9f9);
         }
     </style>
 </head>
@@ -39,7 +39,7 @@
                 inactive-text="显示名称" />
         </div>
         <h3>横向菜单 (type="inline")</h3>
-        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid #e4e7ed; border-radius: 4px;">
+        <div style="margin-bottom: 20px; padding: 10px; border: 1px solid var(--el-border-color-light, #e4e7ed); border-radius: 4px;">
             <yq-menu :type="'inline'" :menu-items="menuItems" :mini="mini" />
         </div>
         <h3>垂直菜单 (type="vertical")</h3>

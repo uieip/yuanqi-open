@@ -181688,7 +181688,7 @@ class ZGe {
         let l = "";
         const f = window.top || window, p = f !== window, g = f.innerWidth - 520, y = Math.max(0, (g - 950) / 2);
         console.log("showOpen", r.modelValue);
-        let b = r.modelValue.info.func;
+        let b = r.modelValue.info.func || "/adp/test_model/ab_test_m-edit-wf.html?appno=0&menuno=1004";
         b.charAt(0) !== "/" && (b = "/" + b), b += (b.indexOf("?") === -1 ? "?" : "&") + "sid=" + encodeURIComponent(e.tb_id);
         const x = {
           h: "div",

@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>Document>from-file</title>
     <!-- 引入基础样式 -->
     <style>
@@ -26,7 +27,7 @@
     <div id="app">
         <h2>17.文件(单文件)</h2>
         参数：
-        <div style="margin-bottom: 15px; padding: 10px; background-color: #f0f2f5; border-radius: 4px;">
+        <div style="margin-bottom: 15px; padding: 10px; background-color: var(--el-fill-color-light, #f0f2f5); border-radius: 4px;">
             <el-switch v-model="directup" :active-value="true" :inactive-value="false" active-text="直接上传"
                 inactive-text="选择后上传"></el-switch> |
             <el-switch v-model="chunk" :active-value="true" :inactive-value="false" active-text="分片上传"

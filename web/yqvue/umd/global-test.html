@@ -3,21 +3,20 @@
 
 <head>
   <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+  <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
   <title>YqwinPlus Global Test</title>
   <style>
     body {
       font-family: 'Arial', sans-serif;
-      background-color: #f5f7fa;
       margin: 0;
       padding: 20px;
-      color: #303133;
       background-color: var(--yq-bg);
       color: var(--yq-text);
     }
 
     h1 {
-      color: #409eff;
+      color: var(--el-color-primary, #409eff);
       text-align: center;
       margin-bottom: 30px;
     }
@@ -25,7 +24,7 @@
     #result {
       max-width: 800px;
       margin: 0 auto;
-      background-color: white;
+      background-color: var(--el-bg-color, #fff);
       border-radius: 8px;
       box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
       padding: 20px;
@@ -39,37 +38,37 @@
     }
 
     p:hover {
-      background-color: #f0f9eb;
+      background-color: var(--el-color-success-light-9, #f0f9eb);
     }
 
     .success {
-      color: #67c23a;
-      background-color: #f0f9eb;
-      border-left: 4px solid #67c23a;
+      color: var(--el-color-success, #67c23a);
+      background-color: var(--el-color-success-light-9, #f0f9eb);
+      border-left: 4px solid var(--el-color-success, #67c23a);
     }
 
     .error {
-      color: #f56c6c;
-      background-color: #fef0f0;
-      border-left: 4px solid #f56c6c;
+      color: var(--el-color-error, #f56c6c);
+      background-color: var(--el-color-error-light-9, #fef0f0);
+      border-left: 4px solid var(--el-color-error, #f56c6c);
     }
 
     .info {
-      color: #409eff;
-      background-color: #ecf5ff;
-      border-left: 4px solid #409eff;
+      color: var(--el-color-primary, #409eff);
+      background-color: var(--el-color-primary-light-9, #ecf5ff);
+      border-left: 4px solid var(--el-color-primary, #409eff);
     }
 
     .test-section {
       margin-bottom: 20px;
       padding: 15px;
-      border: 1px solid #e4e7ed;
+      border: 1px solid var(--el-border-color-light, #e4e7ed);
       border-radius: 4px;
     }
 
     .test-section h3 {
       margin-top: 0;
-      color: #606266;
+      color: var(--el-text-color-regular, #606266);
     }
   </style>
 </head>

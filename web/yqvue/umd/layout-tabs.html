@@ -3,7 +3,8 @@
 
 <head>
   <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+  <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
   <title>YqTabs 组件测试</title>
   <style>
     * {
@@ -15,7 +16,6 @@
     body {
       font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
       padding: 20px;
-      background: #f5f7fa;
       background-color: var(--yq-bg);
       color: var(--yq-text);
     }
@@ -28,11 +28,11 @@
     h1 {
       font-size: 24px;
       margin-bottom: 20px;
-      color: #303133;
+      color: var(--el-text-color-primary, #303133);
     }
 
     .test-section {
-      background: #fff;
+      background: var(--el-bg-color, #fff);
       border-radius: 8px;
       box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
       padding: 24px;
@@ -42,20 +42,20 @@
     .test-section h2 {
       font-size: 18px;
       margin-bottom: 16px;
-      color: #409eff;
-      border-bottom: 2px solid #ecf5ff;
+      color: var(--el-color-primary, #409eff);
+      border-bottom: 2px solid var(--el-color-primary-light-9, #ecf5ff);
       padding-bottom: 8px;
     }
 
     .test-section h3 {
       font-size: 14px;
       margin-bottom: 12px;
-      color: #606266;
+      color: var(--el-text-color-regular, #606266);
     }
 
     .tab-demo {
       height: 200px;
-      border: 1px solid #ebeef5;
+      border: 1px solid var(--el-border-color-lighter, #ebeef5);
       border-radius: 4px;
       padding: 0;
     }
@@ -65,7 +65,7 @@
       align-items: center;
       justify-content: center;
       height: 100%;
-      color: #606266;
+      color: var(--el-text-color-regular, #606266);
       font-size: 14px;
     }
   </style>

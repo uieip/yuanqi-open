@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>Table 行拖拽示例</title>
 </head>
 
@@ -35,7 +36,7 @@
                 </draggable>
             </div>
             <h2>YqQueue 示例</h2>
-            <div style="width: 100%; height: 250px; border: 1px solid #409eff">
+            <div style="width: 100%; height: 250px; border: 1px solid var(--el-color-primary, #409eff)">
                 <yq-queue :titles="titles" v-model:rows="rows" height="250px">
                 </yq-queue>
             </div>
@@ -217,7 +218,7 @@
         }
         .drag-icon {
             cursor: move;
-            color: #909399;
+            color: var(--el-text-color-secondary, #909399);
             user-select: none;
         }
 
@@ -228,7 +229,7 @@
         }
 
         pre {
-            background: #f5f7fa;
+            background: var(--el-fill-color-light, #f5f7fa);
             padding: 10px;
             border-radius: 4px;
             overflow-x: auto;
@@ -237,7 +238,7 @@
 
         /* 拖拽表格样式 */
         .yq-draggable {
-            border: 1px solid #ebeef5;
+            border: 1px solid var(--el-border-color-lighter, #ebeef5);
             border-radius: 4px;
             overflow: hidden;
             margin-top: 16px;
@@ -247,30 +248,30 @@
         /* 表头样式 */
         .yq-draggable .header {
             display: flex;
-            background-color: #ecf1f8;
-            border-bottom: 1px solid #ebeef5;
+            background-color: var(--el-fill-color-light, #ecf1f8);
+            border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
             font-weight: 500;
-            color: #303133;
+            color: var(--el-text-color-primary, #303133);
         }
 
         /* 行样式 */
         .yq-draggable .row {
             display: flex;
-            border-bottom: 1px solid #ebeef5;
+            border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
             transition: background-color 0.2s;
             align-items: center;
         }
 
         /* 行悬停效果 */
         .yq-draggable .row:hover {
-            background-color: #ecf5ff;
+            background-color: var(--el-color-primary-light-9, #ecf5ff);
         }
 
         /* 单元格样式 */
         .yq-draggable .cell {
             padding: 12px;
             box-sizing: border-box;
-            border-right: 1px solid #ebeef5;
+            border-right: 1px solid var(--el-border-color-lighter, #ebeef5);
             display: flex;
             align-items: center;
         }
@@ -290,7 +291,7 @@
         /* 拖拽图标 */
         .yq-draggable .drag-icon {
             cursor: move;
-            color: #909399;
+            color: var(--el-text-color-secondary, #909399);
             user-select: none;
             font-size: 14px;
             padding: 4px;
@@ -299,7 +300,7 @@
 
         /* 拖拽图标悬停 */
         .yq-draggable .drag-icon:hover {
-            color: #409eff;
+            color: var(--el-color-primary, #409eff);
             background-color: rgba(64, 158, 255, 0.1);
         }
 
@@ -313,25 +314,25 @@
 
         /* 数据单元格 */
         .yq-draggable .row .cell {
-            color: #606266;
+            color: var(--el-text-color-regular, #606266);
         }
 
         /* 拖拽状态 */
         .yq-draggable .ghost-row {
             opacity: 0.5;
-            background-color: #ecf5ff;
-            border: 1px dashed #409eff;
+            background-color: var(--el-color-primary-light-9, #ecf5ff);
+            border: 1px dashed var(--el-color-primary, #409eff);
         }
 
         .yq-draggable .chosen-row {
-            background-color: #ecf5ff;
+            background-color: var(--el-color-primary-light-9, #ecf5ff);
         }
 
         /* 空状态 */
         .yq-draggable .empty {
             padding: 48px 24px;
             text-align: center;
-            color: #909399;
+            color: var(--el-text-color-secondary, #909399);
             font-size: 14px;
         }
     </style>

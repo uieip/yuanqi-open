@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>YqDrawer测试页面</title>
     <style>
         body {
@@ -18,17 +19,17 @@
         .test-section {
             margin-bottom: 2rem;
             padding: 1.5rem;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--el-border-color-light, #e5e7eb);
             border-radius: 8px;
-            background-color: #fff;
+            background-color: var(--el-bg-color, #fff);
         }
 
         .test-section h2 {
             margin-top: 0;
             margin-bottom: 1rem;
-            color: #1e293b;
+            color: var(--el-text-color-primary, #1e293b);
             font-size: 1.25rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--el-border-color-light, #e5e7eb);
             padding-bottom: 0.5rem;
         }
 

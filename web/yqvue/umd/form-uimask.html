@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>YqUiMask 测试</title>
     <!-- 自定义样式 -->
     <style>
@@ -11,7 +12,6 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f7fa;
             background-color: var(--yq-bg);
             color: var(--yq-text);
         }
@@ -19,7 +19,7 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background-color: white;
+            background-color: var(--el-bg-color, #fff);
             border-radius: 8px;
             box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
             overflow: hidden;
@@ -27,14 +27,14 @@
 
         .header {
             padding: 20px;
-            border-bottom: 1px solid #e4e7ed;
-            background-color: #fafafa;
+            border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
+            background-color: var(--el-fill-color-light, #fafafa);
         }
 
         .header h1 {
             margin: 0;
             font-size: 24px;
-            color: #303133;
+            color: var(--el-text-color-primary, #303133);
         }
 
         .content {
@@ -44,7 +44,7 @@
         .type-selector {
             margin-bottom: 20px;
             padding: 15px;
-            background-color: #f5f7fa;
+            background-color: var(--el-fill-color-light, #f5f7fa);
             border-radius: 4px;
         }
 
@@ -56,7 +56,7 @@
         .result-panel {
             margin-top: 20px;
             padding: 15px;
-            background-color: #f5f7fa;
+            background-color: var(--el-fill-color-light, #f5f7fa);
             border-radius: 4px;
         }
 
@@ -64,11 +64,11 @@
             margin-top: 0;
             margin-bottom: 10px;
             font-size: 16px;
-            color: #606266;
+            color: var(--el-text-color-regular, #606266);
         }
 
         .result-panel pre {
-            background-color: #fff;
+            background-color: var(--el-bg-color, #fff);
             padding: 10px;
             border-radius: 4px;
             overflow: auto;
@@ -99,7 +99,7 @@
                         :is-edit="true"></yq-ui-mask-text>
                 </div>
 
-                <div style="border: 1px solid #dcdfe6; border-radius: 4px; padding: 20px; min-height: 400px;">
+                <div style="border: 1px solid var(--el-border-color, #dcdfe6); border-radius: 4px; padding: 20px; min-height: 400px;">
                     <yq-ui-mask-edit :ui_type="currentUiType" v-model:value="maskValue" :is-edit="true"></yq-ui-mask-edit>
                 </div>
 

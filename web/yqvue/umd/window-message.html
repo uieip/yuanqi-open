@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>YqMessage 测试</title>
     <style>
         * {
@@ -14,8 +15,6 @@
 
         body {
             font-family: Arial, sans-serif;
-            background-color: #f5f7fa;
-            color: #303133;
             padding: 20px;
             background-color: var(--yq-bg);
             color: var(--yq-text);
@@ -24,7 +23,7 @@
         #app {
             max-width: 800px;
             margin: 0 auto;
-            background-color: #fff;
+            background-color: var(--el-bg-color, #fff);
             border-radius: 8px;
             box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
             padding: 20px;
@@ -33,21 +32,21 @@
         h1 {
             font-size: 24px;
             margin-bottom: 20px;
-            color: #409eff;
+            color: var(--el-color-primary, #409eff);
         }
 
         .test-section {
             margin-bottom: 30px;
             padding: 20px;
-            border: 1px solid #dcdfe6;
+            border: 1px solid var(--el-border-color, #dcdfe6);
             border-radius: 4px;
-            background-color: #f9f9f9;
+            background-color: var(--el-fill-color-light, #f9f9f9);
         }
 
         .test-section h2 {
             font-size: 18px;
             margin-bottom: 15px;
-            color: #606266;
+            color: var(--el-text-color-regular, #606266);
         }
 
         .button-group {
@@ -63,13 +62,13 @@
         }
 
         .info {
-            background-color: #ecf5ff;
-            border: 1px solid #d9ecff;
+            background-color: var(--el-color-primary-light-9, #ecf5ff);
+            border: 1px solid var(--el-color-primary-light-8, #d9ecff);
             border-radius: 4px;
             padding: 10px;
             margin-top: 10px;
             font-size: 14px;
-            color: #409eff;
+            color: var(--el-color-primary, #409eff);
         }
     </style>
 </head>
@@ -104,7 +103,7 @@
         <div class="test-section">
             <h2>测试指定 div 位置对话框</h2>
             <div ref="divTarget"
-                style="padding: 20px; background-color: #f0f9eb; border: 1px solid #b7eb8f; border-radius: 4px; margin-bottom: 10px;">
+                style="padding: 20px; background-color: var(--el-color-success-light-9, #f0f9eb); border: 1px solid var(--el-color-success-light-5, #b7eb8f); border-radius: 4px; margin-bottom: 10px;">
                 这是一个测试 div 元素
             </div>
             <el-button type="success" @click="showDivConfirm">在 div 下方显示对话框</el-button>

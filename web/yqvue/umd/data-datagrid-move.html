@@ -1,11 +1,12 @@
 ﻿<uieip type="page" value="base"></uieip>
+<script src="/yqvue/test-theme-switch.js" defer></script>
 <uieip type="reg" value="console,login,session"></uieip>
 <!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>数据表格测试[排序]</title>
     <style>
         * {
@@ -23,7 +24,7 @@
         #app {
             max-width: 1200px;
             margin: 0 auto;
-            background-color: #fff;
+            background-color: var(--el-bg-color, #fff);
             border-radius: 8px;
             box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
             padding: 20px;
@@ -36,7 +37,7 @@
             align-items: center;
             margin-bottom: 20px;
             padding: 15px;
-            background-color: #f9f9f9;
+            background-color: var(--el-fill-color-light, #f9f9f9);
             border-radius: 4px;
         }
 
@@ -53,32 +54,32 @@
 
         .divider {
             margin: 0 10px;
-            color: #909399;
+            color: var(--el-text-color-secondary, #909399);
         }
 
         .yq-data-grid-container {
             height: calc(100vh - 350px);
-            border: 1px solid #dcdfe6;
+            border: 1px solid var(--el-border-color, #dcdfe6);
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 20px;
         }
 
         .yq-data-grid .warning-row {
-            background-color: #fdf5e6;
+            background-color: var(--el-color-warning-light-9, #fdf5e6);
         }
 
         .yq-data-grid .success-row {
-            background-color: #e6f5e9;
+            background-color: var(--el-color-success-light-9, #e6f5e9);
         }
 
         .data-log {
             height: 200px;
             overflow: auto;
-            border: 1px solid #dcdfe6;
+            border: 1px solid var(--el-border-color, #dcdfe6);
             border-radius: 4px;
             padding: 15px;
-            background-color: #f9f9f9;
+            background-color: var(--el-fill-color-light, #f9f9f9);
         }
 
         .data-log pre {
@@ -91,14 +92,14 @@
         h1 {
             font-size: 20px;
             margin-bottom: 20px;
-            color: #409eff;
+            color: var(--el-color-primary, #409eff);
         }
 
         .section-title {
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #606266;
+            color: var(--el-text-color-regular, #606266);
         }
     </style>
 </head>

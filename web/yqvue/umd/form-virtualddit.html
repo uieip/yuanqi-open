@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>YqVirtualEdit 虚拟编辑组件测试</title>
     <style>
         body {
@@ -19,7 +20,7 @@
         .control-panel {
             margin-bottom: 20px;
             padding: 15px;
-            background-color: #f5f7fa;
+            background-color: var(--el-fill-color-light, #f5f7fa);
             border-radius: 4px;
         }
 
@@ -38,12 +39,12 @@
             </yq-virtual-edit>
         </div>
 
-        <div style="margin-top: 20px; border: 1px solid #e4e7ed; border-radius: 4px; overflow: hidden;">
-            <div style="background-color: #f5f7fa; padding: 10px; font-weight: bold; border-bottom: 1px solid #e4e7ed;">
+        <div style="margin-top: 20px; border: 1px solid var(--el-border-color-light, #e4e7ed); border-radius: 4px; overflow: hidden;">
+            <div style="background-color: var(--el-fill-color-light, #f5f7fa); padding: 10px; font-weight: bold; border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);">
                 数据预览
             </div>
             <pre
-                style="margin: 0; padding: 15px; background-color: #fafafa; max-height: 300px; overflow: auto; font-family: 'Courier New', Courier, monospace; font-size: 14px; line-height: 1.5;">{{ modelValue }}</pre>
+                style="margin: 0; padding: 15px; background-color: var(--el-fill-color-light, #fafafa); max-height: 300px; overflow: auto; font-family: 'Courier New', Courier, monospace; font-size: 14px; line-height: 1.5;">{{ modelValue }}</pre>
         </div>
     </div>
 

@@ -3,7 +3,8 @@
 
 <head>
     <uieip type="file" value="inc" src="/scripts/yqwin_inc.txt"></uieip>
-  <link rel="stylesheet" href="/test-ui.css">
+    <script src="/yqvue/test-theme-switch.js" defer></script>
+  <link rel="stylesheet" href="/yqvue/test-ui.css">
     <title>YqFlowEdit 流程图编辑组件测试</title>
     <link rel="stylesheet" type="text/css" href="/font-awesome.min.css">
     <style>
@@ -30,8 +31,8 @@
             align-items: center;
             gap: 20px;
             padding: 10px 20px;
-            background-color: #f5f7fa;
-            border-bottom: 1px solid #e4e7ed;
+            background-color: var(--el-fill-color-light, #f5f7fa);
+            border-bottom: 1px solid var(--el-border-color-light, #e4e7ed);
         }
 
         .flow-container {
@@ -41,16 +42,16 @@
 
         .test-content {
             padding: 10px 20px;
-            background-color: #fff;
-            border-top: 1px solid #e4e7ed;
+            background-color: var(--el-bg-color, #fff);
+            border-top: 1px solid var(--el-border-color-light, #e4e7ed);
             height: 300px;
             overflow: auto;
         }
 
         .json-preview {
             font-size: 14px;
-            color: #333;
-            background-color: #f9f9f9;
+            color: var(--el-text-color-primary, #303133);
+            background-color: var(--el-fill-color-light, #f9f9f9);
             padding: 10px;
             border-radius: 4px;
         }
@@ -84,7 +85,8 @@
     </div>
     <script>
         const { createApp, ref, watch, onMounted } = Vue;
-        const { YqFlowEdit } = YqwinPlus;
+        const { initTheme, YqFlowEdit } = YqwinPlus;
+        initTheme();
 
         const formatJson = (obj) => {
             return JSON.stringify(obj, null, 2);

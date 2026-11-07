@@ -6,33 +6,174 @@
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>YQWIN-Plus 组件库测试导引页</title>
+  <!-- 首屏防闪烁：与工作台一致的主题引导（读取 yq-theme-mode，先设 data-theme 再绘制） -->
+  <script src="/scripts/theme-boot.js"></script>
   <style>
+    /* 三调色板与 src/theme.css 对齐（dark 为默认） */
+    :root,
+    html[data-theme='dark'] {
+      --bg: #0f1011;
+      --bg-card: #1a1b1d;
+      --panel: #222427;
+      --text: #d1d3db;
+      --text-strong: #f5f9fe;
+      --text-muted: #9599a6;
+      --text-faint: #666b75;
+      --border: rgba(224, 226, 242, 0.09);
+      --primary: #387bff;
+      --primary-text: #7fb2ff;
+      --primary-soft: rgba(56, 123, 255, 0.16);
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.4);
+      --header-gradient: linear-gradient(135deg, #2456c4 0%, #387bff 100%);
+    }
+
+    html[data-theme='blue'] {
+      --bg: #10151e;
+      --bg-card: #181d27;
+      --panel: #232a35;
+      --text: #d1d3db;
+      --text-strong: #f5f9fe;
+      --text-muted: #9599a6;
+      --text-faint: #666b75;
+      --border: rgba(176, 192, 244, 0.09);
+      --primary: #387bff;
+      --primary-text: #84b5ff;
+      --primary-soft: rgba(56, 123, 255, 0.18);
+      --shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+      --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.45);
+      --header-gradient: linear-gradient(135deg, #2456c4 0%, #387bff 100%);
+    }
+
+    html[data-theme='light'] {
+      --bg: #eaecf0;
+      --bg-card: #ffffff;
+      --panel: #ffffff;
+      --text: #31353a;
+      --text-strong: #111214;
+      --text-muted: #5b6066;
+      --text-faint: #8a9096;
+      --border: rgba(77, 107, 153, 0.12);
+      --primary: #2f74ff;
+      --primary-text: #006ab1;
+      --primary-soft: rgba(47, 116, 255, 0.10);
+      --shadow: 0 2px 12px rgba(31, 35, 41, 0.06);
+      --shadow-hover: 0 8px 24px rgba(47, 116, 255, 0.15);
+      --header-gradient: linear-gradient(135deg, #2f74ff 0%, #6aa5ff 100%);
+    }
+
+    /* 视口底色跟随调色板：body 限宽居中，两侧留白由 html 背景填充 */
+    html {
+      background-color: var(--bg);
+    }
+
+    * {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
-      color: #333;
-      max-width: 800px;
+      color: var(--text);
+      max-width: 960px;
       margin: 0 auto;
-      padding: 20px;
-      background-color: #f9f9f9;
+      padding: 24px 20px 40px;
+      background-color: var(--bg);
+      min-height: 100vh;
     }
 
     header {
+      position: relative;
       text-align: center;
-      margin-bottom: 40px;
-      padding-bottom: 20px;
-      border-bottom: 2px solid #eaeaea;
+      margin-bottom: 36px;
+      padding: 36px 24px 28px;
+      border-radius: 16px;
+      background: var(--header-gradient);
+      color: #fff;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -60%;
+      left: -5%;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.06);
     }
 
     h1 {
-      color: #409eff;
+      position: relative;
+      z-index: 1;
       margin: 0;
+      font-size: 2rem;
+      letter-spacing: 1px;
     }
 
     .subtitle {
-      color: #666;
-      font-size: 1.1rem;
-      margin-top: 10px;
+      position: relative;
+      z-index: 1;
+      margin-top: 8px;
+      font-size: 1.05rem;
+      opacity: 0.9;
+    }
+
+    /* 主题切换：四段式（与工作台 theme.ts 四模式一致） */
+    .theme-switch {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      gap: 2px;
+      margin-top: 18px;
+      padding: 3px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(4px);
+    }
+
+    .theme-switch button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .theme-switch button:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .theme-switch button.active {
+      background: #fff;
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .theme-switch button:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 1px;
     }
 
     .test-links {
@@ -41,52 +182,88 @@
     }
 
     .link-card {
-      background-color: white;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
+      background-color: var(--bg-card);
+      padding: 22px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.3s ease, border-color 0.3s ease;
     }
 
     .link-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.15);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--primary);
     }
 
     .link-card h2 {
-      margin-top: 0;
-      color: #303133;
-      font-size: 1.3rem;
+      margin: 0 0 16px;
+      padding-bottom: 10px;
+      color: var(--text-strong);
+      font-size: 1.15rem;
+      border-bottom: 2px solid var(--primary-soft);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .link-card p {
-      color: #606266;
-      margin-bottom: 20px;
+    .link-card h2::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 18px;
+      border-radius: 2px;
+      background: var(--primary);
     }
 
     .test-link {
       display: inline-block;
-      padding: 10px 20px;
-      margin: 5px 0;
-      background-color: #409eff;
-      color: white;
+      padding: 7px 16px;
+      margin: 4px 6px 4px 0;
+      background-color: var(--primary-soft);
+      color: var(--primary-text);
       text-decoration: none;
-      border-radius: 4px;
+      border-radius: 6px;
+      font-size: 0.9rem;
       font-weight: 500;
-      transition: background-color 0.3s ease;
+      border: 1px solid transparent;
+      transition: all 0.25s ease;
     }
 
     .test-link:hover {
-      background-color: #66b1ff;
+      background-color: var(--primary);
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(56, 123, 255, 0.35);
     }
 
     footer {
       text-align: center;
-      margin-top: 50px;
+      margin-top: 40px;
       padding-top: 20px;
-      border-top: 2px solid #eaeaea;
-      color: #909399;
+      border-top: 1px solid var(--border);
+      color: var(--text-faint);
       font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .link-card {
+        padding: 18px 16px;
+      }
+
+      .theme-switch {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+
+      .theme-switch button {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
     }
   </style>
 </head>
@@ -95,6 +272,12 @@
   <header>
     <h1>YQWIN-Plus 组件库</h1>
     <p class="subtitle">基于 Element Plus 扩展的组件库测试页面</p>
+    <div class="theme-switch" id="themeSwitch" role="group" aria-label="主题切换">
+      <button type="button" data-mode="dark">暗色</button>
+      <button type="button" data-mode="blue">深蓝</button>
+      <button type="button" data-mode="light">亮色</button>
+      <button type="button" data-mode="system">跟随系统</button>
+    </div>
   </header>
 
   <div class="test-links">
@@ -142,7 +325,7 @@
       <h2>访问统计组件</h2>
       <a href="javascript:toLinkUrl('tongji-api.html')" class="test-link">tongji-api</a>
       <a href="javascript:toLinkUrl('tongji-com-edit.html')" class="test-link">tongji-com-edit</a>
-    </div> 
+    </div>
     <div class="link-card">
       <h2>窗体组件</h2>
       <a href="javascript:toLinkUrl('window.html')" class="test-link">window</a>
@@ -184,10 +367,82 @@
   </footer>
 
   <script>
-     const linkType = 'umd'
-     const toLinkUrl = (url) => {
+    const linkType = 'umd'
+    const toLinkUrl = (url) => {
       window.open(`/yqvue/${linkType}/${url}`, '_blank');
-     }
+    }
+
+    // 主题切换：与 src/theme.ts 四模式一致（dark / blue / light / system），共用 localStorage['yq-theme-mode']
+    (function () {
+      const STORAGE_KEY = 'yq-theme-mode';
+      const MODES = ['dark', 'blue', 'light', 'system'];
+      // 临界底色（与 theme-boot.js / src/theme.ts BOOT_COLORS 一致）
+      const BOOT_COLORS = {
+        dark: { bg: '#0f1011', fg: '#d1d3db' },
+        blue: { bg: '#10151e', fg: '#d1d3db' },
+        light: { bg: '#eaecf0', fg: '#31353a' }
+      };
+      const root = document.documentElement;
+      const switchEl = document.getElementById('themeSwitch');
+      const buttons = Array.from(switchEl.querySelectorAll('button'));
+
+      // 同步首屏临界底色样式，保证 html 背景与 color-scheme 随切换更新
+      const syncBootStyle = (palette) => {
+        let el = document.getElementById('yq-theme-boot');
+        if (!el) {
+          el = document.createElement('style');
+          el.id = 'yq-theme-boot';
+          document.head.appendChild(el);
+        }
+        const c = BOOT_COLORS[palette];
+        el.textContent = `html{background-color:${c.bg};color:${c.fg};color-scheme:${palette === 'light' ? 'light' : 'dark'}}`;
+      };
+
+      const loadMode = () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return MODES.includes(saved) ? saved : 'dark';
+      };
+
+      const resolvePalette = (mode) => {
+        if (mode === 'system') {
+          return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        return mode;
+      };
+
+      let mode = loadMode();
+
+      const applyTheme = () => {
+        const palette = resolvePalette(mode);
+        root.setAttribute('data-theme', palette);
+        root.classList.toggle('dark', palette !== 'light');
+        syncBootStyle(palette);
+        buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+      };
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          mode = btn.dataset.mode;
+          localStorage.setItem(STORAGE_KEY, mode);
+          applyTheme();
+        });
+      });
+
+      // 「跟随系统」模式下响应系统深浅色变化
+      const mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+      mq && mq.addEventListener && mq.addEventListener('change', () => {
+        if (mode === 'system') applyTheme();
+      });
+
+      // 同源其他窗口（如工作台）切换主题后同步跟随
+      window.addEventListener('storage', (e) => {
+        if (e.key !== STORAGE_KEY) return;
+        mode = loadMode();
+        applyTheme();
+      });
+
+      applyTheme();
+    })();
   </script>
 </body>
 

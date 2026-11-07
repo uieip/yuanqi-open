@@ -1,0 +1,398 @@
+﻿/* ==========================================================================
+   YQWIN-Plus 测试页统一视觉层（test-ui.css）
+   --------------------------------------------------------------------------
+   所有 yqvue/test/*.html 与 yqvue/umd/*.html 共用。加载位置：theme-boot.js
+   之后、页面自有 <style> 之前 —— 页面级样式永远覆盖本层，因此本文件只做
+   「基线 + 通用构件」：
+     · 设计令牌统一挂到 Element Plus CSS 变量上，组件库与页面同一套色
+     · 标题层级、正文排版、滚动容器
+     · 测试控制面板卡片 / 按钮行 / 结果区 pre / 表格 / 提示条
+     · 浮动主题切换器（配合 /scripts/yqwin/test-theme-switch.js）
+   不设置 #app 尺寸与定位，避免破坏全屏布局类测试页。
+
+   多主题适配：颜色一律引用 --el-* / --yq-* 变量。html.dark（暗色/深蓝
+   调色板）时 Element Plus 暗色变量生效，本层随动，无需按主题重写规则；
+   仅阴影等少量令牌按 html[data-theme] 微调。
+   ========================================================================== */
+
+:root {
+  /* ---- 设计令牌 ---- */
+  --test-radius-sm: 6px;
+  --test-radius: 10px;
+  --test-radius-lg: 14px;
+  --test-gap: 16px;
+  --test-gap-lg: 24px;
+  --test-shadow-sm: 0 1px 2px rgb(0 0 0 / 4%), 0 2px 8px rgb(0 0 0 / 4%);
+  --test-shadow: 0 2px 4px rgb(0 0 0 / 4%), 0 8px 24px rgb(0 0 0 / 6%);
+  --test-shadow-hover: 0 4px 8px rgb(0 0 0 / 6%), 0 12px 32px rgb(0 0 0 / 8%);
+  --test-border: 1px solid var(--el-border-color-lighter, #ebeef5);
+  --test-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --test-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* 页面底色与文字：跟随主题（theme-boot.js 写入的 --yq-bg / --yq-text） */
+  --test-bg: var(--yq-bg, var(--el-bg-color-page, #f5f7fa));
+  --test-fg: var(--yq-text, var(--el-text-color-primary, #303133));
+}
+
+/* 暗底需要更深的阴影托出浮层（与 src/theme.css 三调色板一致） */
+html[data-theme='dark'],
+html[data-theme='blue'] {
+  --test-shadow-sm: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 8px rgb(0 0 0 / 30%);
+  --test-shadow: 0 2px 4px rgb(0 0 0 / 32%), 0 8px 24px rgb(0 0 0 / 36%);
+  --test-shadow-hover: 0 4px 10px rgb(0 0 0 / 36%), 0 14px 36px rgb(0 0 0 / 42%);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--test-fg);
+  background-color: var(--test-bg);
+  font-family: var(--test-font);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 主题切换时底色/文字平滑过渡 */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ---- 标题层级：干净的灰阶层次，不用彩色大标题 ---- */
+h1,
+h2,
+h3,
+h4 {
+  margin: 0 0 0.6em;
+  color: var(--test-fg);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 22px;
+}
+
+h2 {
+  margin-top: 1.2em;
+  font-size: 17px;
+}
+
+h3,
+h4 {
+  font-size: 15px;
+}
+
+h1 small,
+h2 small,
+h3 small {
+  margin-left: 8px;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+p {
+  margin: 0 0 0.8em;
+  color: var(--el-text-color-regular, #606266);
+}
+
+/* ---- 测试控制面板：统一卡片外观 ---- */
+.test-panel {
+  box-sizing: border-box;
+  margin: 0 0 var(--test-gap-lg);
+  padding: 18px 22px;
+  background-color: var(--el-bg-color, #fff);
+  border: var(--test-border);
+  border-radius: var(--test-radius);
+  box-shadow: var(--test-shadow-sm);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease,
+    background-color 0.3s ease;
+}
+
+.test-panel:hover {
+  border-color: var(--el-border-color, #dcdfe6);
+  box-shadow: var(--test-shadow);
+}
+
+.test-panel > h3,
+.test-panel > h4 {
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  border-bottom: var(--test-border);
+}
+
+.test-panel + .test-panel {
+  margin-top: calc(var(--test-gap-lg) * -1 + var(--test-gap));
+}
+
+/* 面板内的按钮行：自动换行、等距 */
+.btn-row,
+.test-panel .btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+/* ---- 结果输出区 ---- */
+pre {
+  box-sizing: border-box;
+  margin: 0 0 var(--test-gap);
+  padding: 14px 16px;
+  overflow: auto;
+  color: var(--el-text-color-regular, #606266);
+  background-color: var(--el-fill-color-light, #f5f7fa);
+  border: var(--test-border);
+  border-radius: var(--test-radius-sm);
+  font-family: var(--test-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+
+code {
+  font-family: var(--test-mono);
+}
+
+/* ---- 表格：斑马纹 + 轻边框，便于肉眼比对数据 ---- */
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+  overflow: hidden;
+  border: var(--test-border);
+  border-radius: var(--test-radius-sm);
+  font-size: 13px;
+}
+
+thead th {
+  padding: 10px 12px;
+  color: var(--el-text-color-secondary, #909399);
+  background-color: var(--el-fill-color-light, #f5f7fa);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: var(--test-border);
+}
+
+tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter, #ebeef5);
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--el-fill-color-lighter, #fafafa);
+}
+
+/* ---- 链接：去下划线，hover 才显示 ---- */
+a {
+  color: var(--el-color-primary, #409eff);
+  text-decoration: none;
+  transition: color 0.18s ease;
+}
+
+a:hover {
+  color: var(--el-color-primary-light-3, #79bbff);
+  text-decoration: underline;
+}
+
+/* ---- 输入控件基线高度，避免原生 input 与 EP 组件错位 ---- */
+input[type='button'],
+input[type='submit'] {
+  padding: 7px 15px;
+  color: var(--el-text-color-regular, #606266);
+  background-color: var(--el-bg-color, #fff);
+  border: 1px solid var(--el-border-color, #dcdfe6);
+  border-radius: var(--test-radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+input[type='button']:hover,
+input[type='submit']:hover {
+  color: var(--el-color-primary, #409eff);
+  border-color: var(--el-color-primary-light-5, #a0cfff);
+  background-color: var(--el-color-primary-light-9, #ecf5ff);
+}
+
+input[type='button']:active,
+input[type='submit']:active {
+  transform: translateY(1px);
+}
+
+/* ---- 状态文本：成功 / 失败 / 信息 / 警告（测试断言常用） ---- */
+.text-success {
+  color: var(--el-color-success, #67c23a);
+}
+
+.text-error {
+  color: var(--el-color-error, #f56c6c);
+}
+
+.text-info {
+  color: var(--el-color-primary, #409eff);
+}
+
+.text-warning {
+  color: var(--el-color-warning, #e6a23c);
+}
+
+/* ---- 滚动条：细窄、低对比，不抢视觉 ---- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--el-border-color, #dcdfe6) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--el-border-color, #dcdfe6);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--el-border-color-darker, #c0c4cc);
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* ==========================================================================
+   浮动主题切换器（#yq-theme-switch，由 test-theme-switch.js 自动注入）
+   固定右下角，默认半透不抢镜，悬停浮起；iframe 内不注入。
+   ========================================================================== */
+#yq-theme-switch {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 999;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background-color: var(--el-bg-color, #fff);
+  background-color: color-mix(in srgb, var(--el-bg-color, #fff) 88%, transparent);
+  border: 1px solid var(--el-border-color-lighter, #ebeef5);
+  border-radius: 999px;
+  box-shadow: var(--test-shadow);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  opacity: 0.8;
+  transition: opacity 0.22s ease, transform 0.22s ease, box-shadow 0.25s ease,
+    background-color 0.3s ease, border-color 0.3s ease;
+}
+
+#yq-theme-switch:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  box-shadow: var(--test-shadow-hover);
+}
+
+#yq-theme-switch button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
+  color: var(--el-text-color-secondary, #909399);
+  background-color: transparent;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.18s ease, background-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+#yq-theme-switch button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.22s ease;
+}
+
+#yq-theme-switch button:hover {
+  color: var(--el-text-color-primary, #303133);
+  background-color: var(--el-fill-color, #f0f2f5);
+}
+
+#yq-theme-switch button:hover svg {
+  transform: scale(1.12);
+}
+
+#yq-theme-switch button:active {
+  transform: scale(0.94);
+}
+
+#yq-theme-switch button.active {
+  color: var(--el-color-white, #fff);
+  background-color: var(--el-color-primary, #409eff);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--el-color-primary, #409eff) 45%, transparent);
+}
+
+#yq-theme-switch button.active svg {
+  transform: none;
+}
+
+#yq-theme-switch button:focus-visible {
+  outline: 2px solid var(--el-color-primary, #409eff);
+  outline-offset: 2px;
+}
+
+/* ---- 窄屏适配：面板内边距与标题缩小 ---- */
+@media (max-width: 768px) {
+  .test-panel {
+    padding: 14px 16px;
+  }
+
+  h1 {
+    font-size: 19px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  #yq-theme-switch {
+    right: 10px;
+    bottom: 10px;
+    padding: 3px;
+  }
+
+  #yq-theme-switch button {
+    width: 30px;
+    height: 27px;
+  }
+
+  #yq-theme-switch button svg {
+    width: 14px;
+    height: 14px;
+  }
+}
