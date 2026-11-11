@@ -675,7 +675,7 @@ res 数据格式
 ```json
 {
 	"error": 0,
-	"info": "OK",
+	"info": "ok",
 	"rows": [{
 		"c_userid": "22bd7aed-f114-4c59-9590-204e7d563245",
 		"c_username": "spring",

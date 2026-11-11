@@ -126,6 +126,45 @@
             font-size: 14px;
             color: #333;
         }
+
+        /* 手机端 */
+        @media (max-width: 767px) {
+            .container.inner-info {
+                margin-top: 12px;
+            }
+
+            .user-container {
+                padding: 20px 16px;
+                margin-bottom: 12px;
+            }
+
+            /* #app 直接包住栅格列，手机上强制单列堆叠 */
+            #app {
+                width: 100%;
+            }
+
+            #app > div[class*="col-"] {
+                display: block;
+                float: none;
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .login-container {
+                padding: 18px 16px 20px;
+                margin: 0 0 12px;
+            }
+
+            .login-container h2 {
+                font-size: 17px;
+                margin: 2px 0 14px;
+                padding-bottom: 11px;
+            }
+
+            .third-login-section {
+                padding: 14px 16px;
+            }
+        }
     </style>
 </head>
 
@@ -156,6 +195,25 @@
         </div>
     </div>
     <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+
+    <script>
+        function onresize() {
+            var innerEl = document.querySelector(".inner-info");
+            if (!innerEl) return;
+            innerEl.style.marginBottom = "0px";
+            var footEl = document.querySelector(".footer .container");
+            if (footEl) {
+                var h_ = parseInt(document.documentElement.scrollHeight - 25 - innerEl.getBoundingClientRect().top - innerEl.offsetHeight - footEl.offsetHeight);
+                if (h_ > 0) {
+                    innerEl.style.marginBottom = h_ + "px";
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            window.addEventListener('resize', onresize);
+            onresize();
+        });
+    </script>
 
     <script>
         get_link_weixin();

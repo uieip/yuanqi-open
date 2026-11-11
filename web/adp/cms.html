@@ -40,7 +40,7 @@
     <script>
         const { ref, onMounted, createApp, nextTick, computed } = Vue;
         const { ElTree } = ElementPlus;
-        const { initTheme, YqWindowApi, yqData, YqCombogrid, YqEdit, YqAttr, YqTreeView, YqLabel, YqContainer, YqConAside, YqConMain  } = YqwinPlus;
+        const { initTheme, YqWindowApi, yqData, YqCombogrid, YqEdit, YqAttr, YqTreeView, YqLabel, YqContainer, YqConAside, YqConMain, YqMessageBox } = YqwinPlus;
         initTheme();
 
         let mainParams = {
@@ -86,7 +86,7 @@
 
                     const dbname = ref("yqbase");
 
-                    const cms = ref({
+                    const cms = {
                         tbname: "sys_cms",
                         keyId: "sid",
                         displayMember: "{describe}[{name}]",
@@ -104,29 +104,36 @@
                         editModeH: 564,
                         editModeNo: 2,
                         autoSelect: true,
-                    });
+                    };
 
                     const cmsProps = computed(() => ({
+                        ...cms,
                         dbname: dbname.value,
-                        tbname: cms.value.tbname,
-                        keyId: cms.value.keyId,
-                        displayMember: cms.value.displayMember,
-                        order: cms.value.order,
-                        titles: cms.value.titles,
-                        loadData: cms.value.loadData,
-                        editMode: cms.value.editMode,
-                        editType: cms.value.editType,
-                        isEdit: cms.value.isEdit,
-                        menuType: 3,
-                        isSeek: cms.value.isSeek,
-                        isSimple: cms.value.isSimple,
-                        isPage: cms.value.isPage,
-                        move: cms.value.move,
-                        autoSelect: cms.value.autoSelect,
-                        editModeW: cms.value.editModeW,
-                        editModeH: cms.value.editModeH,
-                        editModeNo: cms.value.editModeNo,
                         beforeSetTitles: treeBeforeSetTitles,
+                        editLinks_r: [
+                            {
+                                name: 'delcache',
+                                label: '清理登录缓存',
+                                toptip: '清理登录缓存',
+                                icon: 'fa fa-eraser',
+                                type: "primary",
+                                divided: false,
+                                disabled: (() => {
+                                    return false;
+                                }),
+                                click: async (e) => {
+                                    YqMessageBox.confirm({
+                                        message: '确定清理缓存...',
+                                        title: '提示',
+                                        type: 'message',
+                                        el: e.target,
+                                    }).then(async () => {
+                                        await yqData.clearCache("cms:");
+                                    }).catch(() => {
+                                        //console.log('用户点击了取消');
+                                    });
+                                }
+                            }]
                     }));
 
                     const treeBeforeSetTitles = async (titles) => {
@@ -178,7 +185,7 @@
                     }));
 
                     const cmsRowSelect = ({ row, index, key }) => {
-                        //console.log("cmsRowSelect",row,index,key);
+                        console.log("cmsRowSelect", row, index, key);
                         editRow.value = row;
 
                         if (row && row.navigation) {
@@ -200,10 +207,10 @@
 
                             const res_model = await yqData.tbModel({
                                 dbname: dbname.value,
-                                tbname: cms.value.tbname,
+                                tbname: cms.tbname,
                                 tempno: 3
                             });
-                            //console.log(res_model);
+                            console.log(res_model);
                             if (res_model.error == 0) {
                                 editModel.value = res_model.model;
                             }

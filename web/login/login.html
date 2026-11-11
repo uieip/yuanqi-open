@@ -161,6 +161,60 @@
       background: #1677ff;
       border-radius: 1px;
     }
+
+    /* 手机端 */
+    @media (max-width: 767px) {
+      .container.inner-info {
+        margin-top: 12px;
+      }
+
+      .login-brand {
+        padding: 4px 16px 10px;
+      }
+
+      .login-brand .brand-logo {
+        max-height: 44px;
+      }
+
+      .login-brand .brand-title {
+        font-size: 18px;
+        margin: 8px 0 2px;
+      }
+
+      .login-brand .brand-slogan {
+        font-size: 12px;
+        letter-spacing: .5px;
+      }
+
+      #app {
+        padding: 22px 18px;
+        min-height: auto;
+        border-radius: 14px;
+        box-shadow: 0 8px 24px rgba(20, 60, 90, 0.08);
+      }
+
+      .login-tabs {
+        margin-bottom: 18px;
+      }
+
+      .login-tab {
+        font-size: 14px;
+        padding: 9px 0;
+      }
+    }
+
+    /* 超窄屏：页签文字缩小，避免被裁切 */
+    @media (max-width: 380px) {
+      .login-tab {
+        font-size: 12.5px;
+        letter-spacing: -.2px;
+        padding: 9px 0;
+      }
+
+      #app {
+        padding: 20px 14px;
+      }
+    }
   </style>
 </head>
 

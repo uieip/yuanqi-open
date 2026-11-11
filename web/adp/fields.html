@@ -1140,7 +1140,7 @@
                             props: {
                                 style: {
                                     padding: '0 5px',
-                                    background: '#f5f7fa',
+                                    background: 'var(--wb-sidebar)',
                                 }
                             },
                             children: [{
@@ -1267,10 +1267,10 @@
                         let rect = {
                             top: 0,
                             left: 0,
-                            width: window.top.innerWidth - 10,
-                            height: window.top.innerHeight - 10,
+                            width: window.top ? (window.top.innerWidth - 35) : (window.innerWidth - 35),
+                            height: window.top ? (window.top.innerHeight - 35) : (window.innerHeight - 35),
                         };
-                        console.log('rect', rect);
+                        //console.log('rect', rect);
                         if (rect.width > 1500) rect.width = 1500;
                         if (rect.height > 950) rect.height = 950;
 
@@ -1298,7 +1298,7 @@
                             props: {
                                 style: {
                                     padding: '0 5px',
-                                    background: '#f5f7fa',
+                                    background: 'var(--wb-sidebar)',
                                 }
                             },
                             children: [{
@@ -1389,7 +1389,7 @@
                             placement: 'center',
                             showTitle: false,
                             modal: true,
-                            top: 0,
+                            top: 7,
                             left: 0,
                             width: rect.width,
                             height: rect.height,
@@ -1446,7 +1446,7 @@
                             props: {
                                 style: {
                                     padding: '0 5px',
-                                    background: '#f5f7fa',
+                                    background: 'var(--wb-sidebar)',
                                 }
                             },
                             children: [{

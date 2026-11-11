@@ -14,17 +14,6 @@ curl -sfL https://raw.githubusercontent.com/milvus-io/milvus/master/scripts/stan
 bash standalone_embed.sh start
 ```
 
-```bash
-wsl
-# 进入 root 用户
-su root 
-# 输入密码：
-# 修改 root 密码
-passwd root
-```
-
-
-
 ## 1.2 可视化工具 Attu（可选）
 
 Attu 是 Milvus 官方提供的图形化管理工具，可以方便地查看和管理数据。
@@ -36,28 +25,6 @@ Attu 是 Milvus 官方提供的图形化管理工具，可以方便地查看和�
 双击安装，启动后输入 localhost:19530 连接 Milvus 数据库  
 默认用户名密码：root/Milvus
 
-- 修改 Milvus root 密码
-
-核心概念澄清  
-Milvus 默认的超级管理员账户是 root，密码是 Milvus。首次部署时，如果未开启认证功能，可以直接连接无需密码。出于安全考虑，强烈建议在初次使用时启用认证并修改默认密码。
-
-- 开启认证功能
-
-对于 standalone_embed.sh 脚本部署的实例，可以通过命令直接修改配置并重启：
-
-```bash
-# 1. 进入 Milvus 容器内部
-docker exec -it milvus-standalone bash
-
-# 2. 修改配置文件，开启认证
-cd configs
-sed -i 's/authorizationEnabled: false/authorizationEnabled: true/' milvus.yaml
-
-# 3. 退出容器并重启服务使其生效
-exit
-docker restart milvus-standalone
-```
-
 - 修改密码
 
 通过 Attu 可视化工具修改
@@ -67,8 +34,27 @@ docker restart milvus-standalone
 Milvus 地址: localhost:19530  
 用户名: root  
 密码: Milvus  
-连接成功后，在左侧导航栏找到 用户 图标。  
+连接成功后，在左侧导航栏找到 权限管理。  
 点击 root 用户右侧的 “Update password” 按钮，输入新密码即可。
+
+核心概念澄清  
+Milvus 默认的超级管理员账户是 root，密码是 Milvus。首次部署时，如果未开启认证功能，可以直接连接无需密码。出于安全考虑，强烈建议在初次使用时启用认证并修改默认密码。
+
+## 2.2 Docker Compose 部署 Milvus 实例
+Milvus 持续更新，建议使用最新版本的 compose 文件。
+
+```bash
+# 下载v3.x compose文件
+wget https://github.com/milvus-io/milvus/releases/download/v3.0.5/milvus-standalone-docker-compose.yml -O docker-compose.yml
+
+# 启动（会拉起 milvus-etcd、milvus-minio、milvus-standalone 3个容器）
+docker compose up -d
+
+# 3. 退出容器并重启服务使其生效
+docker restart milvus-standalone
+```
+
+默认没有开启认证功能，需要手动开启，如何开启请使用ai助手。
 
 # 二、向量数据集定义
 

@@ -47,6 +47,10 @@
             </div>
         </div>
     </div>
+    <button type="button" class="doc-nav-toggle" id="docNavToggle" aria-label="打开文档目录">
+        <i class="bi bi-list-ul"></i> 目录
+    </button>
+    <div class="doc-nav-backdrop" id="docNavBackdrop"></div>
     <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
     <script type="text/javascript">
         var md_url = "/<uieip>select_file</uieip>";
@@ -273,8 +277,7 @@
 
                     var hsNodes = htmlsDiv.querySelectorAll('h' + i);
                     if (hsNodes.length > 0) {
-                        titles_ += '<div class="markdown-toc editormd-markdown-toc">';
-                        titles_ += '<ul class="markdown-toc-list">';
+                        titles_ += '<ul>';
                         for (var i_ = 0; i_ < hsNodes.length; i_++) {
                             var li = hsNodes[i_];
                             li.insertAdjacentHTML('beforebegin', '<a id="link_' + i_ + '"></a>');
@@ -314,15 +317,13 @@
                         titles_ += '</li>';
 
                         titles_ += '</ul>';
-                        titles_ += '</div>';
                     }
 
                     if (tocContainer) tocContainer.innerHTML = titles_;
 
-                    var h_ = '<div class="card"><div class="card-body">' +
+                    var h_ = 
                         '<lable id="link_top"></lable>' +
-                        htmlsDiv.innerHTML +
-                        '</div></div>';
+                        htmlsDiv.innerHTML;
                     if (editormdView) editormdView.insertAdjacentHTML('beforeend', h_);
 
                     onresize();
@@ -331,6 +332,31 @@
 
             window.addEventListener('resize', onresize);
             onresize();
+
+            // 手机端：底部“目录”按钮控制左侧文档导航抽屉
+            var docNavBtn = document.getElementById('docNavToggle');
+            var docSidebar = document.getElementById('sidebar');
+            var docBackdrop = document.getElementById('docNavBackdrop');
+
+            function closeDocNav() {
+                if (docSidebar) docSidebar.classList.remove('mobile-open');
+                if (docBackdrop) docBackdrop.classList.remove('show');
+            }
+
+            if (docNavBtn && docSidebar) {
+                docNavBtn.addEventListener('click', function() {
+                    docSidebar.classList.toggle('mobile-open');
+                    if (docBackdrop) docBackdrop.classList.toggle('show');
+                });
+            }
+
+            if (docBackdrop) docBackdrop.addEventListener('click', closeDocNav);
+
+            if (docSidebar) {
+                docSidebar.addEventListener('click', function(e) {
+                    if (e.target.closest('a')) closeDocNav();
+                });
+            }
         });
     </script>
 

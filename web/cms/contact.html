@@ -1,0 +1,45 @@
+<!doctype html>
+<uieip type="page" value="base"></uieip>
+<uieip type="reg" value="console,cms"></uieip>
+
+<html>
+
+<head>
+    <uieip type="file" value="inc" src="/cms/inc/pc_head_inc.html"></uieip>
+    <uieip type="tmpl" value="cms.title"></uieip>
+</head>
+
+<body>
+    <div class="container">
+        <uieip type="file" value="exec" src="/cms/inc/pc_topmenu_exec.html"></uieip>
+        <uieip type="file" value="exec" src="/cms/inc/pc_breadcrumb_exec.html"></uieip>
+        <div class="row">
+            <div class="col-md-3 col-sm-4 nopaddingright">
+                <uieip type="file" value="exec" src="/cms/inc/pc_leftmenu_exec.html"></uieip>
+            </div>
+            <div class="col-md-9 col-sm-8">
+                <uieip id="div_row" type="tmpl" value="cms.datarow" dbname="yqbase" tbname="cms_oneshot"
+                    seek="tid='{id}'" js="datarow_js" current="true"></uieip>
+                <div style="float: right;margin: -12px 15px 5px 0;">
+                    <span class="uieip-tongji-view" style="display: none;">阅读数量<i class="view"></i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <uieip type="file" value="inc" src="/cms/inc/pc_footer_inc.html"></uieip>
+    <script runat="server">
+        function datarow_js(data) {
+            //response.write(JSON.stringify(data));
+            if (data.row) {
+                var h_ = '<div class="article jumbotron">';
+                h_ += JSON.parse(data.row.body).html;
+                h_ += '</div>';
+                return h_;
+            } else {
+                return "";
+            }
+        }
+    </script>
+</body>
+
+</html>

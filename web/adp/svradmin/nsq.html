@@ -570,6 +570,22 @@
 
                 const nsqContent_info = ref(h("div", null, ''));
 
+                // 当前选中的顶部导航
+                const activeNav = ref('Streams');
+
+                const navLinkStyle = (name) => ({
+                    color: activeNav.value === name
+                        ? "var(--el-color-primary)"
+                        : "var(--yq-text-muted)",
+                    fontWeight: activeNav.value === name ? "bold" : "normal",
+                    borderBottom: activeNav.value === name
+                        ? "2px solid var(--el-color-primary)"
+                        : "2px solid transparent",
+                    paddingBottom: "2px",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                });
+
                 const nsqErrorMsg = (msg) => {
                     return h("div", {
                         style: {
@@ -599,6 +615,7 @@
                  查找所有主题 nsq:topics
                 */
                 const nsqStreams = async () => {
+                    activeNav.value = 'Streams';
                     let streams = [];
                     var formData = new FormData();
                     formData.append("action", "nsq:topics");
@@ -1495,6 +1512,7 @@
                 获取所有节点 nsq:nodes
                 */
                 const nsqNodes = async () => {
+                    activeNav.value = 'Nodes';
                     var formData = new FormData();
                     formData.append("action", "nsq:nodes");
                     const res = await yqData.post("/_svradmin.html", formData);
@@ -1595,6 +1613,7 @@
 
                 //nsq counter
                 const nsqCounter = async () => {
+                    activeNav.value = 'Counter';
                     let counter = 0;
 
                     var formData = new FormData();
@@ -1659,6 +1678,7 @@
 
                 // nsq admin
                 const nsqAdmin = async () => {
+                    activeNav.value = 'Lookup';
                     let counter = 0;
 
                     let streams = [];
@@ -1779,7 +1799,7 @@
                                     ui_readonly: false,
                                     ui_mask: {
                                         blank: false,
-                                        placeholder: true,
+                                        placeholder: 'Please enter topic name',
                                     }
                                 }, {
                                     name: 'channel',
@@ -1788,7 +1808,7 @@
                                     ui_visible: true,
                                     ui_readonly: false,
                                     ui_mask: {
-                                        placeholder: true,
+                                        placeholder: 'Please enter channel name',
                                     }
                                 }],
                                 model: `
@@ -1895,30 +1915,22 @@
                                         }, "NSQ")),
 
                                         h("li", null, h("a", {
-                                            style: {
-                                                color: "var(--yq-text-muted)",
-                                            },
+                                            style: navLinkStyle("Streams"),
                                             href: "javascript:void(0);",
                                             onClick: () => nsqStreams()
                                         }, "Streams")),
                                         h("li", null, h("a", {
-                                            style: {
-                                                color: "var(--yq-text-muted)",
-                                            },
+                                            style: navLinkStyle("Nodes"),
                                             href: "javascript:void(0);",
                                             onClick: () => nsqNodes()
                                         }, "Nodes")),
                                         h("li", null, h("a", {
-                                            style: {
-                                                color: "var(--yq-text-muted)",
-                                            },
+                                            style: navLinkStyle("Counter"),
                                             href: "javascript:void(0);",
                                             onClick: () => nsqCounter()
                                         }, "Counter")),
                                         h("li", null, h("a", {
-                                            style: {
-                                                color: "var(--yq-text-muted)",
-                                            },
+                                            style: navLinkStyle("Lookup"),
                                             href: "javascript:void(0);",
                                             onClick: () => nsqAdmin()
                                         }, "Lookup")),

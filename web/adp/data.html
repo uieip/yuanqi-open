@@ -74,8 +74,12 @@
     <script>
         const { ref, onMounted, createApp, nextTick, computed } = Vue;
         const { ElSelect, ElOption } = ElementPlus;
-        const { initTheme, YqDataTree, YqDataGrid, YqContent, yqData, yqUiPub, YqWindowApi, YqTabs, YqTabPane, YqLabel, YqMessageBox, YqContainer, YqConAside, YqConMain } = YqwinPlus;
+        const { initTheme, YqDataTree, YqDataGrid, YqContent, yqData, 
+            yqUiPub, YqWindowApi, YqTabs, YqTabPane, YqLabel, YqMessageBox, 
+            YqContainer, YqConAside, YqConMain,i18n } = YqwinPlus;
         initTheme();
+
+        const $t = i18n.global.t
 
         let mainParams = {
             dbname: "yqbase",
@@ -251,15 +255,16 @@
                             isUrl: true,
                             closable: true, // 默认可关闭
                             contextMenu: [
-                                { label: '关闭', icon: 'fa fa-window-close-o', action: 'close' },
-                                { label: '关闭其它', icon: 'fa fa-columns', action: 'closeOthers' },
-                                { label: '关闭全部', icon: 'fa fa-window-restore', action: 'closeAll' },
+                                { label: $t('layout.layout.tabClose'), icon: 'fa fa-window-close-o', action: 'close' },
+                                { label: $t('layout.layout.tabCloseOthers'), icon: 'fa fa-columns', action: 'closeOthers' },
+                                { label: $t('layout.layout.tabCloseAll'), icon: 'fa fa-window-restore', action: 'closeAll' },
                                 {},
-                                { label: '关闭左侧', icon: 'fa fa-caret-square-o-left', action: 'closeLeft' },
-                                { label: '关闭右侧', icon: 'fa fa-caret-square-o-right', action: 'closeRight' },
+                                { label: $t('layout.layout.tabCloseLeft'), icon: 'fa fa-caret-square-o-left', action: 'closeLeft' },
+                                { label: $t('layout.layout.tabCloseRight'), icon: 'fa fa-caret-square-o-right', action: 'closeRight' },
                                 {},
-                                { label: '刷新', icon: 'fa fa-refresh', action: 'refresh' },
-                                { label: '新窗口打开', icon: 'fa fa-paper-plane', action: 'blankOpen' },
+                                { label: $t('layout.layout.tabRefresh'), icon: 'fa fa-refresh', action: 'refresh' },
+                                { label: $t('layout.layout.tabBlankOpen'), icon: 'fa fa-paper-plane', action: 'blankOpen' },
+                                { label: $t('layout.layout.tabFullscreen'), icon: 'fa fa-expand', action: 'fullscreen' },
                             ]
                         };
 

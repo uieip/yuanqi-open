@@ -160,7 +160,7 @@ window.onload = async function () {
                     url += "index.html";
                 }
                 console.log(url);
-                _div.style = 'position: fixed;top: 0px;right: 0px;z-index: 10300;';
+                _div.style = 'position: fixed;top: 0px;right: 0px;z-index: 9998;';
                 _div.innerHTML = '<a href="javascript:_modal_file_edit(\'/adp/cms/edit.html?path=' + encodeURIComponent(url) + '\');" title="模板编辑"><img style="width:130px;" src="/adp/cms/page_edit.png"></a>';
                 _div.id = 'adminedit_div';
                 document.body.appendChild(_div);
@@ -1028,6 +1028,12 @@ function _modal_file_edit(url) {
     var _old_overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    //隐藏右上角的"模板编辑"入口，避免遮挡弹窗
+    var adminEditDiv = document.getElementById("adminedit_div");
+    if (adminEditDiv) {
+        adminEditDiv.style.display = "none";
+    }
+
     var m_edit = document.querySelector(".modal_file_edit");
     if (!m_edit) {
         document.body.insertAdjacentHTML("beforeend", `
@@ -1066,6 +1072,9 @@ function _modal_file_edit(url) {
     function _closeModal() {
         document.body.style.overflow = _old_overflow;
         document.body.classList.remove("modal-open");
+        if (adminEditDiv) {
+            adminEditDiv.style.display = "";
+        }
         if (backdropEl) {
             backdropEl.remove();
             backdropEl = null;
