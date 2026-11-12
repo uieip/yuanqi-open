@@ -341,6 +341,12 @@
       ]
     },
     {
+      "name": "CMS开发",
+      "path": "cms-index",
+      "file": "document/cms开发/cms.md",
+      "system": false
+    },
+    {
       "name": "demo-html",
       "path": "demo",
       "file": "document/demo.htmls",
